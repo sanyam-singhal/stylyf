@@ -66,11 +66,11 @@ export default function App() {
                   </p>
                 </div>
                 <div class="flex flex-wrap gap-2 text-sm text-muted">
+                  <a href="#theme-studio" class="rounded-full border border-border/70 bg-panel px-4 py-2 transition hover:text-foreground">
+                    Theme studio
+                  </a>
                   <a href="#library" class="rounded-full border border-border/70 bg-panel px-4 py-2 transition hover:text-foreground">
                     Library
-                  </a>
-                  <a href="#implementation-waves" class="rounded-full border border-border/70 bg-panel px-4 py-2 transition hover:text-foreground">
-                    Implementation waves
                   </a>
                 </div>
               </div>

@@ -1,45 +1,53 @@
-import { MoonStar, SunMedium } from "lucide-solid";
-import { createSignal, onMount } from "solid-js";
+import { LaptopMinimal, MoonStar, SunMedium } from "lucide-solid";
+import { createSignal, onCleanup, onMount } from "solid-js";
+import { Dynamic } from "solid-js/web";
 import { cn } from "~/lib/cn";
+import { applyThemeState, readThemeStateFromDocument, subscribeThemeState, syncThemeFromStorage, type ThemeMode } from "~/lib/theme-system";
 
-type Theme = "light" | "dark";
+const modeMeta: Record<ThemeMode, { icon: typeof SunMedium; label: string }> = {
+  light: { icon: SunMedium, label: "Light" },
+  dark: { icon: MoonStar, label: "Dark" },
+  system: { icon: LaptopMinimal, label: "System" },
+};
 
-const STORAGE_KEY = "stylyf-theme";
-
-function setTheme(theme: Theme) {
-  const root = document.documentElement;
-  root.dataset.theme = theme;
-  root.classList.toggle("dark", theme === "dark");
-}
+const modeOrder: ThemeMode[] = ["light", "dark", "system"];
 
 export function ThemeToggle(props: { class?: string }) {
-  const [theme, setThemeState] = createSignal<Theme>("light");
+  const [mode, setMode] = createSignal<ThemeMode>("system");
 
   onMount(() => {
-    const rootTheme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
-    setThemeState(rootTheme);
-    setTheme(rootTheme);
+    setMode(syncThemeFromStorage().mode);
+
+    const unsubscribe = subscribeThemeState(state => {
+      setMode(state.mode);
+    });
+
+    onCleanup(unsubscribe);
   });
 
   const handleToggle = () => {
-    const nextTheme = theme() === "dark" ? "light" : "dark";
-    setThemeState(nextTheme);
-    setTheme(nextTheme);
-    localStorage.setItem(STORAGE_KEY, nextTheme);
+    const currentMode = readThemeStateFromDocument().mode;
+    const currentIndex = modeOrder.indexOf(currentMode);
+    const nextMode = modeOrder[(currentIndex + 1) % modeOrder.length] ?? "system";
+
+    setMode(applyThemeState({ mode: nextMode }).mode);
   };
+
+  const currentMeta = () => modeMeta[mode()];
 
   return (
     <button
       type="button"
       onClick={handleToggle}
       class={cn(
-        "inline-flex h-10 items-center gap-2 rounded-full border border-border/70 bg-panel px-4 text-sm font-medium text-muted transition hover:border-accent/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
+        "inline-flex h-10 items-center gap-2 rounded-full border border-border/70 bg-panel px-4 text-sm font-medium text-muted transition hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
         props.class,
       )}
-      aria-label="Toggle color theme"
+      aria-label={`Cycle color mode. Current mode: ${currentMeta().label}`}
+      title={`Mode: ${currentMeta().label}`}
     >
-      {theme() === "dark" ? <SunMedium class="size-4" /> : <MoonStar class="size-4" />}
-      <span>{theme() === "dark" ? "Light" : "Dark"}</span>
+      <Dynamic component={currentMeta().icon} class="size-4" />
+      <span>{currentMeta().label}</span>
     </button>
   );
 }

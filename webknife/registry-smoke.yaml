@@ -2,6 +2,16 @@
   selector: "input[type='search']"
   timeoutMs: 15000
 
+- action: waitForSelector
+  selector: "[data-theme-preset-option='ocean']"
+  timeoutMs: 15000
+
+- action: click
+  selector: "[data-theme-preset-option='ocean']"
+
+- action: click
+  selector: "[data-theme-segment='dark']"
+
 - action: click
   selector: "[data-sidebar-cluster='tier-1-form-inputs']"
 

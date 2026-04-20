@@ -4,6 +4,7 @@ import type { Component } from "solid-js";
 import { Layers3, Orbit } from "lucide-solid";
 import { RegistryCard } from "~/components/registry-card";
 import { RegistrySidebar } from "~/components/registry-sidebar";
+import { ThemeStudio } from "~/components/theme-studio";
 import { eagerClusterIds, eagerPreviewMapForCluster, loadPreviewMapForCluster } from "~/lib/registry-previews";
 import { registryClusters, registryCounts, registryItemBySlug, type RegistryClusterSection, type RegistryItem } from "~/lib/registry";
 
@@ -243,6 +244,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <ThemeStudio />
 
       <section class="grid gap-6 xl:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
         <RegistrySidebar
