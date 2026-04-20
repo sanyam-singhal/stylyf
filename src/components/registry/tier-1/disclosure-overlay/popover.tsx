@@ -17,23 +17,19 @@ export type PopoverProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, "children" |
   triggerLabel?: JSX.Element;
 };
 
-function getPosition(anchor: HTMLElement, placement: PopoverProps["placement"]) {
+function getPosition(anchor: HTMLElement, panel: HTMLElement | undefined, placement: PopoverProps["placement"]) {
   const rect = anchor.getBoundingClientRect();
-  const top = placement?.startsWith("top") ? rect.top - 12 : rect.bottom + 12;
-  const left = placement?.endsWith("end") ? rect.right : rect.left;
-  const transform = placement?.endsWith("end")
-    ? placement?.startsWith("top")
-      ? "translate(-100%, -100%)"
-      : "translateX(-100%)"
-    : placement?.startsWith("top")
-      ? "translateY(-100%)"
-      : "none";
+  const panelWidth = panel?.offsetWidth ?? Math.min(384, window.innerWidth - 32);
+  const panelHeight = panel?.offsetHeight ?? 240;
+  const baseLeft = placement?.endsWith("end") ? rect.right - panelWidth : rect.left;
+  const baseTop = placement?.startsWith("top") ? rect.top - panelHeight - 12 : rect.bottom + 12;
+  const maxLeft = Math.max(16, window.innerWidth - panelWidth - 16);
+  const maxTop = Math.max(16, window.innerHeight - panelHeight - 16);
 
   return {
-    left: `${Math.max(16, Math.round(left))}px`,
+    left: `${Math.min(Math.max(16, Math.round(baseLeft)), maxLeft)}px`,
     position: "fixed",
-    top: `${Math.max(16, Math.round(top))}px`,
-    transform,
+    top: `${Math.min(Math.max(16, Math.round(baseTop)), maxTop)}px`,
   };
 }
 
@@ -62,6 +58,7 @@ export function Popover(userProps: PopoverProps) {
   ]);
 
   const titleId = createUniqueId();
+  const descriptionId = createUniqueId();
   const [internalOpen, setInternalOpen] = createSignal(Boolean(local.defaultOpen));
   const [position, setPosition] = createSignal<Record<string, string>>({});
   let triggerRef: HTMLButtonElement | undefined;
@@ -82,7 +79,7 @@ export function Popover(userProps: PopoverProps) {
 
     const update = () => {
       if (triggerRef) {
-        setPosition(getPosition(triggerRef, local.placement));
+        setPosition(getPosition(triggerRef, panelRef, local.placement));
       }
     };
 
@@ -111,6 +108,7 @@ export function Popover(userProps: PopoverProps) {
     document.addEventListener("keydown", handleKeyDown);
 
     queueMicrotask(() => {
+      update();
       panelRef?.focus();
     });
 
@@ -142,6 +140,7 @@ export function Popover(userProps: PopoverProps) {
             role="dialog"
             aria-modal="false"
             aria-labelledby={titleId}
+            aria-describedby={descriptionId}
             tabIndex={-1}
             style={position()}
             class={cn(
@@ -153,7 +152,7 @@ export function Popover(userProps: PopoverProps) {
             <h3 id={titleId} class="mt-3 text-lg font-semibold tracking-tight text-foreground">
               {local.title}
             </h3>
-            <p class="mt-2 text-sm leading-6 text-muted-foreground">{local.description}</p>
+            <p id={descriptionId} class="mt-2 text-sm leading-6 text-muted-foreground">{local.description}</p>
             <div class="mt-4">
               {local.children ?? (
                 <div class="grid gap-3">

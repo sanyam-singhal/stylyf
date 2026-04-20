@@ -56,7 +56,7 @@ export function Collapsible(userProps: CollapsibleProps) {
         disabled={local.disabled}
         class={cn(
           "flex w-full items-start justify-between gap-4 px-5 py-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35",
-          isOpen() ? "bg-background" : "hover:bg-accent/75",
+          isOpen() ? "bg-[var(--muted-soft)]" : "hover:bg-accent/75",
           local.disabled && "cursor-not-allowed opacity-50",
         )}
         onClick={() => setOpen(!isOpen())}
@@ -71,7 +71,7 @@ export function Collapsible(userProps: CollapsibleProps) {
       </button>
 
       <Show when={isOpen()}>
-        <div id={regionId} class="border-t border-border/70 bg-card px-5 py-4">
+        <div id={regionId} class="border-t border-border/70 bg-background px-5 py-4">
           {local.children ?? (
             <div class="space-y-3 text-sm leading-6 text-muted-foreground">
               <p>Progressive disclosure works best when the hidden content is related but not required for the main path.</p>

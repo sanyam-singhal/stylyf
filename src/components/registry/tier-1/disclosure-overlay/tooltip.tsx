@@ -113,7 +113,7 @@ export function Tooltip(userProps: TooltipProps) {
             role="tooltip"
             style={position()}
             class={cn(
-              "ui-code z-50 max-w-xs px-3 py-2 text-sm leading-6",
+              "z-50 max-w-xs rounded-[var(--radius-md)] border border-border/80 bg-foreground px-3 py-2 text-sm leading-6 text-background shadow-soft",
               local.class,
             )}
           >

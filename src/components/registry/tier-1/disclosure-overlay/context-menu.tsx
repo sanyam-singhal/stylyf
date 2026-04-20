@@ -36,6 +36,19 @@ function getMenuItems(container: HTMLElement | undefined) {
   );
 }
 
+function getMenuPosition(left: number, top: number, menu: HTMLElement | undefined) {
+  const menuWidth = menu?.offsetWidth ?? Math.min(288, window.innerWidth - 32);
+  const menuHeight = menu?.offsetHeight ?? 240;
+  const maxLeft = Math.max(16, window.innerWidth - menuWidth - 16);
+  const maxTop = Math.max(16, window.innerHeight - menuHeight - 16);
+
+  return {
+    left: `${Math.min(Math.max(16, Math.round(left)), maxLeft)}px`,
+    position: "fixed",
+    top: `${Math.min(Math.max(16, Math.round(top)), maxTop)}px`,
+  };
+}
+
 export function ContextMenu(userProps: ContextMenuProps) {
   const props = mergeProps(
     {
@@ -53,11 +66,7 @@ export function ContextMenu(userProps: ContextMenuProps) {
   let menuRef: HTMLDivElement | undefined;
 
   const openAt = (left: number, top: number) => {
-    setStyle({
-      left: `${Math.round(left)}px`,
-      position: "fixed",
-      top: `${Math.round(top)}px`,
-    });
+    setStyle(getMenuPosition(left, top, menuRef));
     setOpen(true);
   };
 
@@ -75,6 +84,11 @@ export function ContextMenu(userProps: ContextMenuProps) {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       const items = getMenuItems(menuRef);
+
+      if (!items.length) {
+        return;
+      }
+
       const current = document.activeElement as HTMLButtonElement | null;
       const index = items.findIndex(item => item === current);
 
@@ -158,7 +172,7 @@ export function ContextMenu(userProps: ContextMenuProps) {
             role="menu"
             tabIndex={-1}
             style={style()}
-            class={cn("z-50 min-w-64 rounded-xl border border-border/70 bg-popover p-2 shadow-soft focus:outline-none", local.class)}
+            class={cn("ui-popover z-50 w-72 max-w-[calc(100vw-2rem)] p-2 focus:outline-none", local.class)}
           >
             <For each={local.items}>
               {(item, index) => (

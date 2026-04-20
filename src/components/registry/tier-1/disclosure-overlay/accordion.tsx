@@ -165,7 +165,7 @@ export function Accordion(userProps: AccordionProps) {
                   disabled={item.disabled}
                   class={cn(
                     "flex w-full items-start justify-between gap-4 px-5 py-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35",
-                    expanded() ? "bg-background" : "hover:bg-accent/75",
+                    expanded() ? "bg-[var(--muted-soft)]" : "hover:bg-accent/75",
                     item.disabled && "cursor-not-allowed opacity-50",
                   )}
                   onClick={() => {
@@ -206,7 +206,7 @@ export function Accordion(userProps: AccordionProps) {
                 </button>
               </h3>
               <Show when={expanded()}>
-                <div id={panelId} role="region" aria-labelledby={triggerId} class="border-t border-border/70 bg-card px-5 py-4">
+                <div id={panelId} role="region" aria-labelledby={triggerId} class="border-t border-border/70 bg-background px-5 py-4">
                   {item.content}
                 </div>
               </Show>

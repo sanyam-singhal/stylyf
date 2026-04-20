@@ -140,7 +140,13 @@ export function Dialog(userProps: DialogProps) {
     <Show when={isOpen()}>
       <Portal>
         <div class="fixed inset-0 z-50 px-4 py-6 sm:px-6 sm:py-10">
-          <div class="ui-overlay absolute inset-0" />
+          <div
+            aria-hidden="true"
+            class="ui-overlay absolute inset-0"
+            onClick={() => {
+              if (local.dismissible) setOpen(false);
+            }}
+          />
           <div class="relative flex min-h-full items-center justify-center">
             <div
               ref={panelRef}
@@ -150,7 +156,7 @@ export function Dialog(userProps: DialogProps) {
               aria-describedby={descriptionId}
               tabIndex={-1}
               class={cn(
-                "ui-popover relative w-full p-6 focus:outline-none",
+                "ui-popover relative z-10 max-h-full w-full overflow-auto p-6 focus:outline-none",
                 sizeClass(),
                 local.class,
               )}
@@ -204,13 +210,6 @@ export function Dialog(userProps: DialogProps) {
               </Show>
             </div>
           </div>
-          <div
-            aria-hidden="true"
-            class="absolute inset-0"
-            onClick={() => {
-              if (local.dismissible) setOpen(false);
-            }}
-          />
         </div>
       </Portal>
     </Show>

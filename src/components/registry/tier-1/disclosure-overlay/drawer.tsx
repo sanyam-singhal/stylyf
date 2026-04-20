@@ -132,7 +132,7 @@ export function Drawer(userProps: DrawerProps) {
             aria-describedby={descriptionId}
             tabIndex={-1}
             class={cn(
-              "ui-popover relative z-10 flex w-full flex-col p-6 focus:outline-none",
+              "ui-popover relative z-10 flex w-full flex-col overflow-hidden p-6 focus:outline-none",
               layoutClass(),
               local.class,
             )}

@@ -62,6 +62,7 @@ export function CommandMenu(userProps: CommandMenuProps) {
   const [query, setQuery] = createSignal("");
   const [activeIndex, setActiveIndex] = createSignal(0);
   let inputRef: HTMLInputElement | undefined;
+  let panelRef: HTMLDivElement | undefined;
 
   const isOpen = () => (local.open !== undefined ? local.open : internalOpen());
   const setOpen = (next: boolean) => {
@@ -94,9 +95,16 @@ export function CommandMenu(userProps: CommandMenuProps) {
   );
 
   createEffect(() => {
+    if (activeIndex() >= flatItems().length) {
+      setActiveIndex(0);
+    }
+  });
+
+  createEffect(() => {
     if (!isOpen()) return;
 
     const previousOverflow = document.body.style.overflow;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
     document.body.style.overflow = "hidden";
     setActiveIndex(0);
     queueMicrotask(() => inputRef?.focus());
@@ -133,6 +141,7 @@ export function CommandMenu(userProps: CommandMenuProps) {
     onCleanup(() => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
     });
   });
 
@@ -146,7 +155,7 @@ export function CommandMenu(userProps: CommandMenuProps) {
         <Portal>
           <div class="fixed inset-0 z-50 px-4 py-6 sm:px-6 sm:py-10">
             <div aria-hidden="true" class="ui-overlay absolute inset-0" onClick={() => setOpen(false)} />
-            <div role="dialog" aria-modal="true" class="ui-popover relative mx-auto flex w-full max-w-2xl flex-col overflow-hidden">
+            <div ref={panelRef} role="dialog" aria-modal="true" class="ui-popover relative z-10 mx-auto flex w-full max-w-2xl flex-col overflow-hidden">
               <div class="border-b border-border/70 px-5 py-4">
                 <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Keyboard-first surface</div>
                 <h3 class="mt-2 text-xl font-semibold tracking-tight text-foreground">{local.title}</h3>
@@ -200,7 +209,7 @@ export function CommandMenu(userProps: CommandMenuProps) {
                                       <span
                                         class={cn(
                                           "mt-1 block text-sm",
-                                          activeIndex() === flatIndex() ? "text-background/72" : "text-muted-foreground",
+                                          activeIndex() === flatIndex() ? "text-primary-foreground/78" : "text-muted-foreground",
                                         )}
                                       >
                                         {item.description}

@@ -160,115 +160,117 @@ export function Tabs(userProps: TabsProps) {
   const activePanelId = () => `${tabListId}-panel-${activeItem()?.value ?? "panel"}`;
 
   return (
-    <div class={cn("ui-card p-3", local.class)} {...others}>
-      <div
-        role="tablist"
-        aria-label={local.ariaLabel}
-        aria-orientation={local.orientation}
-        class={cn(
-          "grid gap-2 rounded-xl border border-border/70 bg-background p-2",
-          local.orientation === "horizontal" ? "sm:grid-cols-3" : "grid-cols-1",
-        )}
-      >
-        <For each={local.items}>
-          {item => {
-            const tabId = `${tabListId}-tab-${item.value}`;
-            const panelId = `${tabListId}-panel-${item.value}`;
-            const selected = () => currentValue() === item.value;
+    <div class={cn("ui-card p-2 sm:p-3", local.class)} {...others}>
+      <div class={cn("grid gap-3", local.orientation === "vertical" && "lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start")}>
+        <div
+          role="tablist"
+          aria-label={local.ariaLabel}
+          aria-orientation={local.orientation}
+          class={cn(
+            "grid gap-2 rounded-[var(--radius-lg)] border border-border/78 bg-[var(--muted-soft)] p-2",
+            local.orientation === "horizontal" ? "sm:grid-cols-3" : "grid-cols-1 lg:sticky lg:top-28",
+          )}
+        >
+          <For each={local.items}>
+            {item => {
+              const tabId = `${tabListId}-tab-${item.value}`;
+              const panelId = `${tabListId}-panel-${item.value}`;
+              const selected = () => currentValue() === item.value;
 
-            return (
-              <button
-                ref={element => {
-                  tabRefs.push(element);
-                }}
-                id={tabId}
-                type="button"
-                role="tab"
-                data-value={item.value}
-                aria-controls={panelId}
-                aria-selected={selected()}
-                disabled={item.disabled}
-                tabIndex={selected() ? 0 : -1}
-                class={cn(
-                  "rounded-lg border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35",
-                  selected()
-                    ? "border-primary/25 bg-primary text-primary-foreground shadow-soft"
-                    : "border-border/70 bg-card text-foreground hover:border-primary/30 hover:bg-accent",
-                  item.disabled && "cursor-not-allowed opacity-50",
-                )}
-                onClick={() => {
-                  if (!item.disabled) commit(item.value);
-                }}
-                onFocus={() => {
-                  setFocusedValue(item.value);
-                  if (local.activation === "automatic" && !item.disabled) {
-                    commit(item.value);
-                  }
-                }}
-                onKeyDown={event => {
-                  const previousKey = local.orientation === "vertical" ? "ArrowUp" : "ArrowLeft";
-                  const nextKey = local.orientation === "vertical" ? "ArrowDown" : "ArrowRight";
+              return (
+                <button
+                  ref={element => {
+                    tabRefs.push(element);
+                  }}
+                  id={tabId}
+                  type="button"
+                  role="tab"
+                  data-value={item.value}
+                  aria-controls={panelId}
+                  aria-selected={selected()}
+                  disabled={item.disabled}
+                  tabIndex={selected() ? 0 : -1}
+                  class={cn(
+                    "rounded-[var(--radius-md)] border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35",
+                    selected()
+                      ? "border-primary/24 bg-primary text-primary-foreground shadow-xs"
+                      : "border-border/70 bg-card text-foreground hover:border-primary/22 hover:bg-background",
+                    item.disabled && "cursor-not-allowed opacity-50",
+                  )}
+                  onClick={() => {
+                    if (!item.disabled) commit(item.value);
+                  }}
+                  onFocus={() => {
+                    setFocusedValue(item.value);
+                    if (local.activation === "automatic" && !item.disabled) {
+                      commit(item.value);
+                    }
+                  }}
+                  onKeyDown={event => {
+                    const previousKey = local.orientation === "vertical" ? "ArrowUp" : "ArrowLeft";
+                    const nextKey = local.orientation === "vertical" ? "ArrowDown" : "ArrowRight";
 
-                  if (event.key === previousKey) {
-                    event.preventDefault();
-                    moveFocus(-1);
-                    return;
-                  }
+                    if (event.key === previousKey) {
+                      event.preventDefault();
+                      moveFocus(-1);
+                      return;
+                    }
 
-                  if (event.key === nextKey) {
-                    event.preventDefault();
-                    moveFocus(1);
-                    return;
-                  }
+                    if (event.key === nextKey) {
+                      event.preventDefault();
+                      moveFocus(1);
+                      return;
+                    }
 
-                  if (event.key === "Home") {
-                    event.preventDefault();
-                    moveFocus("start");
-                    return;
-                  }
+                    if (event.key === "Home") {
+                      event.preventDefault();
+                      moveFocus("start");
+                      return;
+                    }
 
-                  if (event.key === "End") {
-                    event.preventDefault();
-                    moveFocus("end");
-                    return;
-                  }
+                    if (event.key === "End") {
+                      event.preventDefault();
+                      moveFocus("end");
+                      return;
+                    }
 
-                  if (local.activation === "manual" && (event.key === "Enter" || event.key === " ")) {
-                    event.preventDefault();
-                    commit(item.value);
-                  }
-                }}
-              >
-                <div class="flex items-center justify-between gap-3">
-                  <span class="font-medium">{item.label}</span>
-                  <Show when={item.badge}>
-                    <span
-                      class={cn(
-                        "rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em]",
-                        selected() ? "bg-primary-foreground/14 text-primary-foreground" : "bg-accent text-accent-foreground",
-                      )}
-                    >
-                      {item.badge}
-                    </span>
+                    if (local.activation === "manual" && (event.key === "Enter" || event.key === " ")) {
+                      event.preventDefault();
+                      commit(item.value);
+                    }
+                  }}
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="font-medium">{item.label}</span>
+                    <Show when={item.badge}>
+                      <span
+                        class={cn(
+                          "rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em]",
+                          selected() ? "bg-primary-foreground/14 text-primary-foreground" : "bg-accent text-accent-foreground",
+                        )}
+                      >
+                        {item.badge}
+                      </span>
+                    </Show>
+                  </div>
+                  <Show when={item.description}>
+                    <div class={cn("mt-1 text-xs", selected() ? "text-primary-foreground/78" : "text-muted-foreground")}>{item.description}</div>
                   </Show>
-                </div>
-                <Show when={item.description}>
-                  <div class={cn("mt-1 text-xs", selected() ? "text-background/72" : "text-muted-foreground")}>{item.description}</div>
-                </Show>
-              </button>
-            );
-          }}
-        </For>
-      </div>
+                </button>
+              );
+            }}
+          </For>
+        </div>
 
-      <div
-        id={activePanelId()}
-        role="tabpanel"
-        aria-labelledby={activeTabId()}
-        tabIndex={0}
-        class="mt-3 rounded-xl border border-border/70 bg-background p-5 focus:outline-none"
-      >
-        {activeItem()?.content}
+        <div
+          id={activePanelId()}
+          role="tabpanel"
+          aria-labelledby={activeTabId()}
+          tabIndex={0}
+          class="min-h-[16rem] rounded-[var(--radius-lg)] border border-border/78 bg-background p-5 focus:outline-none"
+        >
+          {activeItem()?.content}
+        </div>
       </div>
     </div>
   );

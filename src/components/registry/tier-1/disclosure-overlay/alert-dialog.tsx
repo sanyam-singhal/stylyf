@@ -152,7 +152,7 @@ export function AlertDialog(userProps: AlertDialogProps) {
               aria-labelledby={titleId}
               aria-describedby={descriptionId}
               tabIndex={-1}
-              class={cn("relative w-full max-w-xl rounded-2xl border border-border/70 bg-popover p-6 shadow-soft", local.class)}
+              class={cn("ui-popover relative z-10 w-full max-w-xl p-6", local.class)}
               onPointerDown={event => event.stopPropagation()}
               {...others}
             >

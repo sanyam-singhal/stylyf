@@ -36,6 +36,20 @@ function getMenuItems(container: HTMLElement | undefined) {
   );
 }
 
+function getMenuPosition(anchor: HTMLElement, menu: HTMLElement | undefined) {
+  const rect = anchor.getBoundingClientRect();
+  const menuWidth = menu?.offsetWidth ?? Math.min(288, window.innerWidth - 32);
+  const menuHeight = menu?.offsetHeight ?? 240;
+  const maxLeft = Math.max(16, window.innerWidth - menuWidth - 16);
+  const maxTop = Math.max(16, window.innerHeight - menuHeight - 16);
+
+  return {
+    left: `${Math.min(Math.max(16, Math.round(rect.left)), maxLeft)}px`,
+    position: "fixed",
+    top: `${Math.min(Math.max(16, Math.round(rect.bottom + 10)), maxTop)}px`,
+  };
+}
+
 export function DropdownMenu(userProps: DropdownMenuProps) {
   const props = mergeProps({ items: defaultItems, label: "Workspace menu" }, userProps);
   const [local, others] = splitProps(props, ["class", "items", "label", "onItemSelect"]);
@@ -50,12 +64,7 @@ export function DropdownMenu(userProps: DropdownMenuProps) {
 
     const update = () => {
       if (!triggerRef) return;
-      const rect = triggerRef.getBoundingClientRect();
-      setStyle({
-        left: `${Math.round(rect.left)}px`,
-        position: "fixed",
-        top: `${Math.round(rect.bottom + 10)}px`,
-      });
+      setStyle(getMenuPosition(triggerRef, menuRef));
     };
 
     const focusFirst = () => getMenuItems(menuRef)[0]?.focus();
@@ -72,6 +81,11 @@ export function DropdownMenu(userProps: DropdownMenuProps) {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       const items = getMenuItems(menuRef);
+
+      if (!items.length) {
+        return;
+      }
+
       const current = document.activeElement as HTMLButtonElement | null;
       const index = items.findIndex(item => item === current);
 
@@ -142,7 +156,7 @@ export function DropdownMenu(userProps: DropdownMenuProps) {
             role="menu"
             tabIndex={-1}
             style={style()}
-            class={cn("z-50 min-w-64 rounded-xl border border-border/70 bg-popover p-2 shadow-soft focus:outline-none", local.class)}
+            class={cn("ui-popover z-50 w-72 max-w-[calc(100vw-2rem)] p-2 focus:outline-none", local.class)}
           >
             <For each={local.items}>
               {(item, index) => (
