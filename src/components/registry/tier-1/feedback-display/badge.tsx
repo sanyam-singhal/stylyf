@@ -17,20 +17,20 @@ export type BadgeProps = Omit<JSX.HTMLAttributes<HTMLSpanElement>, "children" | 
 
 const toneStyles = {
   accent: {
-    soft: "border-accent/35 bg-accent text-accent-foreground",
-    solid: "border-primary/30 bg-primary text-primary-foreground",
+    soft: "border-accent/42 bg-accent/90 text-accent-foreground",
+    solid: "border-primary/28 bg-primary text-primary-foreground shadow-xs",
   },
   danger: {
-    soft: "border-destructive/30 bg-destructive/10 text-destructive",
-    solid: "border-destructive/35 bg-destructive text-destructive-foreground",
+    soft: "border-destructive/26 bg-destructive/10 text-destructive",
+    solid: "border-destructive/34 bg-destructive text-destructive-foreground shadow-xs",
   },
   neutral: {
-    soft: "border-border/70 bg-card text-card-foreground",
-    solid: "border-border/80 bg-foreground text-background",
+    soft: "border-border/78 bg-[var(--muted-soft)] text-foreground",
+    solid: "border-border/80 bg-foreground text-background shadow-xs",
   },
   success: {
-    soft: "border-success/30 bg-success/10 text-success",
-    solid: "border-success/35 bg-success text-success-foreground",
+    soft: "border-success/26 bg-success/10 text-success",
+    solid: "border-success/32 bg-success text-success-foreground shadow-xs",
   },
 } as const;
 
@@ -44,22 +44,27 @@ export function Badge(userProps: BadgeProps) {
   return (
     <span
       class={cn(
-        "inline-flex items-center gap-2 rounded-full border font-medium tracking-[-0.01em]",
-        local.size === "sm" ? "min-h-7 px-3 text-xs" : "min-h-8 px-3.5 text-sm",
+        "inline-flex items-center gap-2 rounded-full border font-medium tracking-[-0.01em] shadow-[inset_0_1px_0_rgba(255,255,255,0.24)]",
+        local.size === "sm" ? "min-h-7 px-2.5 text-[0.72rem]" : "min-h-8 px-3.5 text-sm",
         toneStyles[local.tone][local.emphasis],
-        local.selected && "ring-2 ring-ring/20",
+        local.selected && "border-primary/28 ring-2 ring-primary/14",
         local.class,
       )}
       data-selected={local.selected ? "true" : "false"}
       {...others}
     >
-      {local.icon ? <span class="inline-flex">{local.icon}</span> : null}
-      <span>{local.children ?? "Badge"}</span>
+      {local.icon ? <span class="inline-flex shrink-0">{local.icon}</span> : null}
+      <span class="truncate">{local.children ?? "Badge"}</span>
       {local.removable ? (
         <button
           type="button"
           aria-label="Remove badge"
-          class="inline-flex size-4 items-center justify-center rounded-full bg-background/18 transition hover:bg-background/28 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35"
+          class={cn(
+            "inline-flex size-4 shrink-0 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35",
+            local.emphasis === "solid"
+              ? "bg-background/16 hover:bg-background/26"
+              : "bg-foreground/6 hover:bg-foreground/12",
+          )}
           onClick={() => local.onRemove?.()}
         >
           <X class="size-3" />

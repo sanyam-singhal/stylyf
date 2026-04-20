@@ -43,7 +43,7 @@ function TableRoot(props: ParentProps<TableRootProps>) {
           class={cn(
             "group min-w-full border-separate border-spacing-0 text-left text-sm",
             local.density === "compact" ? "[&_td]:px-4 [&_td]:py-3 [&_th]:px-4 [&_th]:py-3" : "[&_td]:px-5 [&_td]:py-4 [&_th]:px-5 [&_th]:py-4",
-            local.zebra && "[&_tbody_tr:nth-child(even)]:bg-background",
+            local.zebra && "[&_tbody_tr:nth-child(even)]:bg-[var(--muted-soft)]/48",
             local.class,
           )}
           data-sticky-header={local.stickyHeader ? "true" : "false"}
@@ -59,7 +59,7 @@ function TableRoot(props: ParentProps<TableRootProps>) {
 function TableHead(props: ParentProps<TableSectionProps>) {
   const [local, others] = splitProps(props, ["children", "class"]);
   return (
-    <thead class={cn("[&_tr]:bg-background-subtle", local.class)} {...others}>
+    <thead class={cn("[&_tr]:bg-[var(--muted-soft)]", local.class)} {...others}>
       {local.children}
     </thead>
   );
@@ -79,10 +79,11 @@ function TableRow(props: ParentProps<TableRowProps>) {
   return (
     <tr
       class={cn(
-        "transition hover:bg-background-subtle data-[selected=true]:bg-accent [&_td]:border-b [&_td]:border-border/70 [&_th]:border-b [&_th]:border-border/70",
+        "transition hover:bg-background-subtle data-[selected=true]:bg-[color-mix(in_oklab,var(--accent)_54%,white_46%)] [&_td]:border-b [&_td]:border-border/70 [&_th]:border-b [&_th]:border-border/70",
         local.class,
       )}
       data-selected={local.selected ? "true" : "false"}
+      aria-selected={local.selected ? "true" : undefined}
       {...others}
     >
       {local.children}
@@ -97,8 +98,8 @@ function TableHeaderCell(props: ParentProps<TableHeaderCellProps>) {
       scope="col"
       aria-sort={local.sorted === "asc" ? "ascending" : local.sorted === "desc" ? "descending" : "none"}
       class={cn(
-        "bg-background-subtle text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground first:rounded-tl-[1.2rem] last:rounded-tr-[1.2rem]",
-        "group-data-[sticky-header=true]:sticky group-data-[sticky-header=true]:top-0",
+        "bg-[var(--muted-soft)] text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground first:rounded-tl-[var(--radius-lg)] last:rounded-tr-[var(--radius-lg)]",
+        "group-data-[sticky-header=true]:sticky group-data-[sticky-header=true]:top-0 group-data-[sticky-header=true]:backdrop-blur-md",
         local.numeric && "text-right",
         local.class,
       )}
@@ -121,7 +122,10 @@ function TableCell(props: ParentProps<TableCellProps>) {
 function TableCaption(props: ParentProps<TableCaptionProps>) {
   const [local, others] = splitProps(props, ["children", "class"]);
   return (
-    <caption class={cn("caption-bottom border-t border-border/70 px-5 py-4 text-left text-sm text-muted-foreground", local.class)} {...others}>
+    <caption
+      class={cn("caption-bottom border-t border-border/70 bg-[var(--muted-soft)]/52 px-5 py-4 text-left text-sm text-muted-foreground", local.class)}
+      {...others}
+    >
       {local.children}
     </caption>
   );

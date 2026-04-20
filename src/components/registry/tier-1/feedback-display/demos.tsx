@@ -27,7 +27,7 @@ export function ProgressPreview(props: { item: RegistryItem }) {
       <div class="grid gap-5">
         <Progress label="Deployment rollout" value={76} striped animated />
         <Progress label="Billing migration" tone="highlight" value={42} />
-        <Progress label="Background sync" indeterminate tone="accent" />
+        <Progress label="Background sync" indeterminate striped animated tone="accent" />
       </div>
     </DemoFrame>
   );
@@ -69,6 +69,7 @@ export function AvatarPreview(props: { item: RegistryItem }) {
           src={placeholderImage}
           fallback={<span class="font-semibold tracking-[0.08em] text-accent-strong">CS</span>}
         />
+        <Avatar alt="Loading profile" loading bordered={false} />
       </div>
     </DemoFrame>
   );
@@ -92,6 +93,13 @@ export function ToastPreview(props: { item: RegistryItem }) {
             description: "A policy change is pending sign-off from billing admins.",
             tone: "danger",
           },
+          {
+            id: "sync",
+            title: "Workspace sync paused",
+            description: "One importer is waiting for new credentials.",
+            tone: "info",
+            actionLabel: "Resume",
+          },
         ]}
       />
     </DemoFrame>
@@ -107,6 +115,7 @@ export function SkeletonPreview(props: { item: RegistryItem }) {
           <Skeleton shape="line" width="10rem" height="0.95rem" />
           <Skeleton shape="line" width="100%" height="0.8rem" />
           <Skeleton shape="line" width="72%" height="0.8rem" />
+          <Skeleton width="52%" height="2.6rem" />
         </div>
       </div>
     </DemoFrame>

@@ -17,9 +17,10 @@ export function Skeleton(userProps: SkeletonProps) {
   return (
     <div
       class={cn(
-        "relative overflow-hidden border border-border/70 bg-muted-soft",
+        "relative overflow-hidden border border-border/65 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--muted-soft)_86%,white_14%),var(--muted-soft))] shadow-inset",
         local.shape === "circle" ? "rounded-full" : local.shape === "line" ? "rounded-full" : "rounded-lg",
-        local.shimmer && "before:absolute before:inset-0 before:animate-[pulse_1.6s_ease-in-out_infinite] before:bg-linear-to-r before:from-transparent before:via-white/20 before:to-transparent",
+        local.shimmer &&
+          "before:absolute before:inset-0 before:bg-[linear-gradient(110deg,transparent_0%,transparent_34%,rgba(255,255,255,0.48)_50%,transparent_66%,transparent_100%)] before:animate-[ui-shimmer-sweep_1.35s_linear_infinite]",
         local.class,
       )}
       style={{ height: local.height, width: local.width }}

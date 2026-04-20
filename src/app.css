@@ -323,6 +323,30 @@
   --motion-factor: 0.55;
 }
 
+@keyframes ui-progress-indeterminate {
+  0% {
+    transform: translateX(-68%);
+  }
+
+  50% {
+    transform: translateX(92%);
+  }
+
+  100% {
+    transform: translateX(-68%);
+  }
+}
+
+@keyframes ui-shimmer-sweep {
+  0% {
+    transform: translateX(-130%);
+  }
+
+  100% {
+    transform: translateX(130%);
+  }
+}
+
 @theme inline {
   --font-sans: "Manrope Variable", "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", "SFMono-Regular", monospace;

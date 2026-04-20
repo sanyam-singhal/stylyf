@@ -63,10 +63,12 @@ export function Toast(userProps: ToastProps) {
     <div
       role="region"
       aria-label="Notifications"
+      aria-live="polite"
       class={cn(
         "grid gap-3",
         local.placement === "top-right" && "justify-items-end",
         local.placement === "bottom-right" && "justify-items-end",
+        local.placement === "bottom-left" && "justify-items-start",
         local.class,
       )}
       {...others}
@@ -76,9 +78,18 @@ export function Toast(userProps: ToastProps) {
           const tone = item.tone ?? "info";
 
           return (
-            <div class="w-full max-w-sm rounded-xl border border-border/70 bg-card p-4 shadow-soft">
-              <div class="flex items-start gap-3">
-                <div class={cn("inline-flex size-10 shrink-0 items-center justify-center rounded-2xl border", toneClasses(tone))}>
+            <div class="relative w-full max-w-sm overflow-hidden rounded-[var(--radius-lg)] border border-border/78 bg-card p-4 shadow-soft">
+              <span
+                aria-hidden="true"
+                class={cn(
+                  "absolute inset-x-0 top-0 h-1",
+                  tone === "danger" && "bg-destructive/82",
+                  tone === "success" && "bg-success/82",
+                  tone === "info" && "bg-primary/72",
+                )}
+              />
+              <div class="flex items-start gap-3 pt-1">
+                <div class={cn("inline-flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] border", toneClasses(tone))}>
                   {toneIcon(tone)}
                 </div>
                 <div class="min-w-0 flex-1">
@@ -88,7 +99,7 @@ export function Toast(userProps: ToastProps) {
                   </Show>
                   <Show when={item.actionLabel}>
                     <div class="mt-4">
-                      <Button size="sm" tone="soft" intent="neutral" onClick={() => local.onAction?.(item.id)}>
+                      <Button size="sm" tone="outline" intent="neutral" onClick={() => local.onAction?.(item.id)}>
                         {item.actionLabel}
                       </Button>
                     </div>
@@ -97,7 +108,7 @@ export function Toast(userProps: ToastProps) {
                 <button
                   type="button"
                   aria-label="Dismiss notification"
-                  class="inline-flex size-9 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35"
+                  class="inline-flex size-9 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35"
                   onClick={() => dismiss(item.id)}
                 >
                   <X class="size-4" />
