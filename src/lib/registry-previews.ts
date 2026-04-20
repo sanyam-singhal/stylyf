@@ -13,6 +13,7 @@ const clusterPreviewLoaders: Record<string, () => Promise<PreviewModule>> = {
   "tier-1-disclosure-overlay": () => import("../components/registry/tier-1/disclosure-overlay/demos"),
   "tier-1-feedback-display": () => import("../components/registry/tier-1/feedback-display/demos"),
   "tier-1-form-inputs": () => import("../components/registry/tier-1/form-inputs/demos"),
+  "tier-2-form-systems": () => import("../components/registry/tier-2/form-systems/demos"),
 };
 
 export const eagerClusterIds = new Set(["tier-1-actions-navigation"]);
