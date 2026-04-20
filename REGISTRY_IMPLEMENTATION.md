@@ -6,7 +6,7 @@ Stylyf is being implemented cluster by cluster. Each cluster should land as a co
 
 - [x] Actions & Navigation
   Button, IconButton, LinkButton, Toggle, ToggleGroup, Breadcrumb, Pagination
-- [ ] Form Inputs & Selection
+- [x] Form Inputs & Selection
   TextField, TextArea, NumberField, OTPField, Checkbox, RadioGroup, Switch, Select, Combobox, Slider, Calendar, DatePicker
 - [ ] Disclosure & Overlay
   CommandMenu, Tabs, Accordion, Collapsible, Dialog, AlertDialog, Drawer, Popover, Tooltip, DropdownMenu, ContextMenu, Menubar

@@ -9,6 +9,20 @@ import {
   ToggleGroupPreview,
   TogglePreview,
 } from "~/components/registry/tier-1/actions-navigation/demos";
+import {
+  CalendarPreview,
+  CheckboxPreview,
+  ComboboxPreview,
+  DatePickerPreview,
+  NumberFieldPreview,
+  OTPFieldPreview,
+  RadioGroupPreview,
+  SelectPreview,
+  SliderPreview,
+  SwitchPreview,
+  TextAreaPreview,
+  TextFieldPreview,
+} from "~/components/registry/tier-1/form-inputs/demos";
 import type { RegistryItem } from "~/lib/registry";
 
 const implementedPreviewBySlug: Record<string, Component<{ item: RegistryItem }>> = {
@@ -19,6 +33,18 @@ const implementedPreviewBySlug: Record<string, Component<{ item: RegistryItem }>
   "toggle-group": ToggleGroupPreview,
   breadcrumb: BreadcrumbPreview,
   pagination: PaginationPreview,
+  "text-field": TextFieldPreview,
+  "text-area": TextAreaPreview,
+  "number-field": NumberFieldPreview,
+  "otp-field": OTPFieldPreview,
+  checkbox: CheckboxPreview,
+  "radio-group": RadioGroupPreview,
+  switch: SwitchPreview,
+  select: SelectPreview,
+  combobox: ComboboxPreview,
+  slider: SliderPreview,
+  calendar: CalendarPreview,
+  "date-picker": DatePickerPreview,
 };
 
 export function RegistryPreview(props: { item: RegistryItem }) {
