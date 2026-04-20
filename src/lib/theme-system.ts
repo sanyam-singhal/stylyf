@@ -1,7 +1,7 @@
 export type ThemeMode = "light" | "dark" | "system";
-export type ThemePresetId = "stylyf" | "graphite" | "citrus" | "ocean";
+export type ThemePresetId = "amber" | "emerald" | "pearl" | "opal";
 export type ThemeDensity = "comfortable" | "compact";
-export type ThemeRadius = "balanced" | "soft" | "round";
+export type ThemeRadius = "edge" | "trim" | "soft" | "mellow";
 export type ThemeSpacing = "tight" | "balanced" | "airy";
 
 export type ThemeState = {
@@ -24,36 +24,36 @@ export const THEME_EVENT = "stylyf:theme-change";
 
 export const defaultThemeState: ThemeState = {
   mode: "system",
-  preset: "stylyf",
+  preset: "amber",
   density: "comfortable",
-  radius: "balanced",
+  radius: "trim",
   spacing: "balanced",
 };
 
 export const themePresets: ThemePreset[] = [
   {
-    id: "stylyf",
-    label: "Stylyf",
-    description: "Warm editorial neutrals with a blue-cyan action lane.",
-    swatches: ["oklch(0.97 0.01 84)", "oklch(0.69 0.15 236)", "oklch(0.83 0.1 102)"],
+    id: "amber",
+    label: "Amber",
+    description: "Pastel cream, peach, muted red, and ochre with editorial warmth.",
+    swatches: ["oklch(0.97 0.02 80)", "oklch(0.84 0.07 56)", "oklch(0.7 0.13 58)"],
   },
   {
-    id: "graphite",
-    label: "Graphite",
-    description: "Sharper grayscale surfaces with cobalt contrast.",
-    swatches: ["oklch(0.96 0.003 255)", "oklch(0.61 0.17 264)", "oklch(0.76 0.07 230)"],
+    id: "emerald",
+    label: "Emerald",
+    description: "Blue-green oceanic contrast with crisp marine depth.",
+    swatches: ["oklch(0.95 0.03 196)", "oklch(0.71 0.11 187)", "oklch(0.58 0.1 162)"],
   },
   {
-    id: "citrus",
-    label: "Citrus",
-    description: "Sand, amber, and olive for a warmer product mood.",
-    swatches: ["oklch(0.978 0.012 94)", "oklch(0.73 0.16 72)", "oklch(0.74 0.11 150)"],
+    id: "pearl",
+    label: "Pearl",
+    description: "Stone greys with cool contrast and restrained polish.",
+    swatches: ["oklch(0.96 0.004 260)", "oklch(0.76 0.01 260)", "oklch(0.34 0.02 250)"],
   },
   {
-    id: "ocean",
-    label: "Ocean",
-    description: "Cool slate surfaces with teal and marine accents.",
-    swatches: ["oklch(0.966 0.008 224)", "oklch(0.67 0.13 200)", "oklch(0.59 0.11 245)"],
+    id: "opal",
+    label: "Opal",
+    description: "Retro contrast with teal, coral, parchment, and lacquered navy.",
+    swatches: ["oklch(0.93 0.03 92)", "oklch(0.74 0.13 36)", "oklch(0.61 0.11 220)"],
   },
 ];
 
@@ -72,7 +72,7 @@ function isThemeDensity(value: string): value is ThemeDensity {
 }
 
 function isThemeRadius(value: string): value is ThemeRadius {
-  return value === "balanced" || value === "soft" || value === "round";
+  return value === "edge" || value === "trim" || value === "soft" || value === "mellow";
 }
 
 function isThemeSpacing(value: string): value is ThemeSpacing {
@@ -199,9 +199,9 @@ export const themeBootstrapScript = `(() => {
 
   const normalize = value => ({
     mode: value?.mode === "light" || value?.mode === "dark" || value?.mode === "system" ? value.mode : defaults.mode,
-    preset: ["stylyf", "graphite", "citrus", "ocean"].includes(value?.preset) ? value.preset : defaults.preset,
+    preset: ["amber", "emerald", "pearl", "opal"].includes(value?.preset) ? value.preset : defaults.preset,
     density: value?.density === "compact" || value?.density === "comfortable" ? value.density : defaults.density,
-    radius: ["balanced", "soft", "round"].includes(value?.radius) ? value.radius : defaults.radius,
+    radius: ["edge", "trim", "soft", "mellow"].includes(value?.radius) ? value.radius : defaults.radius,
     spacing: ["tight", "balanced", "airy"].includes(value?.spacing) ? value.spacing : defaults.spacing,
   });
 

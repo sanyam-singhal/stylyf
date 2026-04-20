@@ -100,7 +100,7 @@ export function RegistryCard(props: {
     <article
       id={props.item.slug}
       data-registry-card={props.item.slug}
-      class="ui-card scroll-mt-28 p-[var(--space-6)] lg:p-[calc(var(--space-6)*1.12)]"
+      class="ui-card scroll-mt-28 overflow-hidden p-[var(--space-6)] lg:p-[calc(var(--space-6)*1.12)]"
     >
       <div class="flex flex-col gap-6">
         <header class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -127,7 +127,7 @@ export function RegistryCard(props: {
             />
             <a
               href={`#${props.item.slug}`}
-              class="ui-chip bg-background text-muted-foreground transition hover:border-primary/30 hover:text-foreground"
+              class="ui-chip rounded-[var(--radius-xl)] bg-background text-muted-foreground transition hover:border-primary/30 hover:bg-foreground hover:text-background"
             >
               <span>Deep link</span>
               <ArrowRight class="size-3.5" />
@@ -168,7 +168,7 @@ export function RegistryCard(props: {
           </div>
         </div>
 
-        <section class="ui-card-muted p-[var(--space-5)] shadow-inset">
+        <section class="ui-card-muted border-[color:color-mix(in_oklab,var(--border)_70%,var(--primary)_30%)] p-[var(--space-5)] shadow-inset">
           <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="ui-pillbar inline-flex p-1">
               <button
@@ -176,7 +176,7 @@ export function RegistryCard(props: {
                 onClick={() => setActivePane("preview")}
                 data-pane-trigger="preview"
                 class={cn(
-                  "rounded-full px-4 py-2 text-sm font-medium transition",
+                  "rounded-[calc(var(--radius-xl)+0.06rem)] px-4 py-2 text-sm font-medium transition",
                   activePane() === "preview"
                     ? "bg-foreground text-background"
                     : "text-muted-foreground hover:text-foreground",
@@ -189,7 +189,7 @@ export function RegistryCard(props: {
                 onClick={() => setActivePane("source")}
                 data-pane-trigger="source"
                 class={cn(
-                  "rounded-full px-4 py-2 text-sm font-medium transition",
+                  "rounded-[calc(var(--radius-xl)+0.06rem)] px-4 py-2 text-sm font-medium transition",
                   activePane() === "source"
                     ? "bg-foreground text-background"
                     : "text-muted-foreground hover:text-foreground",

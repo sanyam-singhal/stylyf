@@ -1,7 +1,7 @@
 import { Meta, MetaProvider, Title } from "@solidjs/meta";
 import { Router } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
-import { Layers3 } from "lucide-solid";
+import { Compass, Layers3 } from "lucide-solid";
 import { Suspense } from "solid-js";
 import { ThemeToggle } from "~/components/theme-toggle";
 import { registryCounts } from "~/lib/registry";
@@ -26,24 +26,32 @@ export default function App() {
               Skip to library
             </a>
 
-            <header class="sticky top-0 z-40 border-b border-border/80 bg-background/96 backdrop-blur-xl">
-              <div class="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-                <div class="flex min-w-0 items-center gap-3">
-                  <div class="inline-flex size-11 items-center justify-center rounded-2xl border border-border/80 bg-card shadow-sm">
-                    <Layers3 class="size-5 text-accent-strong" />
-                  </div>
-                  <div class="min-w-0">
-                    <a href="/" class="block text-lg font-semibold tracking-tight text-foreground">
-                      Stylyf
-                    </a>
-                    <p class="truncate text-sm text-muted-foreground">
-                      SolidStart registry shell for {registryCounts.total} source-owned components
-                    </p>
-                  </div>
+            <header class="sticky top-0 z-40 border-b border-border/80 bg-background/94 backdrop-blur-xl">
+              <div class="mx-auto grid w-full max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
+                <div class="hidden items-center gap-2 md:flex">
+                  <a href="#theme-studio" class="ui-pillbar px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground">
+                    Theme selector
+                  </a>
+                  <a href="#library" class="ui-pillbar px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground">
+                    Registry
+                  </a>
                 </div>
 
-                <div class="flex items-center gap-3">
-                  <div class="ui-pillbar hidden items-center gap-2 px-4 py-2 text-sm text-muted-foreground md:inline-flex">
+                <a href="/" class="justify-self-center text-center">
+                  <div class="mx-auto inline-flex items-center gap-3 rounded-[var(--radius-2xl)] border border-border/80 bg-card px-4 py-2.5 shadow-soft">
+                    <span class="inline-flex size-10 items-center justify-center rounded-[var(--radius-xl)] bg-[color-mix(in_oklab,var(--primary)_18%,var(--card)_82%)] text-primary shadow-inset">
+                      <Layers3 class="size-[1.125rem]" />
+                    </span>
+                    <span class="block">
+                      <span class="block text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">SolidStart registry</span>
+                      <span class="mt-0.5 block text-xl font-semibold tracking-[-0.03em] text-foreground">Stylyf</span>
+                    </span>
+                  </div>
+                </a>
+
+                <div class="flex items-center justify-self-end gap-3">
+                  <div class="ui-pillbar hidden items-center gap-2 px-4 py-2 text-sm text-muted-foreground xl:inline-flex">
+                    <Compass class="size-4 text-primary" />
                     <span>38 primitives</span>
                     <span class="text-border">/</span>
                     <span>37 compositions</span>

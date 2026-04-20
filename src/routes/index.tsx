@@ -1,12 +1,14 @@
 import { Title } from "@solidjs/meta";
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js";
 import type { Component } from "solid-js";
+import { Dynamic } from "solid-js/web";
 import { Layers3, Orbit } from "lucide-solid";
 import { RegistryCard } from "~/components/registry-card";
 import { RegistrySidebar } from "~/components/registry-sidebar";
 import { ThemeStudio } from "~/components/theme-studio";
 import { eagerClusterIds, eagerPreviewMapForCluster, loadPreviewMapForCluster } from "~/lib/registry-previews";
 import { registryClusters, registryCounts, registryItemBySlug, type RegistryClusterSection, type RegistryItem } from "~/lib/registry";
+import { clusterVisualStyle, visualForCluster } from "~/lib/registry-visuals";
 
 type PreviewMap = Record<string, Component<{ item: RegistryItem }>>;
 
@@ -208,7 +210,7 @@ export default function Home() {
       <Title>Stylyf | Registry</Title>
 
       <section class="ui-shell relative overflow-hidden px-6 py-7 sm:px-8 sm:py-8 lg:px-10 lg:py-10">
-        <div class="pointer-events-none absolute inset-0 bg-linear-to-br from-primary/8 via-transparent to-secondary/10" />
+        <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,color-mix(in_oklab,var(--primary)_10%,transparent),transparent_38%,color-mix(in_oklab,var(--secondary)_10%,transparent))]" />
         <div class="relative grid gap-8 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] xl:items-end">
           <div>
             <div class="ui-pillbar inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
@@ -247,7 +249,7 @@ export default function Home() {
 
       <ThemeStudio />
 
-      <section class="grid gap-6 xl:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
+      <section class="grid gap-6 xl:grid-cols-[auto_minmax(0,1fr)]">
         <RegistrySidebar
           clusters={filteredClusters()}
           onClusterIntent={preloadCluster}
@@ -284,7 +286,7 @@ export default function Home() {
                   }}
                   class="scroll-mt-28 space-y-5"
                 >
-                  <header class="ui-shell p-6 lg:p-7">
+                  <header class="ui-shell p-6 lg:p-7" style={clusterVisualStyle(cluster.id)}>
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <div class="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
@@ -293,12 +295,14 @@ export default function Home() {
                           <span>{cluster.tierTitle}</span>
                         </div>
                         <div class="mt-3 flex items-center gap-3">
-                          <Layers3 class="size-5 text-accent-strong" />
+                          <span class="inline-flex size-11 items-center justify-center rounded-[var(--radius-xl)] border border-[color:var(--cluster-line)] bg-[color:var(--cluster-soft)] text-[color:var(--cluster-color)] shadow-inset">
+                            <Dynamic component={visualForCluster(cluster.id).icon} class="size-5" />
+                          </span>
                           <h2 class="text-3xl font-semibold tracking-tight text-foreground">{cluster.title}</h2>
                         </div>
                         <p class="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">{cluster.description}</p>
                       </div>
-                      <div class="rounded-full border border-border/70 bg-background px-4 py-2 text-sm text-muted-foreground">
+                      <div class="rounded-[calc(var(--radius-xl)+0.06rem)] border border-[color:var(--cluster-line)] bg-[color:var(--cluster-soft)] px-4 py-2 text-sm text-[color:var(--cluster-color)]">
                         {loadedClusters().has(cluster.id)
                           ? `${cluster.items.length} components`
                           : loadingClusters().has(cluster.id)
