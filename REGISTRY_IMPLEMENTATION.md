@@ -12,7 +12,7 @@ Stylyf is being implemented cluster by cluster. Each cluster should land as a co
   CommandMenu, Tabs, Accordion, Collapsible, Dialog, AlertDialog, Drawer, Popover, Tooltip, DropdownMenu, ContextMenu, Menubar
 - [x] Feedback & Display
   Progress, Badge, Avatar, Toast, Skeleton, Separator
-- [ ] Data & Structure
+- [x] Data & Structure
   Table
 
 ## Tier 2

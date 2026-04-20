@@ -45,6 +45,7 @@ import {
   SkeletonPreview,
   ToastPreview,
 } from "~/components/registry/tier-1/feedback-display/demos";
+import { TablePreview } from "~/components/registry/tier-1/data-structure/demos";
 import type { RegistryItem } from "~/lib/registry";
 
 const implementedPreviewBySlug: Record<string, Component<{ item: RegistryItem }>> = {
@@ -85,6 +86,7 @@ const implementedPreviewBySlug: Record<string, Component<{ item: RegistryItem }>
   toast: ToastPreview,
   skeleton: SkeletonPreview,
   separator: SeparatorPreview,
+  table: TablePreview,
 };
 
 export function RegistryPreview(props: { item: RegistryItem }) {
