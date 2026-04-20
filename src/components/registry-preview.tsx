@@ -23,6 +23,20 @@ import {
   TextAreaPreview,
   TextFieldPreview,
 } from "~/components/registry/tier-1/form-inputs/demos";
+import {
+  AccordionPreview,
+  AlertDialogPreview,
+  CollapsiblePreview,
+  CommandMenuPreview,
+  ContextMenuPreview,
+  DialogPreview,
+  DrawerPreview,
+  DropdownMenuPreview,
+  MenubarPreview,
+  PopoverPreview,
+  TabsPreview,
+  TooltipPreview,
+} from "~/components/registry/tier-1/disclosure-overlay/demos";
 import type { RegistryItem } from "~/lib/registry";
 
 const implementedPreviewBySlug: Record<string, Component<{ item: RegistryItem }>> = {
@@ -45,6 +59,18 @@ const implementedPreviewBySlug: Record<string, Component<{ item: RegistryItem }>
   slider: SliderPreview,
   calendar: CalendarPreview,
   "date-picker": DatePickerPreview,
+  tabs: TabsPreview,
+  accordion: AccordionPreview,
+  collapsible: CollapsiblePreview,
+  dialog: DialogPreview,
+  "alert-dialog": AlertDialogPreview,
+  drawer: DrawerPreview,
+  popover: PopoverPreview,
+  tooltip: TooltipPreview,
+  "dropdown-menu": DropdownMenuPreview,
+  "context-menu": ContextMenuPreview,
+  menubar: MenubarPreview,
+  "command-menu": CommandMenuPreview,
 };
 
 export function RegistryPreview(props: { item: RegistryItem }) {
