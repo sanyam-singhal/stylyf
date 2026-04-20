@@ -25,7 +25,7 @@ Stylyf is being implemented cluster by cluster. Each cluster should land as a co
   DataList, DataTableShell, ColumnVisibilityMenu, BulkActionBar, DetailPanel, ActivityFeed, Timeline, NotificationList, CommentThread
 - [x] Navigation & Workflow
   Stepper, WizardShell, SidebarNav, TopNavBar, AppHeader
-- [ ] Commercial & Content
+- [x] Commercial & Content
   PricingCard, FeatureCard, TestimonialCard, FAQList
 
 ## Tier 3
