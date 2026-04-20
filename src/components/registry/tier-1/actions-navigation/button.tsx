@@ -7,7 +7,7 @@ import { cn } from "~/lib/cn";
 export const buttonFrameVariants = cva(
   [
     "inline-flex shrink-0 items-center justify-center whitespace-nowrap border font-semibold tracking-[-0.01em]",
-    "transition-[transform,background-color,border-color,color,box-shadow,opacity] duration-200 ease-out",
+    "select-none transition-[transform,background-color,border-color,color,box-shadow,opacity] duration-200 ease-out",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
     "disabled:pointer-events-none disabled:opacity-50",
     "[&_svg]:pointer-events-none [&_svg]:shrink-0",
@@ -16,17 +16,17 @@ export const buttonFrameVariants = cva(
   {
     variants: {
       size: {
-        sm: "h-9 gap-2 px-3.5 text-[0.92rem] [&_svg]:size-4",
-        md: "h-10 gap-2.5 px-4 text-sm [&_svg]:size-4.5",
-        lg: "h-12 gap-3 px-5 text-[0.98rem] [&_svg]:size-5",
+        sm: "h-[calc(var(--control-height)-0.55rem)] gap-1.75 px-[calc(var(--control-padding-x)-0.35rem)] text-[0.84rem] [&_svg]:size-3.5",
+        md: "h-[var(--control-height)] gap-2 px-[var(--control-padding-x)] text-[0.92rem] [&_svg]:size-4",
+        lg: "h-[calc(var(--control-height)+0.55rem)] gap-2.5 px-[calc(var(--control-padding-x)+0.35rem)] text-[0.98rem] [&_svg]:size-4.5",
       },
       density: {
         comfortable: "",
-        compact: "gap-2 px-3 text-[0.82rem] uppercase tracking-[0.12em]",
+        compact: "gap-1.5 px-[calc(var(--control-padding-x)-0.45rem)] text-[0.79rem] font-bold tracking-[0.08em]",
       },
       radius: {
-        md: "rounded-lg",
-        lg: "rounded-xl",
+        md: "rounded-[max(calc(var(--radius)-10px),0.45rem)]",
+        lg: "rounded-[max(calc(var(--radius)-6px),0.8rem)]",
         pill: "rounded-full",
       },
       fullWidth: {
@@ -46,37 +46,37 @@ export const buttonFrameVariants = cva(
 const toneMatrix = {
   destructive: {
     solid:
-      "border-destructive/30 bg-destructive text-destructive-foreground shadow-soft hover:-translate-y-px hover:border-destructive/45 hover:bg-destructive/92",
-    soft: "border-destructive/28 bg-destructive/10 text-destructive hover:border-destructive/36 hover:bg-destructive/14",
-    outline: "border-destructive/32 bg-background text-destructive hover:border-destructive/42 hover:bg-destructive/8",
+      "border-destructive/28 bg-destructive text-destructive-foreground shadow-xs hover:-translate-y-px hover:border-destructive/42 hover:bg-destructive/92",
+    soft: "border-destructive/26 bg-destructive/10 text-destructive hover:border-destructive/34 hover:bg-destructive/14",
+    outline: "border-destructive/30 bg-background text-destructive hover:border-destructive/40 hover:bg-destructive/8",
     ghost: "border-transparent bg-transparent text-destructive hover:bg-destructive/10 hover:text-destructive",
   },
   primary: {
     solid:
-      "border-primary/25 bg-primary text-primary-foreground shadow-soft hover:-translate-y-px hover:border-primary/38 hover:bg-primary/92",
-    soft: "border-accent/38 bg-accent text-accent-foreground hover:border-accent/52 hover:bg-accent/88",
-    outline: "border-input bg-background text-foreground hover:border-primary/35 hover:bg-accent/55",
+      "border-primary/24 bg-primary text-primary-foreground shadow-xs hover:-translate-y-px hover:border-primary/38 hover:bg-primary/92",
+    soft: "border-accent/48 bg-accent text-accent-foreground hover:border-accent/58 hover:bg-accent/84",
+    outline: "border-input/90 bg-background text-foreground hover:border-primary/26 hover:bg-accent/55",
     ghost: "border-transparent bg-transparent text-foreground hover:bg-accent/55 hover:text-foreground",
   },
   neutral: {
-    solid: "border-border/75 bg-card text-card-foreground shadow-soft hover:-translate-y-px hover:border-border hover:bg-popover",
-    soft: "border-border/70 bg-muted text-foreground hover:border-border/90 hover:bg-card",
-    outline: "border-input bg-background text-foreground hover:border-border hover:bg-muted/70",
-    ghost: "border-transparent bg-transparent text-muted-foreground hover:bg-background hover:text-foreground",
+    solid: "border-input/85 bg-card text-card-foreground shadow-xs hover:-translate-y-px hover:border-border hover:bg-background",
+    soft: "border-border/72 bg-[var(--muted-soft)] text-foreground hover:border-border/84 hover:bg-muted",
+    outline: "border-input/90 bg-background text-foreground hover:border-border hover:bg-accent/45",
+    ghost: "border-transparent bg-transparent text-muted-foreground hover:bg-accent/55 hover:text-foreground",
   },
   highlight: {
-    solid: "border-secondary/35 bg-secondary text-secondary-foreground shadow-soft hover:-translate-y-px hover:border-secondary/50 hover:bg-secondary/92",
-    soft: "border-secondary/32 bg-secondary/14 text-secondary-foreground hover:border-secondary/46 hover:bg-secondary/18",
-    outline: "border-secondary/35 bg-background text-secondary-foreground hover:bg-secondary/10",
+    solid: "border-secondary/30 bg-secondary text-secondary-foreground shadow-xs hover:-translate-y-px hover:border-secondary/44 hover:bg-secondary/92",
+    soft: "border-secondary/28 bg-secondary/16 text-secondary-foreground hover:border-secondary/38 hover:bg-secondary/20",
+    outline: "border-secondary/32 bg-background text-secondary-foreground hover:bg-secondary/10",
     ghost: "border-transparent bg-transparent text-secondary-foreground hover:bg-secondary/10",
   },
 } as const;
 
 const pressedMatrix = {
   destructive:
-    "data-[pressed=true]:border-destructive/45 data-[pressed=true]:bg-destructive data-[pressed=true]:text-destructive-foreground",
+    "data-[pressed=true]:border-destructive/42 data-[pressed=true]:bg-destructive data-[pressed=true]:text-destructive-foreground data-[pressed=true]:shadow-xs",
   default:
-    "data-[pressed=true]:border-primary/35 data-[pressed=true]:bg-primary data-[pressed=true]:text-primary-foreground data-[pressed=true]:shadow-none",
+    "data-[pressed=true]:border-primary/32 data-[pressed=true]:bg-primary data-[pressed=true]:text-primary-foreground data-[pressed=true]:shadow-xs",
 } as const;
 
 export type ActionIntent = "primary" | "neutral" | "highlight";

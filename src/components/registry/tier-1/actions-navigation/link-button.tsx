@@ -1,5 +1,5 @@
 import { A } from "@solidjs/router";
-import { ArrowUpRight, CornerDownRight } from "lucide-solid";
+import { ArrowUpRight, LoaderCircle } from "lucide-solid";
 import { Show, mergeProps, splitProps } from "solid-js";
 import type { JSX } from "solid-js";
 import { cn } from "~/lib/cn";
@@ -61,6 +61,8 @@ function sharedClass(props: {
       tone: props.tone,
       destructive: props.destructive,
     }),
+    props.current && "border-primary/24 bg-accent text-foreground shadow-xs",
+    props.pending && "opacity-85",
     props.class,
   );
 }
@@ -113,9 +115,16 @@ export function LinkButton(userProps: LinkButtonProps) {
 
   const content = (
     <>
-      <span class={cn("inline-flex items-center gap-2", local.underline && "[&_span:last-child]:underline [&_span:last-child]:underline-offset-4")}>
-        <CornerDownRight class="size-4" />
-        <span>{local.children}</span>
+      <span
+        class={cn(
+          "inline-flex min-w-0 items-center gap-2",
+          local.underline && "[&_span:last-child]:underline [&_span:last-child]:underline-offset-4",
+        )}
+      >
+        <Show when={local.pending}>
+          <LoaderCircle class="size-4 animate-spin" />
+        </Show>
+        <span class="truncate">{local.children}</span>
       </span>
       <Show when={local.external && local.showExternalBadge}>
         <ArrowUpRight class="size-4" />
@@ -166,6 +175,7 @@ export function LinkButton(userProps: LinkButtonProps) {
       class={className}
       aria-disabled={local.disabled ? true : undefined}
       rel={local.external ? "noreferrer noopener" : others.rel}
+      target={local.external ? "_blank" : others.target}
       data-current={local.current ? "true" : "false"}
       data-loading="false"
       data-pending={local.pending ? "true" : "false"}

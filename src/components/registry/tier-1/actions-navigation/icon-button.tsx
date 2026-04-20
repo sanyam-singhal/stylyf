@@ -16,15 +16,15 @@ import {
 type IconButtonShape = "square" | "round" | "pill";
 
 const shapeClasses: Record<IconButtonShape, string> = {
-  square: "rounded-lg",
+  square: "rounded-[max(calc(var(--radius)-10px),0.45rem)]",
   round: "rounded-full",
-  pill: "rounded-xl",
+  pill: "rounded-[max(calc(var(--radius)-6px),0.8rem)]",
 };
 
 const sizeClasses: Record<ActionSize, string> = {
-  sm: "size-9 px-0",
-  md: "size-10 px-0",
-  lg: "size-12 px-0",
+  sm: "size-[calc(var(--control-height)-0.55rem)] px-0",
+  md: "size-[var(--control-height)] px-0",
+  lg: "size-[calc(var(--control-height)+0.55rem)] px-0",
 };
 
 export type IconButtonProps = Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, "children"> & {
@@ -88,7 +88,7 @@ export function IconButton(userProps: IconButtonProps) {
         }),
         sizeClasses[local.size],
         shapeClasses[local.shape],
-        "gap-0",
+        "gap-0 shadow-xs",
         buttonToneClasses({
           intent: local.intent,
           tone: local.tone,

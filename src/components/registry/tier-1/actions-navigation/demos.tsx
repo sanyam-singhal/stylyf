@@ -1,5 +1,5 @@
 import { ArrowRight, Bell, Bookmark, Bold, ChevronRight, Filter, Home, LayoutGrid, Plus, Settings, Sparkles } from "lucide-solid";
-import { createSignal } from "solid-js";
+import { Show, createSignal } from "solid-js";
 import type { JSX } from "solid-js";
 import type { RegistryItem } from "~/lib/registry";
 import { Breadcrumb } from "~/components/registry/tier-1/actions-navigation/breadcrumb";
@@ -37,8 +37,8 @@ export function ButtonPreview(props: { item: RegistryItem }) {
             <Button destructive>Delete record</Button>
           </div>
           <div class="flex flex-wrap gap-3">
-            <Button loading>Syncing</Button>
-            <Button pending intent="neutral" tone="soft">Pending</Button>
+            <Button loading>Working</Button>
+            <Button pending intent="neutral" tone="soft">Pending review</Button>
             <Button size="lg" radius="lg" rightIcon={<ChevronRight />}>Continue flow</Button>
           </div>
         </div>
@@ -81,7 +81,7 @@ export function LinkButtonPreview(props: { item: RegistryItem }) {
     <DemoFrame item={props.item} title="Live primitive">
       <div class="flex flex-wrap gap-3">
         <LinkButton href="#tier-1-form-inputs" intent="primary" tone="solid">Form inputs section</LinkButton>
-        <LinkButton href="#theme-studio" intent="highlight" tone="soft" current>Theme studio</LinkButton>
+        <LinkButton href="#theme-studio" intent="highlight" tone="soft">Theme studio</LinkButton>
         <LinkButton href="https://solidjs.com" external tone="outline">
           Solid docs
         </LinkButton>
@@ -138,9 +138,24 @@ export function ToggleGroupPreview(props: { item: RegistryItem }) {
           tone="outline"
           fullWidth
         >
-          <ToggleGroup.Item value="active">Active</ToggleGroup.Item>
-          <ToggleGroup.Item value="starred">Starred</ToggleGroup.Item>
-          <ToggleGroup.Item value="assigned">Assigned</ToggleGroup.Item>
+          <ToggleGroup.Item value="active">
+            <div class="flex flex-col items-start gap-1">
+              <span class="font-semibold">Active</span>
+              <span class="text-xs text-muted-foreground">Records with movement in the last 7 days.</span>
+            </div>
+          </ToggleGroup.Item>
+          <ToggleGroup.Item value="starred">
+            <div class="flex flex-col items-start gap-1">
+              <span class="font-semibold">Starred</span>
+              <span class="text-xs text-muted-foreground">Pinned items that need regular review.</span>
+            </div>
+          </ToggleGroup.Item>
+          <ToggleGroup.Item value="assigned">
+            <div class="flex flex-col items-start gap-1">
+              <span class="font-semibold">Assigned</span>
+              <span class="text-xs text-muted-foreground">Only items already owned by this operator.</span>
+            </div>
+          </ToggleGroup.Item>
         </ToggleGroup>
       </div>
     </DemoFrame>
@@ -148,6 +163,8 @@ export function ToggleGroupPreview(props: { item: RegistryItem }) {
 }
 
 export function BreadcrumbPreview(props: { item: RegistryItem }) {
+  const [expanded, setExpanded] = createSignal(false);
+
   return (
     <DemoFrame item={props.item} title="Live primitive">
       <div class="space-y-5">
@@ -176,14 +193,28 @@ export function BreadcrumbPreview(props: { item: RegistryItem }) {
               <Breadcrumb.Link href="#library">Home</Breadcrumb.Link>
             </Breadcrumb.Item>
             <Breadcrumb.Separator />
-            <Breadcrumb.Item>
-              <Breadcrumb.Collapsed />
-            </Breadcrumb.Item>
-            <Breadcrumb.Separator />
-            <Breadcrumb.Item>
-              <Breadcrumb.Link href="#tier-3-settings-admin">Security</Breadcrumb.Link>
-            </Breadcrumb.Item>
-            <Breadcrumb.Separator />
+            <Show
+              when={expanded()}
+              fallback={
+                <>
+                  <Breadcrumb.Item>
+                    <Breadcrumb.Collapsed onClick={() => setExpanded(true)} />
+                  </Breadcrumb.Item>
+                  <Breadcrumb.Separator />
+                </>
+              }
+            >
+                <>
+                  <Breadcrumb.Item>
+                    <Breadcrumb.Link href="#theme-studio">Workspace</Breadcrumb.Link>
+                  </Breadcrumb.Item>
+                  <Breadcrumb.Separator />
+                  <Breadcrumb.Item>
+                    <Breadcrumb.Link href="#tier-1-actions-navigation">Security</Breadcrumb.Link>
+                  </Breadcrumb.Item>
+                <Breadcrumb.Separator />
+              </>
+            </Show>
             <Breadcrumb.Item>
               <Breadcrumb.Current>Sessions</Breadcrumb.Current>
             </Breadcrumb.Item>
@@ -200,7 +231,7 @@ export function PaginationPreview(props: { item: RegistryItem }) {
   return (
     <DemoFrame item={props.item} title="Live primitive">
       <div class="space-y-5">
-        <Pagination page={page()} onPageChange={setPage} pageCount={12} />
+        <Pagination page={page()} onPageChange={setPage} pageCount={12} siblingCount={1} />
         <Pagination defaultPage={2} pageCount={7} compact showEdges={false} summary={false} />
       </div>
     </DemoFrame>

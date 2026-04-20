@@ -256,14 +256,20 @@ function ToggleGroupRoot(userProps: ToggleGroupProps) {
         aria-label={local.label}
         aria-orientation={local.orientation}
         class={cn(
-          "inline-flex gap-2",
+          "gap-2.5",
           local.layout === "segmented"
             ? cn(
-                "rounded-xl border border-border/70 bg-card p-1.5 shadow-inset",
-                local.orientation === "vertical" && "flex-col",
+                "inline-flex items-center rounded-[max(calc(var(--radius)-2px),1rem)] border border-input/80 bg-[var(--muted-soft)] p-1 shadow-inset",
+                local.orientation === "vertical" && "flex-col items-stretch",
                 local.fullWidth && "w-full",
               )
-            : cn("flex-wrap", local.orientation === "vertical" && "flex-col", local.fullWidth && "w-full"),
+            : cn(
+                local.orientation === "vertical"
+                  ? "flex flex-col"
+                  : local.fullWidth
+                    ? "grid w-full gap-3 md:grid-cols-3"
+                    : "flex flex-wrap",
+              ),
           local.class,
         )}
         {...others}
@@ -358,17 +364,23 @@ export function ToggleGroupItem(userProps: ToggleGroupItemProps) {
         buttonFrameVariants({
           size: context.size(),
           density: context.density(),
-          radius: context.layout() === "segmented" ? "pill" : context.radius(),
-          fullWidth: context.fullWidth(),
+          radius: context.layout() === "segmented" ? "pill" : "lg",
+          fullWidth: context.layout() === "segmented" ? context.fullWidth() : false,
         }),
-        buttonToneClasses({
-          intent: context.intent(),
-          tone: context.layout() === "segmented" ? "ghost" : context.tone(),
-          destructive: context.destructive(),
-          pressedTone: true,
-        }),
-        context.layout() === "segmented" &&
-          "border-transparent shadow-none hover:bg-accent data-[pressed=true]:border-primary/20 data-[pressed=true]:bg-background",
+        context.layout() === "segmented"
+          ? [
+              "min-w-0 flex-1 border-transparent bg-transparent px-3.5 text-muted-foreground shadow-none",
+              "hover:bg-background hover:text-foreground",
+              "data-[pressed=true]:border-border/70 data-[pressed=true]:bg-background data-[pressed=true]:text-foreground data-[pressed=true]:shadow-xs",
+              "data-[pressed=true]:translate-y-0",
+            ]
+          : [
+              "h-auto min-h-[calc(var(--control-height)+1rem)] justify-start border-input/85 bg-card px-4 py-3 text-left shadow-xs",
+              "text-muted-foreground hover:border-primary/22 hover:bg-background hover:text-foreground",
+              "data-[pressed=true]:border-primary/32 data-[pressed=true]:bg-accent/55 data-[pressed=true]:text-foreground data-[pressed=true]:shadow-soft",
+              "data-[pressed=true]:translate-y-0",
+              context.fullWidth() && "w-full",
+            ],
         local.class,
       )}
       disabled={unavailable()}

@@ -7,33 +7,39 @@ import { buttonFrameVariants, buttonToneClasses } from "~/components/registry/ti
 type PaginationToken = number | "ellipsis";
 
 function buildRange(currentPage: number, pageCount: number, siblingCount: number, showEdges: boolean) {
-  const numbers = new Set<number>();
-  const start = Math.max(1, currentPage - siblingCount);
-  const end = Math.min(pageCount, currentPage + siblingCount);
+  const safePageCount = Math.max(pageCount, 1);
+  const safePage = Math.min(Math.max(currentPage, 1), safePageCount);
+  const safeSiblingCount = Math.max(siblingCount, 0);
 
-  for (let page = start; page <= end; page += 1) {
-    numbers.add(page);
+  if (!showEdges) {
+    const start = Math.max(1, safePage - safeSiblingCount);
+    const end = Math.min(safePageCount, safePage + safeSiblingCount);
+    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
   }
 
-  if (showEdges) {
-    numbers.add(1);
-    numbers.add(pageCount);
+  const range = (start: number, end: number) =>
+    Array.from({ length: end - start + 1 }, (_, index) => start + index);
+
+  const totalSlots = safeSiblingCount * 2 + 5;
+
+  if (safePageCount <= totalSlots) {
+    return range(1, safePageCount);
   }
 
-  const sorted = Array.from(numbers).sort((left, right) => left - right);
-  const tokens: PaginationToken[] = [];
+  const leftSibling = Math.max(safePage - safeSiblingCount, 2);
+  const rightSibling = Math.min(safePage + safeSiblingCount, safePageCount - 1);
+  const showLeftEllipsis = leftSibling > 2;
+  const showRightEllipsis = rightSibling < safePageCount - 1;
 
-  sorted.forEach((value, index) => {
-    const previous = sorted[index - 1];
+  if (!showLeftEllipsis && showRightEllipsis) {
+    return [...range(1, 3 + safeSiblingCount * 2), "ellipsis", safePageCount];
+  }
 
-    if (previous && value - previous > 1) {
-      tokens.push("ellipsis");
-    }
+  if (showLeftEllipsis && !showRightEllipsis) {
+    return [1, "ellipsis", ...range(safePageCount - (2 + safeSiblingCount * 2), safePageCount)];
+  }
 
-    tokens.push(value);
-  });
-
-  return tokens;
+  return [1, "ellipsis", ...range(leftSibling, rightSibling), "ellipsis", safePageCount];
 }
 
 export type PaginationProps = Omit<JSX.HTMLAttributes<HTMLElement>, "children"> & {
@@ -93,8 +99,7 @@ export function Pagination(userProps: PaginationProps) {
     local.onPageChange?.(clamped);
   };
 
-  const basePageButton =
-    "min-w-10 px-0 data-[current=true]:border-primary/35 data-[current=true]:bg-primary data-[current=true]:text-primary-foreground data-[current=true]:shadow-soft";
+  const pageButtonSize = () => (local.compact ? "sm" : "md");
 
   return (
     <nav
@@ -106,8 +111,9 @@ export function Pagination(userProps: PaginationProps) {
         <button
           type="button"
           class={cn(
-            buttonFrameVariants({ size: local.compact ? "sm" : "md", density: "comfortable", radius: "pill" }),
+            buttonFrameVariants({ size: pageButtonSize(), density: "comfortable", radius: "pill" }),
             buttonToneClasses({ intent: "neutral", tone: "outline" }),
+            "shadow-xs",
           )}
           disabled={local.disabled || page() <= 1}
           onClick={() => commit(page() - 1)}
@@ -116,13 +122,19 @@ export function Pagination(userProps: PaginationProps) {
           <span>Previous</span>
         </button>
 
-        <div class="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card p-1.5 shadow-inset">
+        <div class="inline-flex items-center gap-1 rounded-full border border-input/80 bg-[var(--muted-soft)] p-1 shadow-inset">
           <For each={tokens()}>
             {token => (
               <Show
                 when={token !== "ellipsis"}
                 fallback={
-                  <span class="inline-flex h-10 min-w-10 items-center justify-center text-muted-foreground" aria-hidden="true">
+                  <span
+                    class={cn(
+                      "inline-flex items-center justify-center text-muted-foreground",
+                      local.compact ? "size-[calc(var(--control-height)-0.55rem)]" : "size-[var(--control-height)]",
+                    )}
+                    aria-hidden="true"
+                  >
                     <MoreHorizontal class="size-4" />
                   </span>
                 }
@@ -131,12 +143,15 @@ export function Pagination(userProps: PaginationProps) {
                   type="button"
                   class={cn(
                     buttonFrameVariants({
-                      size: local.compact ? "sm" : "md",
+                      size: pageButtonSize(),
                       density: "comfortable",
                       radius: "pill",
                     }),
-                    buttonToneClasses({ intent: "neutral", tone: "ghost" }),
-                    basePageButton,
+                    local.compact ? "size-[calc(var(--control-height)-0.55rem)] px-0 text-[0.84rem]" : "size-[var(--control-height)] px-0",
+                    "min-w-0 font-medium shadow-none",
+                    page() === token
+                      ? "border-primary/28 bg-primary text-primary-foreground shadow-xs"
+                      : "border-transparent bg-transparent text-muted-foreground hover:bg-background hover:text-foreground",
                   )}
                   aria-current={page() === token ? "page" : undefined}
                   data-current={page() === token ? "true" : "false"}
@@ -156,8 +171,9 @@ export function Pagination(userProps: PaginationProps) {
         <button
           type="button"
           class={cn(
-            buttonFrameVariants({ size: local.compact ? "sm" : "md", density: "comfortable", radius: "pill" }),
+            buttonFrameVariants({ size: pageButtonSize(), density: "comfortable", radius: "pill" }),
             buttonToneClasses({ intent: "neutral", tone: "outline" }),
+            "shadow-xs",
           )}
           disabled={local.disabled || page() >= local.pageCount}
           onClick={() => commit(page() + 1)}

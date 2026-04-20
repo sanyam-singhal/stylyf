@@ -39,7 +39,7 @@ export function Toggle(userProps: ToggleProps) {
       type: "button" as const,
       children: "Toggle",
       intent: "neutral" as const,
-      tone: "soft" as const,
+      tone: "outline" as const,
       size: "md" as const,
       density: "comfortable" as const,
       radius: "pill" as const,
@@ -109,6 +109,7 @@ export function Toggle(userProps: ToggleProps) {
           destructive: local.destructive,
           pressedTone: true,
         }),
+        "justify-start shadow-xs",
         local.class,
       )}
       disabled={unavailable()}

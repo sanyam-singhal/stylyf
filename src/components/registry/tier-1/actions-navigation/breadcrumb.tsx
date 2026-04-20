@@ -49,7 +49,7 @@ function BreadcrumbList(props: ParentProps<JSX.HTMLAttributes<HTMLOListElement>>
 
   return (
     <ol
-      class={cn("flex flex-wrap items-center gap-2.5 text-sm", local.class)}
+      class={cn("flex flex-wrap items-center gap-1.5 text-sm", local.class)}
       {...others}
     >
       {local.children}
@@ -61,7 +61,7 @@ function BreadcrumbItem(props: ParentProps<JSX.HTMLAttributes<HTMLLIElement>>) {
   const [local, others] = splitProps(props, ["children", "class"]);
 
   return (
-    <li class={cn("inline-flex min-w-0 items-center gap-2", local.class)} {...others}>
+    <li class={cn("inline-flex min-w-0 items-center gap-1.5", local.class)} {...others}>
       {local.children}
     </li>
   );
@@ -79,8 +79,11 @@ function BreadcrumbLink(userProps: BreadcrumbLinkProps) {
   const props = mergeProps({ href: "/" }, userProps);
   const [local, others] = splitProps(props, ["children", "class", "current", "external", "href"]);
   const className = cn(
-    "inline-flex min-w-0 items-center rounded-full px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-    local.current ? "bg-primary text-primary-foreground" : "hover:bg-accent hover:text-foreground",
+    "inline-flex min-w-0 items-center gap-1.5 rounded-[max(calc(var(--radius)-10px),0.45rem)] px-2.5 py-1.5 transition",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+    local.current
+      ? "bg-accent text-foreground"
+      : "text-muted-foreground hover:bg-accent/70 hover:text-foreground",
     local.class,
   );
 
@@ -110,7 +113,10 @@ function BreadcrumbCurrent(props: ParentProps<JSX.HTMLAttributes<HTMLSpanElement
 
   return (
     <span
-      class={cn("inline-flex min-w-0 items-center rounded-full bg-primary px-3 py-1.5 font-semibold text-primary-foreground", local.class)}
+      class={cn(
+        "inline-flex min-w-0 items-center gap-1.5 rounded-[max(calc(var(--radius)-10px),0.45rem)] bg-accent px-2.5 py-1.5 font-semibold text-foreground",
+        local.class,
+      )}
       aria-current="page"
       {...others}
     >
@@ -124,7 +130,7 @@ function BreadcrumbSeparator(props: JSX.HTMLAttributes<HTMLSpanElement>) {
 
   return (
     <span class={cn("inline-flex items-center text-border", local.class)} aria-hidden="true" {...others}>
-      <ChevronRight class="size-4" />
+      <ChevronRight class="size-3.5" />
     </span>
   );
 }
@@ -136,7 +142,8 @@ function BreadcrumbCollapsed(props: JSX.ButtonHTMLAttributes<HTMLButtonElement>)
     <button
       type="button"
       class={cn(
-        "inline-flex items-center rounded-full border border-border/70 bg-background px-3 py-1.5 text-foreground transition hover:border-primary/35 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "inline-flex size-8 items-center justify-center rounded-[max(calc(var(--radius)-10px),0.45rem)] border border-input/80 bg-background text-muted-foreground transition",
+        "hover:border-border hover:bg-accent/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         local.class,
       )}
       aria-label="Show collapsed breadcrumb items"
