@@ -252,6 +252,18 @@ Behavior:
 - scans the registry and template manifests
 - rebuilds the search index
 
+### `stylyf intro`
+
+Behavior:
+
+- emits a rich standalone markdown briefing for a coding agent
+- explains how to set up a SolidStart app with Stylyf
+- explains how to navigate and iteratively extend a generated app
+- optionally inspects a local project path and includes project-specific context
+
+This command is intended to reduce repeated re-orientation work for Codex and
+other coding agents during both initial generation and iterative UI development.
+
 ## JSON IR Design
 
 The IR must stay shallow.
@@ -797,7 +809,19 @@ Deliverable:
 
 - target app is runnable immediately after generation
 
-### Step 11. Dogfood With Two Example Apps
+### Step 11. Add Agent Intro Output
+
+Implement:
+
+- `stylyf intro`
+- markdown output suitable for direct agent consumption
+- project-aware introspection for a generated app
+
+Deliverable:
+
+- `stylyf intro --project ./demo-app --output STYLYF_INTRO.md`
+
+### Step 12. Dogfood With Two Example Apps
 
 Generate at least:
 
@@ -806,7 +830,7 @@ Generate at least:
 
 This is required before calling Phase 1 complete.
 
-### Step 12. Publishability Pass
+### Step 13. Publishability Pass
 
 Ensure:
 
@@ -838,6 +862,12 @@ This is required before treating the CLI as real.
 
 - full frontend draft generation works
 - `npm install` succeeds
+
+### Milestone E
+
+- agent intro output works
+- two generated apps build successfully
+- packaged CLI works in a clean temp directory
 - generated app runs
 - generated app has no dependency on this repo or the CLI package
 

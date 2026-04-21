@@ -88,7 +88,7 @@ function matchAllValues(pattern: RegExp, source: string) {
 function extractThemeGrammar(appCss: string): ThemeGrammar {
   const themePresetIds = matchAllValues(/data-theme-preset="([^"]+)"/g, appCss);
   const radii = matchAllValues(/data-radius="([^"]+)"/g, appCss);
-  const density = unique(["comfortable", ...matchAllValues(/data-density="([^"]+)"/g, appCss)]);
+  const density = unique(["comfortable", "compact", "relaxed", ...matchAllValues(/data-density="([^"]+)"/g, appCss)]);
   const spacing = matchAllValues(/data-spacing="([^"]+)"/g, appCss);
 
   const colorTokens = matchAllValues(/--color-([a-z0-9-]+):/g, appCss);

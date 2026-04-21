@@ -49,18 +49,19 @@ Completed on branch `assembly-tool`:
 - Step 2: extract theme grammar from `src/app.css`
 - Step 3: build the bundled registry assembly manifest
 - Steps 4-6: implement IR validation, search, search index, and local search HTTP endpoint
+- Step 7: create layout and shell templates
+- Step 8: create route and page generators
+- Step 9: add style emission
+- Step 10: add project scaffold and dependency installation
+- Step 11: add `stylyf intro`
 
 The next allowed implementation target is:
 
-- Step 7: create layout and shell templates
+- Step 12: dogfood with two generated example apps
 
-After Step 7, continue in order:
+After Step 12, continue in order:
 
-- Step 8: route and page generators
-- Step 9: style emission
-- Step 10: dependency installation
-- Step 11: dogfood with two generated example apps
-- Step 12: publishability pass
+- Step 13: publishability pass
 
 ## Validation Gates
 

@@ -3,6 +3,7 @@ export const CLI_NAME = "stylyf";
 export const CLI_VERSION = "0.1.0";
 
 export type CliCommand =
+  | "intro"
   | "generate"
   | "validate"
   | "search"
@@ -19,6 +20,7 @@ export function helpText() {
     "  stylyf <command> [options]",
     "",
     "Commands:",
+    "  intro         Emit a markdown briefing for coding agents",
     "  generate      Generate an app from a JSON IR",
     "  validate      Validate a JSON IR",
     "  search        Search bundled registry/codeblock manifests",
@@ -30,12 +32,13 @@ export function helpText() {
     "  -v, --version  Show version",
     "",
     "Phase 1 status:",
-    "  Frontend generation is implemented through dependency installation.",
+    "  Intro output and frontend generation are implemented through dependency installation.",
     "  Dogfooding and publishability validation land next.",
   ].join("\n");
 }
 import { runBuildIndexCommand } from "./commands/build-index.js";
 import { runGenerateCommand } from "./commands/generate.js";
+import { runIntroCommand } from "./commands/intro.js";
 import { runSearchCommand } from "./commands/search.js";
 import { runServeSearchCommand } from "./commands/serve-search.js";
 import { runValidateCommand } from "./commands/validate.js";
@@ -56,6 +59,10 @@ export async function runCli(argv: string[] = process.argv.slice(2)) {
 
   if (command === "generate") {
     return runGenerateCommand(commandArgs(argv));
+  }
+
+  if (command === "intro") {
+    return runIntroCommand(commandArgs(argv));
   }
 
   if (command === "validate") {
