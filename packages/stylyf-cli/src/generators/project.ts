@@ -41,12 +41,17 @@ export function renderGeneratedPackageJson(app: AppIR) {
   };
 
   if (app.database) {
-    dependencies["drizzle-orm"] = "^0.44.5";
+    dependencies["drizzle-orm"] = "^0.45.2";
     dependencies.postgres = "^3.4.7";
     devDependencies["drizzle-kit"] = "^0.31.4";
     scripts["db:generate"] = "drizzle-kit generate";
     scripts["db:migrate"] = "drizzle-kit migrate";
     scripts["db:studio"] = "drizzle-kit studio";
+  }
+
+  if (app.auth) {
+    dependencies["better-auth"] = "^1.6.6";
+    dependencies["@better-auth/drizzle-adapter"] = "^1.6.6";
   }
 
   return JSON.stringify(

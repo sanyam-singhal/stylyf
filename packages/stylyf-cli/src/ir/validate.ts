@@ -407,6 +407,10 @@ export function validateAppIr(value: unknown): ValidationResult {
     } else {
       validateAuth(value.auth, errors);
     }
+
+    if (!isRecord(value.database)) {
+      errors.push("auth requires database to be enabled");
+    }
   }
 
   if (value.storage !== undefined) {
