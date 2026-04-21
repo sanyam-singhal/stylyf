@@ -52,6 +52,14 @@ export type AssemblyItem = {
   searchText: string;
 };
 
+export type BackendManifestIndex = {
+  capabilities: string[];
+  serverFunctions: string[];
+  apiRoutes: string[];
+  envBlocks: string[];
+  snippets: string[];
+};
+
 async function readJsonAsset<T>(relativePath: string): Promise<T> {
   const url = new URL(relativePath, import.meta.url);
   const content = await readFile(url, "utf8");
@@ -64,4 +72,8 @@ export function loadThemeGrammar() {
 
 export function loadAssemblyRegistry() {
   return readJsonAsset<AssemblyItem[]>("./generated/assembly-registry.json");
+}
+
+export function loadBackendManifestIndex() {
+  return readJsonAsset<BackendManifestIndex>("./generated/backend-manifests.json");
 }

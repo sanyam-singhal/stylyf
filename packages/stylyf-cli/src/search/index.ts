@@ -1,10 +1,27 @@
+import {
+  backendApiRouteCatalog,
+  backendCapabilityCatalog,
+  backendEnvCatalog,
+  backendServerTemplateCatalog,
+  backendSnippetCatalog,
+  type BackendCatalogEntry,
+} from "../manifests/backend.js";
 import { appShellCatalog, layoutCatalog, pageShellCatalog, type CatalogEntry } from "../manifests/catalog.js";
 import { loadAssemblyRegistry, type AssemblyItem } from "../manifests/index.js";
 
 export type SearchableEntry = {
   id: string;
   label: string;
-  kind: "component" | "layout" | "page-shell" | "app-shell";
+  kind:
+    | "component"
+    | "layout"
+    | "page-shell"
+    | "app-shell"
+    | "capability"
+    | "server-function"
+    | "api-route"
+    | "env-block"
+    | "backend-snippet";
   area: string;
   description: string;
   summary: string;
@@ -58,6 +75,20 @@ function toSearchableCatalog(item: CatalogEntry): SearchableEntry {
     label: item.label,
     kind: item.kind,
     area: item.kind === "layout" ? "Layout" : item.kind === "page-shell" ? "Page Shells" : "App Shells",
+    description: item.description,
+    summary: item.summary,
+    keywords: item.keywords,
+    snippet: item.snippet,
+    searchText: [item.label, item.description, item.summary, ...item.keywords, ...(item.props ?? [])].join(" ").toLowerCase(),
+  };
+}
+
+function toSearchableBackend(item: BackendCatalogEntry): SearchableEntry {
+  return {
+    id: item.id,
+    label: item.label,
+    kind: item.kind,
+    area: item.area,
     description: item.description,
     summary: item.summary,
     keywords: item.keywords,
@@ -143,6 +174,11 @@ export async function buildSearchEntries() {
     ...appShellCatalog.map(toSearchableCatalog),
     ...pageShellCatalog.map(toSearchableCatalog),
     ...layoutCatalog.map(toSearchableCatalog),
+    ...backendCapabilityCatalog.map(toSearchableBackend),
+    ...backendServerTemplateCatalog.map(toSearchableBackend),
+    ...backendApiRouteCatalog.map(toSearchableBackend),
+    ...backendEnvCatalog.map(toSearchableBackend),
+    ...backendSnippetCatalog.map(toSearchableBackend),
   ];
 }
 
@@ -184,4 +220,3 @@ export async function querySearchIndex(query: string, options?: { limit?: number
     .sort((left, right) => right.score - left.score || left.label.localeCompare(right.label))
     .slice(0, limit);
 }
-
