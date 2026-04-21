@@ -1,0 +1,110 @@
+[
+  {
+    "action": "waitForSelector",
+    "selector": "[data-sidebar-component='select']",
+    "timeoutMs": 20000
+  },
+  {
+    "action": "waitForSelector",
+    "selector": "[data-theme-preset-option='amber']",
+    "timeoutMs": 20000
+  },
+  {
+    "action": "click",
+    "selector": "[data-theme-preset-option='amber']"
+  },
+  {
+    "action": "click",
+    "selector": "[data-theme-segment='light']"
+  },
+  {
+    "action": "wait",
+    "ms": 450
+  },
+  {
+    "action": "click",
+    "selector": "[data-sidebar-component='select']"
+  },
+  {
+    "action": "wait",
+    "ms": 900
+  },
+  {
+    "action": "click",
+    "selector": "[data-demo='select'] [data-demo-slot='surface-preset'] button[aria-haspopup='listbox']"
+  },
+  {
+    "action": "wait",
+    "ms": 450
+  },
+  {
+    "action": "click",
+    "selector": "[data-sidebar-component='combobox']"
+  },
+  {
+    "action": "wait",
+    "ms": 900
+  },
+  {
+    "action": "click",
+    "selector": "[data-demo='combobox'] [data-demo-slot='workspace-search'] input"
+  },
+  {
+    "action": "type",
+    "selector": "[data-demo='combobox'] [data-demo-slot='workspace-search'] input",
+    "text": "sec",
+    "delayMs": 25
+  },
+  {
+    "action": "wait",
+    "ms": 450
+  },
+  {
+    "action": "click",
+    "selector": "[data-sidebar-component='date-picker']"
+  },
+  {
+    "action": "wait",
+    "ms": 900
+  },
+  {
+    "action": "click",
+    "selector": "[data-demo='date-picker'] [data-demo-slot='launch-date'] button[aria-label='Toggle date picker']"
+  },
+  {
+    "action": "wait",
+    "ms": 450
+  },
+  {
+    "action": "click",
+    "selector": "[data-sidebar-component='popover']"
+  },
+  {
+    "action": "wait",
+    "ms": 900
+  },
+  {
+    "action": "click",
+    "selector": "[data-demo='popover'] button[aria-expanded='false']"
+  },
+  {
+    "action": "wait",
+    "ms": 450
+  },
+  {
+    "action": "click",
+    "selector": "[data-sidebar-component='dropdown-menu']"
+  },
+  {
+    "action": "wait",
+    "ms": 900
+  },
+  {
+    "action": "click",
+    "selector": "[data-demo='dropdown-menu'] button[aria-haspopup='menu']"
+  },
+  {
+    "action": "wait",
+    "ms": 450
+  }
+]

@@ -565,6 +565,8 @@
   }
 
   .ui-demo-frame {
+    position: relative;
+    overflow: visible;
     border-radius: var(--radius-xl);
     border: 1px solid color-mix(in oklab, var(--border) 90%, transparent);
     background: linear-gradient(180deg, color-mix(in oklab, var(--card) 96%, white 4%), color-mix(in oklab, var(--card) 92%, var(--muted-soft) 8%));

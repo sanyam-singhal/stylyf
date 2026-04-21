@@ -100,7 +100,7 @@ export function RegistryCard(props: {
     <article
       id={props.item.slug}
       data-registry-card={props.item.slug}
-      class="ui-card scroll-mt-28 overflow-hidden p-[var(--space-6)] lg:p-[calc(var(--space-6)*1.12)]"
+      class="ui-card relative scroll-mt-28 overflow-visible p-[var(--space-6)] lg:p-[calc(var(--space-6)*1.12)]"
     >
       <div class="flex flex-col gap-6">
         <header class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">

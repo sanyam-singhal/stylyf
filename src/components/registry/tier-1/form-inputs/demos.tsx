@@ -14,8 +14,9 @@ import { Slider } from "~/components/registry/tier-1/form-inputs/slider";
 import { Switch } from "~/components/registry/tier-1/form-inputs/switch";
 import { TextArea } from "~/components/registry/tier-1/form-inputs/text-area";
 import { TextField } from "~/components/registry/tier-1/form-inputs/text-field";
+import { cn } from "~/lib/cn";
 
-function DemoFrame(props: { children: JSX.Element; item: RegistryItem; title: string }) {
+function DemoFrame(props: { children: JSX.Element; frameClass?: string; item: RegistryItem; title: string }) {
   return (
     <div class="space-y-4" data-demo={props.item.slug}>
       <div class="ui-demo-chip">
@@ -23,7 +24,7 @@ function DemoFrame(props: { children: JSX.Element; item: RegistryItem; title: st
         <span class="text-border">/</span>
         <span>{props.item.name}</span>
       </div>
-      <div class="ui-demo-frame">{props.children}</div>
+      <div class={cn("ui-demo-frame", props.frameClass)}>{props.children}</div>
     </div>
   );
 }
@@ -217,7 +218,7 @@ export function SwitchPreview(props: { item: RegistryItem }) {
 
 export function SelectPreview(props: { item: RegistryItem }) {
   return (
-    <DemoFrame item={props.item} title="Live primitive">
+    <DemoFrame item={props.item} title="Live primitive" frameClass="pb-[18.5rem]">
       <div class="grid gap-4 xl:grid-cols-2">
         <div data-demo-slot="surface-preset">
           <Select label="Surface preset" description="The trigger, listbox, and selected value stay fully themeable." />
@@ -244,7 +245,7 @@ export function ComboboxPreview(props: { item: RegistryItem }) {
   const [selected, setSelected] = createSignal<string | undefined>();
 
   return (
-    <DemoFrame item={props.item} title="Live primitive">
+    <DemoFrame item={props.item} title="Live primitive" frameClass="pb-[19rem]">
       <div class="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-end">
         <div data-demo-slot="workspace-search">
           <Combobox
@@ -330,7 +331,7 @@ export function DatePickerPreview(props: { item: RegistryItem }) {
   const [range, setRange] = createSignal<[Date | undefined, Date | undefined] | undefined>(undefined);
 
   return (
-    <DemoFrame item={props.item} title="Live primitive">
+    <DemoFrame item={props.item} title="Live primitive" frameClass="pb-[21rem]">
       <div class="grid gap-4 xl:grid-cols-2">
         <div data-demo-slot="launch-date">
           <DatePicker
