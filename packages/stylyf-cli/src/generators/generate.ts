@@ -17,6 +17,7 @@ import {
   renderGeneratedAuthHandlerRoute,
   renderGeneratedAuthModule,
 } from "./backend/auth.js";
+import { renderGeneratedAuthSchemaConfig, renderGeneratedAuthSchemaPlaceholder } from "./backend/auth-schema.js";
 import { renderGeneratedDbModule, renderGeneratedDbSchema, renderGeneratedDrizzleConfig } from "./backend/database.js";
 import { renderGeneratedEnvExample, renderGeneratedEnvModule } from "./backend/env.js";
 import { loadAssemblyRegistry, type AssemblyItem } from "../manifests/index.js";
@@ -346,6 +347,8 @@ export async function generateFrontendDraft(irPath: string, targetPath: string, 
   if (app.auth) {
     await writeGeneratedFile(resolve(targetPath, "src/lib/auth.ts"), renderGeneratedAuthModule(app));
     await writeGeneratedFile(resolve(targetPath, "src/lib/auth-client.ts"), renderGeneratedAuthClientModule());
+    await writeGeneratedFile(resolve(targetPath, "src/lib/auth-schema.config.ts"), renderGeneratedAuthSchemaConfig(app));
+    await writeGeneratedFile(resolve(targetPath, "src/lib/db/auth-schema.ts"), renderGeneratedAuthSchemaPlaceholder());
     await writeGeneratedFile(resolve(targetPath, "src/lib/server/guards.ts"), renderGeneratedAuthGuards());
     await writeGeneratedFile(resolve(targetPath, "src/routes/api/auth/[...auth].ts"), renderGeneratedAuthHandlerRoute());
   }
