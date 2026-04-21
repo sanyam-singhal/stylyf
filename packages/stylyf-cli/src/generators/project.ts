@@ -53,10 +53,9 @@ export function renderGeneratedPackageJson(app: AppIR) {
     dependencies["better-auth"] = "^1.6.6";
     dependencies["@better-auth/drizzle-adapter"] = "^1.6.6";
     devDependencies["@better-auth/cli"] = "^1.3.8";
-    scripts["auth:generate"] =
-      "npx @better-auth/cli@latest generate --config ./src/lib/auth-schema.config.ts --output ./src/lib/db/auth-schema.ts --yes";
+    scripts["auth:generate"] = "better-auth generate --config ./src/lib/auth-schema.config.ts --output ./src/lib/db/auth-schema.ts --yes";
     scripts["auth:sync"] = "npm run auth:generate && npm run db:generate";
-    scripts["auth:secret"] = "npx @better-auth/cli@latest secret";
+    scripts["auth:secret"] = "better-auth secret";
   }
 
   if (app.storage) {
@@ -130,6 +129,13 @@ export async function writeProjectScaffold(app: AppIR, targetPath: string) {
 
 export async function installGeneratedProjectDependencies(targetPath: string) {
   await execFileAsync("npm", ["install"], {
+    cwd: targetPath,
+    maxBuffer: 1024 * 1024 * 20,
+  });
+}
+
+export async function runGeneratedProjectScript(targetPath: string, scriptName: string) {
+  await execFileAsync("npm", ["run", scriptName], {
     cwd: targetPath,
     maxBuffer: 1024 * 1024 * 20,
   });

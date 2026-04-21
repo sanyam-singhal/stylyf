@@ -24,7 +24,7 @@ import { writeGeneratedServerModules } from "./backend/server-functions.js";
 import { renderGeneratedStorageModule } from "./backend/storage.js";
 import { loadAssemblyRegistry, type AssemblyItem } from "../manifests/index.js";
 import { bundledSourcePathExists, readBundledSourceFile, writeGeneratedFile } from "./assets.js";
-import { installGeneratedProjectDependencies, writeProjectScaffold } from "./project.js";
+import { installGeneratedProjectDependencies, runGeneratedProjectScript, writeProjectScaffold } from "./project.js";
 import {
   renderGeneratedAppCss,
   renderGeneratedAppRoot,
@@ -330,6 +330,7 @@ export async function generateFrontendDraft(irPath: string, targetPath: string, 
   const usedPageShells = new Set<PageShellId>();
   const usedLayouts = new Set<LayoutNodeId>(listLayoutTemplates());
   const registryImportsToCopy = new Set<string>(["~/lib/cn"]);
+  const postGenerateSteps: string[] = [];
 
   await writeProjectScaffold(app, targetPath);
   await writeGeneratedFile(resolve(targetPath, "src/app.tsx"), renderGeneratedAppRoot(app));
@@ -407,6 +408,16 @@ export async function generateFrontendDraft(irPath: string, targetPath: string, 
 
   if (install) {
     await installGeneratedProjectDependencies(targetPath);
+
+    if (app.auth) {
+      await runGeneratedProjectScript(targetPath, "auth:generate");
+      postGenerateSteps.push("auth:generate");
+    }
+
+    if (app.database?.migrations === "drizzle-kit") {
+      await runGeneratedProjectScript(targetPath, "db:generate");
+      postGenerateSteps.push("db:generate");
+    }
   }
 
   return {
@@ -417,6 +428,7 @@ export async function generateFrontendDraft(irPath: string, targetPath: string, 
     copiedFiles: seenImports.size,
     apiRoutes: generatedApiRoutes,
     serverModules: generatedServerModules,
+    postGenerateSteps,
     installed: install,
   };
 }
