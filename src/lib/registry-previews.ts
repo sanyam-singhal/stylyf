@@ -1,5 +1,5 @@
 import type { Component } from "solid-js";
-import { previewBySlug as eagerFirstClusterPreviewBySlug } from "~/components/registry/tier-1/actions-navigation/demos";
+import { previewBySlug as eagerFirstClusterPreviewBySlug } from "~/components/registry/actions-navigation/demos";
 import type { RegistryClusterSection, RegistryItem } from "~/lib/registry";
 
 type RegistryPreviewComponent = Component<{ item: RegistryItem }>;
@@ -9,15 +9,15 @@ type PreviewModule = {
 };
 
 const clusterPreviewLoaders: Record<string, () => Promise<PreviewModule>> = {
-  "tier-1-data-structure": () => import("../components/registry/tier-1/data-structure/demos"),
-  "tier-1-disclosure-overlay": () => import("../components/registry/tier-1/disclosure-overlay/demos"),
-  "tier-1-feedback-display": () => import("../components/registry/tier-1/feedback-display/demos"),
-  "tier-1-form-inputs": () => import("../components/registry/tier-1/form-inputs/demos"),
-  "tier-2-form-systems": () => import("../components/registry/tier-2/form-systems/demos"),
-  "tier-2-data-views": () => import("../components/registry/tier-2/data-views/demos"),
-  "tier-2-information-states": () => import("../components/registry/tier-2/information-states/demos"),
-  "tier-2-navigation-workflow": () => import("../components/registry/tier-2/navigation-workflow/demos"),
-  "tier-2-commercial-content": () => import("../components/registry/tier-2/commercial-content/demos"),
+  "tier-1-data-structure": () => import("../components/registry/data-structure/demos"),
+  "tier-1-disclosure-overlay": () => import("../components/registry/disclosure-overlay/demos"),
+  "tier-1-feedback-display": () => import("../components/registry/feedback-display/demos"),
+  "tier-1-form-inputs": () => import("../components/registry/form-inputs/demos"),
+  "tier-2-form-systems": () => import("../components/registry/form-systems/demos"),
+  "tier-2-data-views": () => import("../components/registry/data-views/demos"),
+  "tier-2-information-states": () => import("../components/registry/information-states/demos"),
+  "tier-2-navigation-workflow": () => import("../components/registry/navigation-workflow/demos"),
+  "tier-2-commercial-content": () => import("../components/registry/commercial-content/demos"),
 };
 
 export const eagerClusterIds = new Set(["tier-1-actions-navigation"]);

@@ -8,7 +8,7 @@ import {
   PaginationPreview,
   ToggleGroupPreview,
   TogglePreview,
-} from "~/components/registry/tier-1/actions-navigation/demos";
+} from "~/components/registry/actions-navigation/demos";
 import {
   CalendarPreview,
   CheckboxPreview,
@@ -22,7 +22,7 @@ import {
   SwitchPreview,
   TextAreaPreview,
   TextFieldPreview,
-} from "~/components/registry/tier-1/form-inputs/demos";
+} from "~/components/registry/form-inputs/demos";
 import {
   AccordionPreview,
   AlertDialogPreview,
@@ -36,7 +36,7 @@ import {
   PopoverPreview,
   TabsPreview,
   TooltipPreview,
-} from "~/components/registry/tier-1/disclosure-overlay/demos";
+} from "~/components/registry/disclosure-overlay/demos";
 import {
   AvatarPreview,
   BadgePreview,
@@ -44,8 +44,8 @@ import {
   SeparatorPreview,
   SkeletonPreview,
   ToastPreview,
-} from "~/components/registry/tier-1/feedback-display/demos";
-import { TablePreview } from "~/components/registry/tier-1/data-structure/demos";
+} from "~/components/registry/feedback-display/demos";
+import { TablePreview } from "~/components/registry/data-structure/demos";
 import type { RegistryItem } from "~/lib/registry";
 
 const implementedPreviewBySlug: Record<string, Component<{ item: RegistryItem }>> = {

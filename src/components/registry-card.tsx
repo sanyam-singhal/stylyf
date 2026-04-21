@@ -4,9 +4,9 @@ import type { Component } from "solid-js";
 import { ArrowRight } from "lucide-solid";
 import { CopyButton } from "~/components/copy-button";
 import { PreviewShell } from "~/components/preview-shell";
-import { Skeleton } from "~/components/registry/tier-1/feedback-display/skeleton";
+import { Skeleton } from "~/components/registry/feedback-display/skeleton";
 import { cn } from "~/lib/cn";
-import { targetPath, type RegistryItem } from "~/lib/registry";
+import type { RegistryItem } from "~/lib/registry";
 import { loadSourceFor } from "~/lib/registry-source";
 
 type RegistryPane = "preview" | "source";
@@ -193,14 +193,11 @@ export function RegistryCard(props: {
             </div>
 
             <Show when={activePane() === "source"}>
-              <div class="flex items-center gap-3">
-                <div class="hidden text-sm text-muted-foreground sm:block">{targetPath(props.item)}</div>
-                <CopyButton
-                  value={sourceValue()}
-                  disabled={!sourceReady()}
-                  label={sourceStatus() === "loading" ? "Loading source" : "Copy source"}
-                />
-              </div>
+              <CopyButton
+                value={sourceValue()}
+                disabled={!sourceReady()}
+                label={sourceStatus() === "loading" ? "Loading source" : "Copy source"}
+              />
             </Show>
           </div>
 
@@ -214,8 +211,7 @@ export function RegistryCard(props: {
                 >
                   <div>
                     <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Live source</div>
-                    <div class="mt-1 text-sm text-foreground">{targetPath(props.item)}</div>
-                    <pre class="ui-code mt-4 max-h-[30rem] overflow-auto px-4 py-4 text-[12px] leading-6">
+                    <pre class="ui-code mt-3 max-h-[30rem] overflow-auto px-4 py-4 text-[12px] leading-6">
                       <code>{sourceValue()}</code>
                     </pre>
                   </div>

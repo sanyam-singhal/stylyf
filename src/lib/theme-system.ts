@@ -19,15 +19,15 @@ export type ThemePreset = {
   swatches: [string, string, string];
 };
 
-export const THEME_STORAGE_KEY = "stylyf-theme-state";
+export const THEME_STORAGE_KEY = "stylyf-theme-state-v2";
 export const THEME_EVENT = "stylyf:theme-change";
 
 export const defaultThemeState: ThemeState = {
-  mode: "system",
-  preset: "amber",
+  mode: "light",
+  preset: "opal",
   density: "comfortable",
   radius: "trim",
-  spacing: "balanced",
+  spacing: "tight",
 };
 
 export const themePresets: ThemePreset[] = [

@@ -81,15 +81,15 @@ export function clusterDirectory(entry: Pick<RegistryItem, "tierId" | "clusterId
 }
 
 export function componentFilePath(item: RegistryItem) {
-  return `src/components/registry/${item.tierId}/${clusterDirectory(item)}/${item.slug}.tsx`;
+  return `src/components/registry/${clusterDirectory(item)}/${item.slug}.tsx`;
 }
 
 export function clusterDemoFilePath(cluster: Pick<RegistryClusterSection, "id" | "tierId">) {
-  return `src/components/registry/${cluster.tierId}/${clusterDirectory(cluster)}/demos.tsx`;
+  return `src/components/registry/${clusterDirectory(cluster)}/demos.tsx`;
 }
 
 export function componentImportPath(item: RegistryItem) {
-  return `~/components/registry/${item.tierId}/${clusterDirectory(item)}/${item.slug}`;
+  return `~/components/registry/${clusterDirectory(item)}/${item.slug}`;
 }
 
 export function targetPath(item: RegistryItem) {
