@@ -124,7 +124,7 @@ export function Calendar(userProps: CalendarProps) {
         <div class="flex items-center justify-between gap-3">
           <button
             type="button"
-            class="inline-flex size-9 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground transition hover:bg-accent hover:text-foreground"
+            class="ui-control-button size-9"
             onClick={() => setMonth(current => addMonths(current, -1))}
             aria-label="Previous month"
           >
@@ -135,7 +135,7 @@ export function Calendar(userProps: CalendarProps) {
           </div>
           <button
             type="button"
-            class="inline-flex size-9 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground transition hover:bg-accent hover:text-foreground"
+            class="ui-control-button size-9"
             onClick={() => setMonth(current => addMonths(current, 1))}
             aria-label="Next month"
           >
@@ -162,10 +162,10 @@ export function Calendar(userProps: CalendarProps) {
                       <button
                         type="button"
                         class={cn(
-                          "inline-flex aspect-square items-center justify-center rounded-lg text-sm transition",
+                          "inline-flex aspect-square items-center justify-center rounded-[var(--radius-lg)] border border-transparent text-sm transition",
                           local.compact ? "size-9" : "size-10",
                           selected()
-                            ? "bg-primary font-semibold text-primary-foreground"
+                            ? "border-primary/24 bg-primary font-semibold text-primary-foreground"
                             : containsRange(date, currentValue())
                               ? "bg-accent text-accent-foreground"
                               : "bg-background text-foreground hover:bg-background-subtle",
@@ -173,6 +173,8 @@ export function Calendar(userProps: CalendarProps) {
                           isDisabled(date, local.disabledDates) && "cursor-not-allowed opacity-35",
                         )}
                         aria-pressed={selected()}
+                        aria-current={sameDay(date, new Date()) ? "date" : undefined}
+                        data-date={date.toISOString().slice(0, 10)}
                         disabled={isDisabled(date, local.disabledDates)}
                         onClick={() => selectDate(date)}
                       >

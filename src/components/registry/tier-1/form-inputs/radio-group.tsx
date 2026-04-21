@@ -1,4 +1,3 @@
-import { CircleDot } from "lucide-solid";
 import { For, Show, createMemo, createSignal, createUniqueId, mergeProps, splitProps } from "solid-js";
 import type { JSX } from "solid-js";
 import { cn } from "~/lib/cn";
@@ -98,12 +97,18 @@ export function RadioGroup(userProps: RadioGroupProps) {
             <label
               class={cn(
                 "group relative flex cursor-pointer gap-3 border transition",
-                local.layout === "card" ? "rounded-xl p-4" : "rounded-full px-4 py-3",
+                local.layout === "card" ? "rounded-[var(--radius-xl)] p-4" : "rounded-[var(--radius-xl)] px-4 py-3",
                 currentValue() === option.value
-                  ? "border-primary/35 bg-accent"
-                  : "border-border/70 bg-background hover:border-primary/25",
+                  ? "border-primary/28 bg-[color:color-mix(in_oklab,var(--accent)_72%,var(--background)_28%)] shadow-inset"
+                  : "border-input bg-background hover:border-primary/24 hover:bg-card",
                 option.disabled && "cursor-not-allowed opacity-60",
               )}
+              data-state={currentValue() === option.value ? "checked" : "unchecked"}
+              onClick={() => {
+                if (!option.disabled) {
+                  commit(option.value);
+                }
+              }}
             >
               <input
                 class="peer sr-only"
@@ -115,13 +120,23 @@ export function RadioGroup(userProps: RadioGroupProps) {
                 aria-invalid={local.invalid ? true : undefined}
                 onChange={() => commit(option.value)}
               />
-              <span class="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full border border-border/70 bg-card">
-                <CircleDot class={cn("size-3.5 text-primary transition", currentValue() === option.value ? "opacity-100" : "opacity-0")} />
+              <span
+                class={cn(
+                  "mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full border transition",
+                  currentValue() === option.value ? "border-primary/34 bg-primary/12" : "border-input bg-background",
+                )}
+              >
+                <span
+                  class={cn(
+                    "size-2.5 rounded-full transition",
+                    currentValue() === option.value ? "bg-primary opacity-100" : "bg-transparent opacity-0",
+                  )}
+                />
               </span>
               <span class="min-w-0">
                 <span class="block text-sm font-semibold text-foreground">{option.label}</span>
                 <Show when={option.description}>
-                  <span class="mt-1 block text-sm leading-6 text-muted-foreground">{option.description}</span>
+                  <span class="ui-field-description mt-1 block">{option.description}</span>
                 </Show>
               </span>
             </label>
@@ -130,7 +145,7 @@ export function RadioGroup(userProps: RadioGroupProps) {
       </div>
 
       <Show when={local.invalid && local.errorMessage}>
-        <p id={errorId} class="text-sm font-medium leading-6 text-destructive">
+        <p id={errorId} class="ui-field-error">
           {local.errorMessage}
         </p>
       </Show>

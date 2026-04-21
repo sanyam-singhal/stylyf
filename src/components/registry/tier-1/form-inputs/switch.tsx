@@ -15,9 +15,15 @@ const trackSizes = {
 } as const;
 
 const thumbSizes = {
-  sm: "size-5 data-[checked=true]:translate-x-5",
-  md: "size-7 data-[checked=true]:translate-x-[1.625rem]",
-  lg: "size-8 data-[checked=true]:translate-x-7",
+  sm: "size-5",
+  md: "size-7",
+  lg: "size-8",
+} as const;
+
+const thumbTranslations = {
+  sm: "translate-x-5",
+  md: "translate-x-[1.625rem]",
+  lg: "translate-x-7",
 } as const;
 
 export type SwitchProps = Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, "onChange" | "size"> & {
@@ -112,14 +118,13 @@ export function Switch(userProps: SwitchProps) {
         class={cn(
           "relative inline-flex shrink-0 items-center rounded-full border shadow-inset transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/24",
           trackSizes[local.size],
-          local.tone === "soft" &&
-            "border-accent/35 bg-accent data-[checked=true]:border-primary/18 data-[checked=true]:bg-primary",
-          local.tone === "outline" &&
-            "border-border/70 bg-background data-[checked=true]:border-primary/35 data-[checked=true]:bg-accent",
+          !checked() && local.tone === "soft" && "border-input bg-muted-soft",
+          !checked() && local.tone === "outline" && "border-input bg-background",
+          checked() && local.tone === "soft" && "border-foreground/18 bg-foreground text-background",
+          checked() && local.tone === "outline" && "border-primary/28 bg-accent text-accent-foreground",
           local.tone === "solid" && "border-primary/10 bg-primary text-primary-foreground",
-          local.invalid && "border-destructive/52 ring-2 ring-destructive/14",
+          local.invalid && "border-destructive/46 ring-2 ring-destructive/12",
         )}
-        data-checked={checked() ? "true" : "false"}
         disabled={others.disabled}
         {...others}
       >
@@ -127,8 +132,9 @@ export function Switch(userProps: SwitchProps) {
           class={cn(
             "ml-1 inline-flex items-center justify-center rounded-full bg-background text-foreground shadow-soft transition-transform",
             thumbSizes[local.size],
+            checked() && thumbTranslations[local.size],
+            checked() && "bg-primary-foreground text-primary",
           )}
-          data-checked={checked() ? "true" : "false"}
         >
           <Show when={checked()} fallback={<X class="size-3 text-muted-foreground" />}>
             <Check class="size-3" />
@@ -143,12 +149,12 @@ export function Switch(userProps: SwitchProps) {
           </label>
         </Show>
         <Show when={local.description}>
-          <div id={descriptionId} class="mt-1 text-sm leading-6 text-muted-foreground">
+          <div id={descriptionId} class="ui-field-description mt-1">
             {local.description}
           </div>
         </Show>
         <Show when={local.invalid && local.errorMessage}>
-          <div id={errorId} class="mt-1 text-sm font-medium leading-6 text-destructive">
+          <div id={errorId} class="ui-field-error mt-1">
             {local.errorMessage}
           </div>
         </Show>

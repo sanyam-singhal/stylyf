@@ -168,28 +168,27 @@ export function NumberField(userProps: NumberFieldProps) {
   return (
     <div class={cn("space-y-2.5", local.class)}>
       <Show when={local.label}>
-        <div class="flex items-center gap-2">
-          <label for={baseId} class="text-sm font-semibold tracking-[-0.01em] text-foreground">
+        <div class="ui-field-label-row">
+          <label for={baseId} class="ui-field-label">
             {local.label}
           </label>
           <Show when={local.required}>
-            <span class="text-xs font-medium uppercase tracking-[0.2em] text-primary">Required</span>
+            <span class="ui-field-required">Required</span>
           </Show>
         </div>
       </Show>
       <div
         class={cn(
-          "group relative flex w-full items-center border bg-background text-foreground shadow-inset transition-[border-color,box-shadow,background-color,color]",
-          "hover:border-primary/18 focus-within:border-primary/48 focus-within:bg-card focus-within:ring-2 focus-within:ring-ring/24",
-          local.invalid && "border-destructive/52 ring-2 ring-destructive/14",
-          others.disabled && "cursor-not-allowed bg-muted/70 opacity-70",
-          others.readOnly && "bg-muted/40",
+          "ui-field-shell",
           frameSizeClasses[local.size],
           frameRadiusClasses[local.radius],
         )}
+        data-invalid={local.invalid ? "true" : undefined}
+        data-disabled={others.disabled ? "true" : undefined}
+        data-readonly={others.readOnly ? "true" : undefined}
       >
         <Show when={resolvedPrefix()}>
-          <div class="shrink-0 text-muted-foreground">{resolvedPrefix()}</div>
+          <div class="ui-field-affix shrink-0">{resolvedPrefix()}</div>
         </Show>
 
         <input
@@ -198,7 +197,7 @@ export function NumberField(userProps: NumberFieldProps) {
           type="text"
           inputMode="decimal"
           class={cn(
-            "w-full min-w-0 bg-transparent text-foreground outline-none placeholder:text-muted-foreground/90 disabled:cursor-not-allowed",
+            "ui-field-input disabled:cursor-not-allowed",
             controlSizeClasses[local.size],
             alignClasses[local.align],
             "tabular-nums font-semibold tracking-[0.08em]",
@@ -226,18 +225,18 @@ export function NumberField(userProps: NumberFieldProps) {
         />
 
         <Show when={resolvedSuffix()}>
-          <div class="shrink-0 text-muted-foreground">{resolvedSuffix()}</div>
+          <div class="ui-field-affix shrink-0">{resolvedSuffix()}</div>
         </Show>
 
         <div
           class={cn(
-            "shrink-0 rounded-full border border-border/78 bg-muted-soft shadow-inset",
-            local.controlPlacement === "stacked" ? "grid gap-1 p-1" : "inline-flex items-center p-1",
+            "ml-1 shrink-0 border-l border-border/72 pl-3",
+            local.controlPlacement === "stacked" ? "grid gap-1" : "inline-flex items-center gap-1",
           )}
         >
           <button
             type="button"
-            class="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
+            class="ui-control-button size-8"
             aria-label="Decrease value"
             onClick={() => bump(-local.step)}
             disabled={!canDecrease()}
@@ -245,11 +244,11 @@ export function NumberField(userProps: NumberFieldProps) {
             <Minus class="size-4" />
           </button>
           <Show when={local.controlPlacement === "inline"}>
-            <span class="h-5 w-px bg-border/70" />
+            <span class="h-5 w-px bg-border/72" />
           </Show>
           <button
             type="button"
-            class="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
+            class="ui-control-button size-8"
             aria-label="Increase value"
             onClick={() => bump(local.step)}
             disabled={!canIncrease()}
@@ -259,12 +258,12 @@ export function NumberField(userProps: NumberFieldProps) {
         </div>
       </div>
       <Show when={local.description}>
-        <div id={descriptionId} class="text-sm leading-6 text-muted-foreground">
+        <div id={descriptionId} class="ui-field-description">
           {local.description}
         </div>
       </Show>
       <Show when={local.invalid && local.errorMessage}>
-        <div id={errorId} class="text-sm font-medium leading-6 text-destructive">
+        <div id={errorId} class="ui-field-error">
           {local.errorMessage}
         </div>
       </Show>

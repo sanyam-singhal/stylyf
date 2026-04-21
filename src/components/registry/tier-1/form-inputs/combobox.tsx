@@ -1,6 +1,7 @@
 import { Check, ChevronDown, CircleX, LoaderCircle } from "lucide-solid";
-import { For, Show, createMemo, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from "solid-js";
+import { For, Show, createEffect, createMemo, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from "solid-js";
 import type { JSX } from "solid-js";
+import { Portal } from "solid-js/web";
 import { cn } from "~/lib/cn";
 
 type FieldRadius = "md" | "lg" | "pill";
@@ -99,6 +100,7 @@ export function Combobox(userProps: ComboboxProps) {
   const [internalSelectedValue, setInternalSelectedValue] = createSignal<string | undefined>(local.defaultSelectedValue);
   const [open, setOpen] = createSignal(false);
   const [highlightedIndex, setHighlightedIndex] = createSignal(0);
+  const [panelStyle, setPanelStyle] = createSignal<Record<string, string>>({});
   const baseId = local.id ?? createUniqueId();
   const descriptionId = `${baseId}-description`;
   const errorId = `${baseId}-error`;
@@ -109,6 +111,7 @@ export function Combobox(userProps: ComboboxProps) {
   const selectedValue = createMemo(() => local.selectedValue ?? internalSelectedValue());
   const listboxId = `${baseId}-listbox`;
   let rootRef: HTMLDivElement | undefined;
+  let panelRef: HTMLDivElement | undefined;
 
   const filteredOptions = createMemo(() => {
     const query = inputValue().trim().toLowerCase();
@@ -146,7 +149,10 @@ export function Combobox(userProps: ComboboxProps) {
 
   if (typeof document !== "undefined") {
     const handlePointerDown = (event: PointerEvent) => {
-      if (rootRef && !rootRef.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const insideRoot = rootRef?.contains(target) ?? false;
+      const insidePanel = panelRef?.contains(target) ?? false;
+      if (!insideRoot && !insidePanel) {
         setOpen(false);
       }
     };
@@ -154,30 +160,70 @@ export function Combobox(userProps: ComboboxProps) {
     onCleanup(() => document.removeEventListener("pointerdown", handlePointerDown));
   }
 
+  const updatePanelPosition = () => {
+    if (typeof window === "undefined" || !rootRef) {
+      return;
+    }
+
+    const rect = rootRef.getBoundingClientRect();
+    const width = Math.max(rect.width, 340);
+    const resolvedWidth = Math.min(width, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(rect.left, window.innerWidth - resolvedWidth - 12));
+    const maxHeight = Math.max(180, window.innerHeight - rect.bottom - 16);
+
+    setPanelStyle({
+      left: `${left}px`,
+      top: `${rect.bottom + 8}px`,
+      width: `${resolvedWidth}px`,
+      "max-height": `${maxHeight}px`,
+      position: "fixed",
+      "z-index": "80",
+    });
+  };
+
+  createEffect(() => {
+    if (!open()) {
+      return;
+    }
+
+    updatePanelPosition();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleLayout = () => updatePanelPosition();
+    window.addEventListener("resize", handleLayout);
+    window.addEventListener("scroll", handleLayout, true);
+    onCleanup(() => {
+      window.removeEventListener("resize", handleLayout);
+      window.removeEventListener("scroll", handleLayout, true);
+    });
+  });
+
   return (
     <div class={cn("space-y-2.5", local.class)}>
       <Show when={local.label}>
-        <div class="flex items-center gap-2">
-          <label for={baseId} class="text-sm font-semibold tracking-[-0.01em] text-foreground">
+        <div class="ui-field-label-row">
+          <label for={baseId} class="ui-field-label">
             {local.label}
           </label>
           <Show when={local.required}>
-            <span class="text-xs font-medium uppercase tracking-[0.2em] text-primary">Required</span>
+            <span class="ui-field-required">Required</span>
           </Show>
         </div>
       </Show>
       <div class="relative" ref={rootRef}>
         <div
           class={cn(
-            "group relative flex w-full items-center border bg-background text-foreground shadow-inset transition-[border-color,box-shadow,background-color,color]",
-            "hover:border-primary/18 focus-within:border-primary/48 focus-within:bg-card focus-within:ring-2 focus-within:ring-ring/24",
-            local.invalid && "border-destructive/52 ring-2 ring-destructive/14",
-            others.disabled && "cursor-not-allowed bg-muted/70 opacity-70",
-            others.readOnly && "bg-muted/40",
+            "ui-field-shell",
             frameSizeClasses[local.size],
             frameRadiusClasses[local.radius],
             "pr-2",
           )}
+          data-invalid={local.invalid ? "true" : undefined}
+          data-disabled={others.disabled ? "true" : undefined}
+          data-readonly={others.readOnly ? "true" : undefined}
         >
           <input
             id={baseId}
@@ -189,7 +235,7 @@ export function Combobox(userProps: ComboboxProps) {
             aria-activedescendant={open() ? `${listboxId}-option-${highlightedIndex()}` : undefined}
             aria-invalid={local.invalid ? true : undefined}
             class={cn(
-              "w-full min-w-0 bg-transparent text-foreground outline-none placeholder:text-muted-foreground/90 disabled:cursor-not-allowed",
+              "ui-field-input disabled:cursor-not-allowed",
               controlSizeClasses[local.size],
             )}
             value={inputValue()}
@@ -231,7 +277,7 @@ export function Combobox(userProps: ComboboxProps) {
           <Show when={inputValue().length > 0}>
             <button
               type="button"
-              class="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground"
+              class="ui-control-button size-8 shrink-0"
               onClick={() => {
                 commitInput("");
                 commitSelection(undefined);
@@ -249,52 +295,54 @@ export function Combobox(userProps: ComboboxProps) {
         </div>
 
         <Show when={open()}>
-          <div class="ui-popover absolute inset-x-0 top-[calc(100%+0.6rem)] z-20 overflow-hidden">
-            <div role="listbox" id={listboxId} class="max-h-72 overflow-auto p-2">
-              <Show
-                when={filteredOptions().length}
-                fallback={<div class="rounded-lg px-3 py-3 text-sm text-muted-foreground">{local.emptyMessage}</div>}
-              >
-                <For each={filteredOptions()}>
-                  {(option, index) => (
-                    <button
-                      id={`${listboxId}-option-${index()}`}
-                      type="button"
-                      role="option"
-                      aria-selected={selectedValue() === option.value}
-                      disabled={option.disabled}
-                      class={cn(
-                        "flex w-full items-start justify-between gap-3 rounded-lg px-3 py-3 text-left transition",
-                        highlightedIndex() === index()
-                          ? "bg-accent text-foreground"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                      )}
-                      onMouseEnter={() => setHighlightedIndex(index())}
-                      onMouseDown={event => event.preventDefault()}
-                      onClick={() => choose(option.value)}
-                    >
-                      <span class="min-w-0">
-                        <span class="block text-sm font-semibold text-current">{option.label}</span>
-                        <Show when={option.description}>
-                          <span class="mt-1 block text-sm leading-6 text-muted-foreground">{option.description}</span>
-                        </Show>
-                      </span>
-                      <Check class={cn("size-4 shrink-0 text-primary", selectedValue() === option.value ? "opacity-100" : "opacity-0")} />
-                    </button>
-                  )}
-                </For>
-              </Show>
+          <Portal>
+            <div ref={panelRef} class="ui-popover overflow-hidden p-2" style={panelStyle()}>
+              <div role="listbox" id={listboxId} class="max-h-72 overflow-auto">
+                <Show
+                  when={filteredOptions().length}
+                  fallback={<div class="rounded-[var(--radius-lg)] px-3 py-3 text-sm text-muted-foreground">{local.emptyMessage}</div>}
+                >
+                  <For each={filteredOptions()}>
+                    {(option, index) => (
+                      <button
+                        id={`${listboxId}-option-${index()}`}
+                        type="button"
+                        role="option"
+                        aria-selected={selectedValue() === option.value}
+                        disabled={option.disabled}
+                        class={cn(
+                          "flex w-full items-start justify-between gap-3 rounded-[var(--radius-lg)] px-3 py-3 text-left transition",
+                          highlightedIndex() === index()
+                            ? "bg-accent text-foreground"
+                            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                        )}
+                        onMouseEnter={() => setHighlightedIndex(index())}
+                        onMouseDown={event => event.preventDefault()}
+                        onClick={() => choose(option.value)}
+                      >
+                        <span class="min-w-0">
+                          <span class="block text-sm font-semibold text-current">{option.label}</span>
+                          <Show when={option.description}>
+                            <span class="ui-field-description mt-1 block">{option.description}</span>
+                          </Show>
+                        </span>
+                        <Check class={cn("size-4 shrink-0 text-primary", selectedValue() === option.value ? "opacity-100" : "opacity-0")} />
+                      </button>
+                    )}
+                  </For>
+                </Show>
+              </div>
             </div>
-          </div>
+          </Portal>
         </Show>
       </div>
       <Show when={local.description}>
-        <div id={descriptionId} class="text-sm leading-6 text-muted-foreground">
+        <div id={descriptionId} class="ui-field-description">
           {local.description}
         </div>
       </Show>
       <Show when={local.invalid && local.errorMessage}>
-        <div id={errorId} class="text-sm font-medium leading-6 text-destructive">
+        <div id={errorId} class="ui-field-error">
           {local.errorMessage}
         </div>
       </Show>

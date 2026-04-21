@@ -103,16 +103,16 @@ export function OTPField(userProps: OTPFieldProps) {
   return (
     <div class={cn("space-y-2.5", local.class)}>
       <Show when={local.label}>
-        <div class="flex items-center gap-2">
-          <label for={baseId} class="text-sm font-semibold tracking-[-0.01em] text-foreground">
+        <div class="ui-field-label-row">
+          <label for={baseId} class="ui-field-label">
             {local.label}
           </label>
           <Show when={local.required}>
-            <span class="text-xs font-medium uppercase tracking-[0.2em] text-primary">Required</span>
+            <span class="ui-field-required">Required</span>
           </Show>
         </div>
       </Show>
-      <div class={cn("inline-flex flex-wrap items-center rounded-[calc(var(--radius-xl)+0.1rem)] border border-border/82 bg-muted-soft p-3 shadow-inset", gapClasses[local.gap])}>
+      <div class={cn("inline-flex flex-wrap items-center rounded-[var(--radius-xl)] border border-border/84 bg-[color:color-mix(in_oklab,var(--muted-soft)_78%,var(--background)_22%)] p-3.5 shadow-inset", gapClasses[local.gap])}>
         <For each={chars()}>
           {(value, index) => (
             <>
@@ -129,13 +129,15 @@ export function OTPField(userProps: OTPFieldProps) {
                 aria-describedby={describedBy}
                 aria-label={`Digit ${index() + 1}`}
                 class={cn(
-                  "rounded-xl border border-border/76 bg-background text-center font-semibold outline-none shadow-inset transition focus:border-primary/48 focus:bg-card focus:ring-2 focus:ring-ring/24",
+                  "border border-input bg-background text-center font-semibold outline-none shadow-inset transition focus:border-primary/48 focus:bg-card focus:ring-2 focus:ring-ring/24",
                   cellClasses[local.size],
                   local.mono && "font-mono tracking-[0.2em]",
-                  value && "border-primary/24 bg-card",
-                  local.invalid && "border-destructive/52 ring-2 ring-destructive/14",
-                  local.radius === "md" && "rounded-lg",
+                  value && "border-primary/24 bg-card text-foreground",
+                  !value && "text-muted-foreground",
+                  local.invalid && "border-destructive/46 ring-2 ring-destructive/12",
+                  local.radius === "md" && "rounded-md",
                   local.radius === "pill" && "rounded-full",
+                  local.radius === "lg" && "rounded-[var(--radius-lg)]",
                   local.cellClass,
                 )}
                 disabled={others.disabled}
@@ -191,12 +193,12 @@ export function OTPField(userProps: OTPFieldProps) {
         <div class="ui-chip ui-chip-accent w-fit text-[0.7rem] font-semibold uppercase tracking-[0.2em]">Complete</div>
       </Show>
       <Show when={local.description}>
-        <div id={descriptionId} class="text-sm leading-6 text-muted-foreground">
+        <div id={descriptionId} class="ui-field-description">
           {local.description}
         </div>
       </Show>
       <Show when={local.invalid && local.errorMessage}>
-        <div id={errorId} class="text-sm font-medium leading-6 text-destructive">
+        <div id={errorId} class="ui-field-error">
           {local.errorMessage}
         </div>
       </Show>

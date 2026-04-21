@@ -135,7 +135,7 @@ export function Slider(userProps: SliderProps) {
             aria-describedby={describedBy}
             aria-invalid={local.invalid ? true : undefined}
             class={cn(
-              "absolute appearance-none bg-transparent accent-foreground",
+              "ui-slider-input absolute bg-transparent accent-foreground",
               local.orientation === "horizontal" ? "inset-x-0 top-0 h-full" : "inset-y-0 left-0 h-full w-full rotate-180 [writing-mode:vertical-lr]",
             )}
             onInput={event => {
@@ -155,7 +155,7 @@ export function Slider(userProps: SliderProps) {
               value={currentValue()[1]}
               aria-label={`${local.label ?? "Range"} end`}
               class={cn(
-                "pointer-events-none absolute appearance-none bg-transparent accent-foreground",
+                "ui-slider-input pointer-events-none absolute bg-transparent accent-foreground",
                 local.orientation === "horizontal" ? "inset-x-0 top-0 h-full" : "inset-y-0 left-0 h-full w-full rotate-180 [writing-mode:vertical-lr]",
               )}
               onInput={event => {
@@ -180,12 +180,12 @@ export function Slider(userProps: SliderProps) {
         </div>
       </div>
       <Show when={local.description}>
-        <div id={descriptionId} class="text-sm leading-6 text-muted-foreground">
+        <div id={descriptionId} class="ui-field-description">
           {local.description}
         </div>
       </Show>
       <Show when={local.invalid && local.errorMessage}>
-        <div id={errorId} class="text-sm font-medium leading-6 text-destructive">
+        <div id={errorId} class="ui-field-error">
           {local.errorMessage}
         </div>
       </Show>

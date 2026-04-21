@@ -109,15 +109,16 @@ export function Checkbox(userProps: CheckboxProps) {
             local.radius === "md" && "rounded-md",
             local.radius === "lg" && "rounded-lg",
             local.radius === "pill" && "rounded-full",
-            local.tone === "soft" &&
-              "border-accent/35 bg-accent text-accent-foreground peer-checked:border-primary/25 peer-checked:bg-primary peer-checked:text-primary-foreground",
-            local.tone === "outline" &&
-              "border-border bg-background text-primary peer-checked:border-primary/35 peer-checked:bg-accent peer-checked:text-accent-foreground",
-            local.tone === "solid" && "border-primary/15 bg-primary text-primary-foreground",
-            local.invalid && "border-destructive/52 ring-2 ring-destructive/14",
+            !checked() && !local.indeterminate && local.tone === "soft" && "border-input bg-background text-transparent",
+            !checked() && !local.indeterminate && local.tone === "outline" && "border-input bg-background text-transparent",
+            (checked() || local.indeterminate) && local.tone === "soft" && "border-primary/24 bg-primary text-primary-foreground",
+            (checked() || local.indeterminate) && local.tone === "outline" && "border-primary/28 bg-accent text-accent-foreground",
+            local.tone === "solid" && "border-primary/12 bg-primary text-primary-foreground",
+            local.invalid && "border-destructive/46 ring-2 ring-destructive/12",
           )}
+          data-state={local.indeterminate && !checked() ? "indeterminate" : checked() ? "checked" : "unchecked"}
         >
-          <Show when={local.indeterminate && !checked()} fallback={<Check class="size-3.5 opacity-0 transition peer-checked:opacity-100" />}>
+          <Show when={local.indeterminate && !checked()} fallback={<Check class="size-3.5" />}>
             <Minus class="size-3.5" />
           </Show>
         </span>
@@ -130,12 +131,12 @@ export function Checkbox(userProps: CheckboxProps) {
           </span>
         </Show>
         <Show when={local.description}>
-          <span id={descriptionId} class="mt-1 block text-sm leading-6 text-muted-foreground">
+          <span id={descriptionId} class="ui-field-description mt-1 block">
             {local.description}
           </span>
         </Show>
         <Show when={local.invalid && local.errorMessage}>
-          <span id={errorId} class="mt-1 block text-sm font-medium leading-6 text-destructive">
+          <span id={errorId} class="ui-field-error mt-1 block">
             {local.errorMessage}
           </span>
         </Show>

@@ -106,34 +106,33 @@ export function TextField(userProps: TextFieldProps) {
   return (
     <div class={cn("space-y-2.5", local.class)}>
       <Show when={local.label}>
-        <div class="flex items-center gap-2">
-          <label for={baseId} class="text-sm font-semibold tracking-[-0.01em] text-foreground">
+        <div class="ui-field-label-row">
+          <label for={baseId} class="ui-field-label">
             {local.label}
           </label>
           <Show when={local.required}>
-            <span class="text-xs font-medium uppercase tracking-[0.2em] text-primary">Required</span>
+            <span class="ui-field-required">Required</span>
           </Show>
         </div>
       </Show>
       <div
         class={cn(
-          "group relative flex w-full items-center border bg-background text-foreground shadow-inset transition-[border-color,box-shadow,background-color,color]",
-          "hover:border-primary/18 focus-within:border-primary/48 focus-within:bg-card focus-within:ring-2 focus-within:ring-ring/24",
-          local.invalid && "border-destructive/52 ring-2 ring-destructive/14",
-          others.disabled && "cursor-not-allowed bg-muted/70 opacity-70",
-          others.readOnly && "bg-muted/40",
+          "ui-field-shell",
           frameSizeClasses[local.size],
           frameRadiusClasses[local.radius],
         )}
+        data-invalid={local.invalid ? "true" : undefined}
+        data-disabled={others.disabled ? "true" : undefined}
+        data-readonly={others.readOnly ? "true" : undefined}
       >
         <Show when={resolvedPrefix()}>
-          <div class="shrink-0 text-muted-foreground">{resolvedPrefix()}</div>
+          <div class="ui-field-affix shrink-0">{resolvedPrefix()}</div>
         </Show>
         <input
           ref={ref}
           id={baseId}
           class={cn(
-            "w-full min-w-0 bg-transparent text-foreground outline-none placeholder:text-muted-foreground/90 disabled:cursor-not-allowed",
+            "ui-field-input disabled:cursor-not-allowed",
             controlSizeClasses[local.size],
             local.inputClass,
           )}
@@ -157,23 +156,23 @@ export function TextField(userProps: TextFieldProps) {
           <button
             type="button"
             onClick={clear}
-            class="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground"
+            class="ui-control-button size-8 shrink-0"
             aria-label="Clear field"
           >
             <CircleX class="size-4" />
           </button>
         </Show>
         <Show when={resolvedSuffix()}>
-          <div class="shrink-0 text-muted-foreground">{resolvedSuffix()}</div>
+          <div class="ui-field-affix shrink-0">{resolvedSuffix()}</div>
         </Show>
       </div>
       <Show when={local.description}>
-        <div id={descriptionId} class="text-sm leading-6 text-muted-foreground">
+        <div id={descriptionId} class="ui-field-description">
           {local.description}
         </div>
       </Show>
       <Show when={local.invalid && local.errorMessage}>
-        <div id={errorId} class="text-sm font-medium leading-6 text-destructive">
+        <div id={errorId} class="ui-field-error">
           {local.errorMessage}
         </div>
       </Show>

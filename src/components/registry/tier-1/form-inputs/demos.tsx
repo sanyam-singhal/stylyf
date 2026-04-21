@@ -218,7 +218,7 @@ export function SwitchPreview(props: { item: RegistryItem }) {
 
 export function SelectPreview(props: { item: RegistryItem }) {
   return (
-    <DemoFrame item={props.item} title="Live primitive" frameClass="pb-[18.5rem]">
+    <DemoFrame item={props.item} title="Live primitive">
       <div class="grid gap-4 xl:grid-cols-2">
         <div data-demo-slot="surface-preset">
           <Select label="Surface preset" description="The trigger, listbox, and selected value stay fully themeable." />
@@ -245,8 +245,8 @@ export function ComboboxPreview(props: { item: RegistryItem }) {
   const [selected, setSelected] = createSignal<string | undefined>();
 
   return (
-    <DemoFrame item={props.item} title="Live primitive" frameClass="pb-[19rem]">
-      <div class="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-end">
+    <DemoFrame item={props.item} title="Live primitive">
+      <div class="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-start">
         <div data-demo-slot="workspace-search">
           <Combobox
             label="Search workspace"
@@ -261,7 +261,7 @@ export function ComboboxPreview(props: { item: RegistryItem }) {
             ]}
           />
         </div>
-        <div class="ui-demo-inset text-sm text-muted-foreground">
+        <div class="ui-demo-inset mt-8 text-sm text-muted-foreground xl:mt-0">
           Selected: <span class="font-semibold text-foreground">{selected() ?? "None"}</span>
         </div>
       </div>
@@ -331,7 +331,7 @@ export function DatePickerPreview(props: { item: RegistryItem }) {
   const [range, setRange] = createSignal<[Date | undefined, Date | undefined] | undefined>(undefined);
 
   return (
-    <DemoFrame item={props.item} title="Live primitive" frameClass="pb-[21rem]">
+    <DemoFrame item={props.item} title="Live primitive">
       <div class="grid gap-4 xl:grid-cols-2">
         <div data-demo-slot="launch-date">
           <DatePicker

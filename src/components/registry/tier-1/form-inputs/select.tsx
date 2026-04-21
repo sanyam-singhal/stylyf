@@ -1,6 +1,7 @@
 import { Check, ChevronDown } from "lucide-solid";
-import { For, Show, createMemo, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from "solid-js";
+import { For, Show, createEffect, createMemo, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from "solid-js";
 import type { JSX } from "solid-js";
+import { Portal } from "solid-js/web";
 import { cn } from "~/lib/cn";
 
 type FieldRadius = "md" | "lg" | "pill";
@@ -93,9 +94,12 @@ export function Select(userProps: SelectProps) {
   const [internalValue, setInternalValue] = createSignal(local.defaultValue);
   const [open, setOpen] = createSignal(false);
   const [highlightedIndex, setHighlightedIndex] = createSignal(0);
+  const [panelStyle, setPanelStyle] = createSignal<Record<string, string>>({});
   const currentValue = createMemo(() => local.value ?? internalValue());
   const selectedOption = createMemo(() => local.options.find(option => option.value === currentValue()));
   let rootRef: HTMLDivElement | undefined;
+  let triggerRef: HTMLButtonElement | undefined;
+  let panelRef: HTMLDivElement | undefined;
 
   const commit = (next: string) => {
     if (local.value === undefined) {
@@ -108,13 +112,57 @@ export function Select(userProps: SelectProps) {
 
   if (typeof document !== "undefined") {
     const handlePointerDown = (event: PointerEvent) => {
-      if (rootRef && !rootRef.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const insideRoot = rootRef?.contains(target) ?? false;
+      const insidePanel = panelRef?.contains(target) ?? false;
+      if (!insideRoot && !insidePanel) {
         setOpen(false);
       }
     };
     document.addEventListener("pointerdown", handlePointerDown);
     onCleanup(() => document.removeEventListener("pointerdown", handlePointerDown));
   }
+
+  const updatePanelPosition = () => {
+    if (typeof window === "undefined" || !triggerRef) {
+      return;
+    }
+
+    const rect = triggerRef.getBoundingClientRect();
+    const width = Math.max(rect.width, 320);
+    const resolvedWidth = Math.min(width, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(rect.left, window.innerWidth - resolvedWidth - 12));
+    const maxHeight = Math.max(180, window.innerHeight - rect.bottom - 16);
+
+    setPanelStyle({
+      left: `${left}px`,
+      top: `${rect.bottom + 8}px`,
+      width: `${resolvedWidth}px`,
+      "max-height": `${maxHeight}px`,
+      position: "fixed",
+      "z-index": "80",
+    });
+  };
+
+  createEffect(() => {
+    if (!open()) {
+      return;
+    }
+
+    updatePanelPosition();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleLayout = () => updatePanelPosition();
+    window.addEventListener("resize", handleLayout);
+    window.addEventListener("scroll", handleLayout, true);
+    onCleanup(() => {
+      window.removeEventListener("resize", handleLayout);
+      window.removeEventListener("scroll", handleLayout, true);
+    });
+  });
 
   return (
     <div class={cn("space-y-2.5", local.class)}>
@@ -132,6 +180,7 @@ export function Select(userProps: SelectProps) {
       <div class="relative" ref={rootRef}>
         <input type="hidden" name={others.name} value={currentValue()} />
         <button
+          ref={triggerRef}
           id={baseId}
           type="button"
           aria-haspopup="listbox"
@@ -139,14 +188,9 @@ export function Select(userProps: SelectProps) {
           aria-expanded={open()}
           aria-describedby={describedBy}
           aria-invalid={local.invalid ? true : undefined}
-          class={cn(
-            "group relative flex w-full items-center border bg-background text-foreground shadow-inset transition-[border-color,box-shadow,background-color,color]",
-            "hover:border-primary/18 focus-visible:border-primary/48 focus-visible:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/24",
-            local.invalid && "border-destructive/52 ring-2 ring-destructive/14",
-            others.disabled && "cursor-not-allowed bg-muted/70 opacity-70",
-            frameSizeClasses[local.size],
-            frameRadiusClasses[local.radius],
-          )}
+          class={cn("ui-field-shell", frameSizeClasses[local.size], frameRadiusClasses[local.radius])}
+          data-invalid={local.invalid ? "true" : undefined}
+          data-disabled={others.disabled ? "true" : undefined}
           disabled={others.disabled}
           onClick={() => {
             setOpen(current => !current);
@@ -174,11 +218,11 @@ export function Select(userProps: SelectProps) {
               setOpen(false);
             }
           }}
-        >
-          <span
-            class={cn(
-              "min-w-0 flex-1 truncate text-left",
-              controlSizeClasses[local.size],
+          >
+            <span
+              class={cn(
+                "min-w-0 flex-1 truncate text-left",
+                controlSizeClasses[local.size],
               !selectedOption() && "text-muted-foreground",
             )}
           >
@@ -188,47 +232,49 @@ export function Select(userProps: SelectProps) {
         </button>
 
         <Show when={open()}>
-          <div class="ui-popover absolute inset-x-0 top-[calc(100%+0.65rem)] z-20 overflow-hidden">
-            <div id={listboxId} role="listbox" class="max-h-72 overflow-auto p-2">
-              <For each={local.options}>
-                {(option, index) => (
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={currentValue() === option.value}
-                    disabled={option.disabled}
-                    class={cn(
-                      "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-3 text-left transition",
-                      highlightedIndex() === index()
-                        ? "bg-accent text-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                      option.disabled && "cursor-not-allowed opacity-50",
-                    )}
-                    onMouseEnter={() => setHighlightedIndex(index())}
-                    onMouseDown={event => event.preventDefault()}
-                    onClick={() => {
-                      if (!option.disabled) {
-                        commit(option.value);
-                      }
-                    }}
-                  >
-                    <span class="text-sm font-semibold text-current">{option.label}</span>
-                    <Check class={cn("size-4 shrink-0 text-primary", currentValue() === option.value ? "opacity-100" : "opacity-0")} />
-                  </button>
-                )}
-              </For>
+          <Portal>
+            <div ref={panelRef} class="ui-popover overflow-hidden p-2" style={panelStyle()}>
+              <div id={listboxId} role="listbox" class="max-h-72 overflow-auto">
+                <For each={local.options}>
+                  {(option, index) => (
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={currentValue() === option.value}
+                      disabled={option.disabled}
+                      class={cn(
+                        "flex w-full items-center justify-between gap-3 rounded-[var(--radius-lg)] px-3 py-3 text-left transition",
+                        highlightedIndex() === index()
+                          ? "bg-accent text-foreground"
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                        option.disabled && "cursor-not-allowed opacity-50",
+                      )}
+                      onMouseEnter={() => setHighlightedIndex(index())}
+                      onMouseDown={event => event.preventDefault()}
+                      onClick={() => {
+                        if (!option.disabled) {
+                          commit(option.value);
+                        }
+                      }}
+                    >
+                      <span class="text-sm font-semibold text-current">{option.label}</span>
+                      <Check class={cn("size-4 shrink-0 text-primary", currentValue() === option.value ? "opacity-100" : "opacity-0")} />
+                    </button>
+                  )}
+                </For>
+              </div>
             </div>
-          </div>
+          </Portal>
         </Show>
       </div>
 
       <Show when={local.description}>
-        <div id={descriptionId} class="text-sm leading-6 text-muted-foreground">
+        <div id={descriptionId} class="ui-field-description">
           {local.description}
         </div>
       </Show>
       <Show when={local.invalid && local.errorMessage}>
-        <div id={errorId} class="text-sm font-medium leading-6 text-destructive">
+        <div id={errorId} class="ui-field-error">
           {local.errorMessage}
         </div>
       </Show>

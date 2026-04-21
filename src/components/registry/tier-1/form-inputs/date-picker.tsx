@@ -1,6 +1,7 @@
 import { CalendarDays } from "lucide-solid";
-import { Show, createMemo, createSignal, createUniqueId, mergeProps, splitProps } from "solid-js";
+import { Show, createEffect, createMemo, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from "solid-js";
 import type { JSX } from "solid-js";
+import { Portal } from "solid-js/web";
 import { cn } from "~/lib/cn";
 import { Calendar } from "~/components/registry/tier-1/form-inputs/calendar";
 import { formatDate, type CalendarValue } from "~/components/registry/tier-1/form-inputs/calendar-utils";
@@ -85,6 +86,7 @@ export function DatePicker(userProps: DatePickerProps) {
 
   const [internalValue, setInternalValue] = createSignal<CalendarValue>(local.defaultValue);
   const [open, setOpen] = createSignal(local.defaultOpen);
+  const [panelStyle, setPanelStyle] = createSignal<Record<string, string>>({});
   const currentValue = createMemo(() => local.value ?? internalValue());
   const baseId = local.id ?? createUniqueId();
   const descriptionId = `${baseId}-description`;
@@ -92,6 +94,8 @@ export function DatePicker(userProps: DatePickerProps) {
   const describedBy = [local.description ? descriptionId : undefined, local.invalid && local.errorMessage ? errorId : undefined]
     .filter(Boolean)
     .join(" ") || undefined;
+  let rootRef: HTMLDivElement | undefined;
+  let panelRef: HTMLDivElement | undefined;
 
   const setOpenState = (next: boolean) => {
     setOpen(next);
@@ -110,29 +114,82 @@ export function DatePicker(userProps: DatePickerProps) {
     }
   };
 
+  if (typeof document !== "undefined") {
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      const insideRoot = rootRef?.contains(target) ?? false;
+      const insidePanel = panelRef?.contains(target) ?? false;
+      if (!insideRoot && !insidePanel) {
+        setOpenState(false);
+      }
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    onCleanup(() => document.removeEventListener("pointerdown", handlePointerDown));
+  }
+
+  const updatePanelPosition = () => {
+    if (typeof window === "undefined" || !rootRef) {
+      return;
+    }
+
+    const rect = rootRef.getBoundingClientRect();
+    const width = Math.max(rect.width, 320);
+    const resolvedWidth = Math.min(width, 420);
+    const left = Math.max(12, Math.min(rect.left, window.innerWidth - resolvedWidth - 12));
+    const maxHeight = Math.max(240, window.innerHeight - rect.bottom - 16);
+
+    setPanelStyle({
+      left: `${left}px`,
+      top: `${rect.bottom + 8}px`,
+      width: `${resolvedWidth}px`,
+      "max-height": `${maxHeight}px`,
+      position: "fixed",
+      "z-index": "80",
+    });
+  };
+
+  createEffect(() => {
+    if (!open()) {
+      return;
+    }
+
+    updatePanelPosition();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleLayout = () => updatePanelPosition();
+    window.addEventListener("resize", handleLayout);
+    window.addEventListener("scroll", handleLayout, true);
+    onCleanup(() => {
+      window.removeEventListener("resize", handleLayout);
+      window.removeEventListener("scroll", handleLayout, true);
+    });
+  });
+
   return (
     <div class={cn("space-y-2.5", local.class)}>
       <Show when={local.label}>
-        <div class="flex items-center gap-2">
-          <label for={baseId} class="text-sm font-semibold tracking-[-0.01em] text-foreground">
+        <div class="ui-field-label-row">
+          <label for={baseId} class="ui-field-label">
             {local.label}
           </label>
           <Show when={local.required}>
-            <span class="text-xs font-medium uppercase tracking-[0.2em] text-primary">Required</span>
+            <span class="ui-field-required">Required</span>
           </Show>
         </div>
       </Show>
-      <div class="relative">
+      <div class="relative" ref={rootRef}>
         <div
           class={cn(
-            "group relative flex w-full items-center border bg-background text-foreground shadow-inset transition-[border-color,box-shadow,background-color,color]",
-            "hover:border-primary/18 focus-within:border-primary/48 focus-within:bg-card focus-within:ring-2 focus-within:ring-ring/24",
-            local.invalid && "border-destructive/52 ring-2 ring-destructive/14",
-            others.disabled && "cursor-not-allowed bg-muted/70 opacity-70",
+            "ui-field-shell",
             frameSizeClasses[local.size],
             frameRadiusClasses[local.radius],
             "pr-2",
           )}
+          data-invalid={local.invalid ? "true" : undefined}
+          data-disabled={others.disabled ? "true" : undefined}
         >
           <input
             id={baseId}
@@ -140,7 +197,7 @@ export function DatePicker(userProps: DatePickerProps) {
             value={formatDisplay(currentValue())}
             placeholder={local.mode === "range" ? "Choose a date range" : "Choose a date"}
             class={cn(
-              "w-full min-w-0 bg-transparent text-foreground outline-none placeholder:text-muted-foreground/90 disabled:cursor-not-allowed",
+              "ui-field-input disabled:cursor-not-allowed",
               controlSizeClasses[local.size],
             )}
             aria-describedby={describedBy}
@@ -158,24 +215,26 @@ export function DatePicker(userProps: DatePickerProps) {
         </div>
 
         <Show when={open()}>
-          <div class="absolute left-0 top-[calc(100%+0.65rem)] z-20 w-full min-w-[20rem] max-w-[26rem]">
-            <Calendar
-              label={local.mode === "range" ? "Date range" : "Date"}
-              mode={local.mode}
-              value={currentValue()}
-              onValueChange={commit}
-              class={cn("ui-popover p-4")}
-            />
-          </div>
+          <Portal>
+            <div ref={panelRef} style={panelStyle()}>
+              <Calendar
+                label={local.mode === "range" ? "Date range" : "Date"}
+                mode={local.mode}
+                value={currentValue()}
+                onValueChange={commit}
+                class={cn("ui-popover p-4")}
+              />
+            </div>
+          </Portal>
         </Show>
       </div>
       <Show when={local.description}>
-        <div id={descriptionId} class="text-sm leading-6 text-muted-foreground">
+        <div id={descriptionId} class="ui-field-description">
           {local.description}
         </div>
       </Show>
       <Show when={local.invalid && local.errorMessage}>
-        <div id={errorId} class="text-sm font-medium leading-6 text-destructive">
+        <div id={errorId} class="ui-field-error">
           {local.errorMessage}
         </div>
       </Show>
