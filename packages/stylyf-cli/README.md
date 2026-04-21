@@ -1,6 +1,6 @@
 # @depths/stylyf-cli
 
-Stylyf is a JSON-driven frontend assembly line for SolidStart. Its job is to let a coding agent describe the intended app once, generate a real working source tree, and then keep iterating inside that emitted app without redoing the repetitive setup work by hand.
+Stylyf is a JSON-driven full-stack assembly line for SolidStart. Its job is to let a coding agent describe the intended app once, generate a real working source tree, and then keep iterating inside that emitted app without redoing the repetitive setup work by hand.
 
 `@depths/stylyf-cli` is the publishable CLI package. The generated app is a separate destination project and does not depend on this repo or on `@depths/stylyf-cli` at runtime.
 
@@ -8,13 +8,14 @@ Stylyf is a JSON-driven frontend assembly line for SolidStart. Its job is to let
 
 - turns a shallow JSON IR into a standalone SolidStart app
 - emits app shell, route files, page shells, layout wrappers, global styling, and copied registry components
-- installs dependencies so the target app is runnable immediately
+- emits backend capability files for PostgreSQL + Drizzle, Better Auth, S3 storage, API routes, and server functions when requested
+- installs dependencies and runs post-generate auth/db scaffolding so the target app is runnable immediately
 - exposes search and intro commands so an agent can orient itself quickly during follow-up work
 
 ## Operator Workflow
 
 1. Search the bundled inventory to find the right building blocks.
-2. Write or refine a shallow JSON IR describing app shell, routes, page shells, layout wrappers, and component composition.
+2. Write or refine a shallow JSON IR describing app shell, routes, page shells, layout wrappers, component composition, and any required backend capabilities.
 3. Validate the IR before generation.
 4. Generate the app into a clean target directory.
 5. Move into the generated app and iterate there like a normal SolidStart codebase.
@@ -24,7 +25,7 @@ Stylyf is a JSON-driven frontend assembly line for SolidStart. Its job is to let
 
 Yes. The intended operator is a coding agent with little or no prior project context. Stylyf is meant to provide enough structure that an agent can:
 
-- understand the available shells, layouts, themes, and components
+- understand the available shells, layouts, themes, components, and backend capabilities
 - write valid JSON IR without reopening the full Stylyf source tree first
 - generate a SolidStart scaffold quickly
 - continue iterative UI development inside the emitted app
@@ -72,6 +73,21 @@ Stylyf uses a shallow JSON IR. The root shape is:
       "mono": "string"
     }
   },
+  "database": {
+    "dialect": ["postgres"],
+    "migrations": ["drizzle-kit"],
+    "schema": "DatabaseSchemaIR[]"
+  },
+  "auth": {
+    "provider": ["better-auth"],
+    "mode": ["session"]
+  },
+  "storage": {
+    "provider": ["s3"],
+    "mode": ["presigned-put"]
+  },
+  "apis": "ApiRouteIR[]",
+  "server": "ServerModuleIR[]",
   "routes": [
     {
       "path": "string",
@@ -117,6 +133,55 @@ Stylyf uses a shallow JSON IR. The root shape is:
 - string component children are shorthand for `{ "component": "..." }`
 - use `props` when a component or layout needs named values
 - use `items` when a component expects repeatable data collections
+- add `database`, `auth`, `storage`, `apis`, and `server` only when the app actually needs those backend capabilities
+
+### Backend Capability DSL
+
+```json
+{
+  "database": {
+    "dialect": "postgres",
+    "migrations": "drizzle-kit",
+    "schema": [
+      {
+        "table": "records",
+        "columns": [
+          { "name": "id", "type": "uuid", "primaryKey": true },
+          { "name": "name", "type": "varchar" }
+        ],
+        "timestamps": true
+      }
+    ]
+  },
+  "auth": {
+    "provider": "better-auth",
+    "mode": "session",
+    "features": { "emailPassword": true }
+  },
+  "storage": {
+    "provider": "s3",
+    "mode": "presigned-put",
+    "bucketAlias": "uploads"
+  },
+  "apis": [
+    {
+      "path": "/api/uploads/presign",
+      "method": "POST",
+      "type": "presign-upload",
+      "name": "create-record-upload",
+      "auth": "user"
+    }
+  ],
+  "server": [
+    {
+      "name": "records.list",
+      "type": "query",
+      "resource": "records",
+      "auth": "user"
+    }
+  ]
+}
+```
 
 ### Example IR
 
@@ -180,10 +245,21 @@ src/
   app.css
   entry-client.tsx
   entry-server.tsx
+  .env.example
   lib/
+    env.ts
     theme-system.ts
     cn.ts
+    db.ts
+    auth.ts
+    auth-client.ts
+    storage.ts
+    server/
+      guards.ts
+      queries/
+      actions/
   routes/
+    api/
   components/
     layout/
     shells/
@@ -200,6 +276,8 @@ src/
 - inspect `src/components/layout/` for spatial composition wrappers
 - inspect `src/components/registry/` for the copied UI building blocks used by the generated routes
 - inspect `src/app.css` and `src/lib/theme-system.ts` for the styling grammar and default theme behavior
+- inspect `src/lib/env.ts`, `src/lib/db.ts`, `src/lib/auth.ts`, and `src/lib/storage.ts` for the generated backend capability surface
+- inspect `src/routes/api/` and `src/lib/server/` for explicit machine-facing API routes and server functions
 
 ## Iterative UI Development With Stylyf
 
@@ -259,6 +337,14 @@ Current grammar surface:
 - app shells: `sidebar-app`, `topbar-app`, `docs-shell`, `marketing-shell`
 - page shells: `dashboard`, `resource-index`, `resource-detail`, `settings`, `auth`, `blank`
 - layouts: `stack`, `row`, `column`, `grid`, `split`, `panel`, `section`, `toolbar`, `content-frame`
+
+### Backend Capability Inventory
+
+- database: `postgres` with `drizzle-kit` migrations
+- auth: `better-auth` in session mode, wired to Drizzle
+- storage: `s3` with presigned PUT upload helpers
+- api route types: `json`, `webhook`, `presign-upload`, plus the generated Better Auth mount route
+- server module types: `query`, `action`
 
 ### App Shell Intent
 

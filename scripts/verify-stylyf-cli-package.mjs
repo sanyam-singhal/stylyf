@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,6 +25,49 @@ const verifyIr = {
       mono: "IBM Plex Mono",
     },
   },
+  database: {
+    dialect: "postgres",
+    migrations: "drizzle-kit",
+    schema: [
+      {
+        table: "records",
+        timestamps: true,
+        columns: [
+          { name: "id", type: "uuid", primaryKey: true },
+          { name: "name", type: "varchar" },
+        ],
+      },
+    ],
+  },
+  auth: {
+    provider: "better-auth",
+    mode: "session",
+    features: {
+      emailPassword: true,
+    },
+  },
+  storage: {
+    provider: "s3",
+    mode: "presigned-put",
+    bucketAlias: "uploads",
+  },
+  apis: [
+    {
+      path: "/api/uploads/presign",
+      method: "POST",
+      type: "presign-upload",
+      name: "create-record-upload",
+      auth: "user",
+    },
+  ],
+  server: [
+    {
+      name: "records.list",
+      type: "query",
+      resource: "records",
+      auth: "user",
+    },
+  ],
   routes: [
     {
       path: "/",
@@ -74,7 +117,10 @@ async function main() {
     "package/dist/bin.js",
     "package/dist/manifests/generated/theme-grammar.json",
     "package/dist/manifests/generated/assembly-registry.json",
+    "package/dist/manifests/generated/backend-manifests.json",
     "package/dist/templates/app-shells/sidebar-app.tsx.tpl",
+    "package/dist/templates/server-functions/list-query.ts.tpl",
+    "package/dist/templates/api-routes/presign-upload.ts.tpl",
     "package/dist/assets/source/src/app.css",
     "package/dist/assets/source/src/components/registry/actions-navigation/button.tsx",
   ];
@@ -107,9 +153,47 @@ async function main() {
   }
 
   await run(stylyfBin, ["intro", "--output", "STYLYF_INTRO.md"], verifyRoot);
+  const intro = await readFile(resolve(verifyRoot, "STYLYF_INTRO.md"), "utf8");
+  if (!intro.includes("Better Auth") || !intro.includes("PostgreSQL") || !intro.includes("S3")) {
+    throw new Error("Generated intro output does not mention the backend capability surface");
+  }
+
   await writeFile(resolve(verifyRoot, "verify-ir.json"), `${JSON.stringify(verifyIr, null, 2)}\n`);
   await run(stylyfBin, ["generate", "--ir", "verify-ir.json", "--target", "./generated-app"], verifyRoot);
+  await run("npm", ["run", "check"], resolve(verifyRoot, "generated-app"));
   await run("npm", ["run", "build"], resolve(verifyRoot, "generated-app"));
+
+  const requiredGeneratedFiles = [
+    "generated-app/drizzle.config.ts",
+    "generated-app/src/routes/api/auth/[...auth].ts",
+    "generated-app/src/routes/api/uploads/presign.ts",
+    "generated-app/src/lib/storage.ts",
+    "generated-app/src/lib/server/queries/records-list.ts",
+  ];
+
+  for (const relativePath of requiredGeneratedFiles) {
+    const absolutePath = resolve(verifyRoot, relativePath);
+    try {
+      await readFile(absolutePath, "utf8");
+    } catch {
+      throw new Error(`Generated packaged app is missing required file: ${relativePath}`);
+    }
+  }
+
+  const { stdout: importScan } = await run(
+    "rg",
+    ["-n", "/root/stylyf|@depths/stylyf-cli|@stylyf/cli", "generated-app"],
+    verifyRoot,
+  ).catch(error => {
+    if (error.code === 1) {
+      return { stdout: "" };
+    }
+    throw error;
+  });
+
+  if (importScan.trim()) {
+    throw new Error(`Generated packaged app still references the repo or CLI package:\n${importScan}`);
+  }
 
   process.stdout.write(
     [
@@ -118,9 +202,11 @@ async function main() {
       "Verified:",
       "  - tarball bundles dist manifests, templates, and source assets",
       "  - installed stylyf binary runs outside the repo",
-      "  - packaged intro command works",
+      "  - packaged intro command reflects backend capabilities",
       "  - packaged generate command works in a clean temp directory",
-      "  - generated app builds successfully",
+      "  - generated backend files are present",
+      "  - generated app does not import the repo or CLI package",
+      "  - generated app checks and builds successfully",
     ].join("\n") + "\n",
   );
 

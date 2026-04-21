@@ -143,13 +143,14 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
   const intro = [
     "# Stylyf Intro",
     "",
-    "Stylyf is a JSON-driven frontend assembly line for SolidStart. Its job is to let a coding agent describe the intended app once, generate a real working source tree, and then keep iterating inside that emitted app without redoing the repetitive setup work by hand.",
+    "Stylyf is a JSON-driven full-stack assembly line for SolidStart. Its job is to let a coding agent describe the intended app once, generate a real working source tree, and then keep iterating inside that emitted app without redoing the repetitive setup work by hand.",
     "",
     "## What Stylyf Does",
     "",
     "- turns a shallow JSON IR into a standalone SolidStart app",
     "- emits app shell, route files, page shells, layout wrappers, global styling, and copied registry components",
-    "- installs dependencies so the target app is runnable immediately",
+    "- emits backend capability files for PostgreSQL + Drizzle, Better Auth, S3 storage, API routes, and server functions when requested",
+    "- installs dependencies and runs post-generate auth/db scaffolding so the target app is runnable immediately",
     "- exposes search and intro commands so an agent can orient itself quickly during follow-up work",
     "",
     "## Operator Workflow",
@@ -165,7 +166,7 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
     "",
     "Yes, that is the point of this document. A fresh coding agent should be able to:",
     "",
-    "- understand the available shells, layouts, themes, and components",
+    "- understand the available shells, layouts, themes, components, and backend capabilities",
     "- write valid JSON IR without opening the Stylyf source tree first",
     "- generate a SolidStart app scaffold quickly",
     "- move into the emitted app and continue iterative UI development there",
@@ -207,6 +208,27 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
                 mono: "string",
               },
             },
+            env: {
+              extras: [{ name: "string", exposure: "server | public", required: "boolean", example: "string" }],
+            },
+            database: {
+              dialect: ["postgres"],
+              migrations: ["drizzle-kit"],
+              schema: "DatabaseSchemaIR[]",
+            },
+            auth: {
+              provider: ["better-auth"],
+              mode: ["session"],
+              features: { emailPassword: "boolean", magicLink: "boolean" },
+              protect: "AuthProtectionIR[]",
+            },
+            storage: {
+              provider: ["s3"],
+              mode: ["presigned-put"],
+              bucketAlias: "string",
+            },
+            apis: "ApiRouteIR[]",
+            server: "ServerModuleIR[]",
             routes: [
               {
                 path: "string",
@@ -265,6 +287,70 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
     "- string component children are shorthand for `{ \"component\": \"...\" }`",
     "- use `props` when a component or layout needs named values",
     "- use `items` when a component expects repeatable data collections",
+    "- add `database`, `auth`, `storage`, `apis`, and `server` only when the app actually needs those backend capabilities",
+    "",
+    "### Backend Capability DSL",
+    "",
+    codeBlock(
+      JSON.stringify(
+        {
+          database: {
+            dialect: "postgres",
+            migrations: "drizzle-kit",
+            schema: [
+              {
+                table: "records",
+                columns: [
+                  { name: "id", type: "uuid", primaryKey: true },
+                  { name: "name", type: "varchar" },
+                ],
+                timestamps: true,
+              },
+            ],
+          },
+          auth: {
+            provider: "better-auth",
+            mode: "session",
+            features: {
+              emailPassword: true,
+              magicLink: false,
+            },
+            protect: [{ target: "/records", kind: "route", access: "user" }],
+          },
+          storage: {
+            provider: "s3",
+            mode: "presigned-put",
+            bucketAlias: "uploads",
+          },
+          apis: [
+            {
+              path: "/api/uploads/presign",
+              method: "POST",
+              type: "presign-upload",
+              name: "create-record-upload",
+              auth: "user",
+            },
+          ],
+          server: [
+            {
+              name: "records.list",
+              type: "query",
+              resource: "records",
+              auth: "user",
+            },
+            {
+              name: "records.create",
+              type: "action",
+              resource: "records",
+              auth: "user",
+            },
+          ],
+        },
+        null,
+        2,
+      ),
+      "json",
+    ),
     "",
     "### Example IR",
     "",
@@ -285,6 +371,49 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
               mono: "IBM Plex Mono",
             },
           },
+          database: {
+            dialect: "postgres",
+            migrations: "drizzle-kit",
+            schema: [
+              {
+                table: "records",
+                timestamps: true,
+                columns: [
+                  { "name": "id", "type": "uuid", "primaryKey": true },
+                  { "name": "name", "type": "varchar" }
+                ]
+              }
+            ]
+          },
+          auth: {
+            provider: "better-auth",
+            mode: "session",
+            features: {
+              emailPassword: true
+            }
+          },
+          storage: {
+            provider: "s3",
+            mode: "presigned-put",
+            bucketAlias: "uploads"
+          },
+          apis: [
+            {
+              path: "/api/uploads/presign",
+              method: "POST",
+              type: "presign-upload",
+              name: "create-record-upload",
+              auth: "user"
+            }
+          ],
+          server: [
+            {
+              name: "records.list",
+              type: "query",
+              resource: "records",
+              auth: "user"
+            }
+          ],
           routes: [
             {
               path: "/",
@@ -343,10 +472,21 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
         "  app.css",
         "  entry-client.tsx",
         "  entry-server.tsx",
+        ".env.example",
         "  lib/",
+        "    env.ts",
         "    theme-system.ts",
         "    cn.ts",
+        "    db.ts",
+        "    auth.ts",
+        "    auth-client.ts",
+        "    storage.ts",
+        "    server/",
+        "      guards.ts",
+        "      queries/",
+        "      actions/",
         "  routes/",
+        "    api/",
         "  components/",
         "    layout/",
         "    shells/",
@@ -364,6 +504,8 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
     "- inspect `src/components/shells/page/` for page rhythm and framing",
     "- inspect `src/components/layout/` for spatial composition wrappers",
     "- inspect `src/components/registry/` for the copied UI building blocks used by the generated routes",
+    "- inspect `src/lib/env.ts`, `src/lib/db.ts`, `src/lib/auth.ts`, and `src/lib/storage.ts` for the generated backend capability surface",
+    "- inspect `src/routes/api/` and `src/lib/server/` for explicit machine-facing API routes and server functions",
     "- inspect `src/app.css` and `src/lib/theme-system.ts` for the styling grammar and default theme behavior",
     "",
     "## Iterative UI Development With Stylyf",
@@ -425,6 +567,14 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
     `- page shells: ${listPageShellTemplates().join(", ")}`,
     `- layouts: ${listLayoutTemplates().join(", ")}`,
     "",
+    "### Backend Capability Inventory",
+    "",
+    "- database: `postgres` with `drizzle-kit` migrations",
+    "- auth: `better-auth` in session mode, wired to Drizzle",
+    "- storage: `s3` with presigned PUT upload helpers",
+    "- api route types: `json`, `webhook`, `presign-upload`, plus the generated Better Auth mount route",
+    "- server module types: `query`, `action`",
+    "",
     "### App Shell Intent",
     "",
     "- `sidebar-app`: internal tools, dashboards, admin products",
@@ -481,11 +631,12 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
     "",
     "1. Choose the app shell that matches the product surface.",
     "2. Choose the default theme values and three font roles.",
-    "3. Sketch routes using page shells first, before thinking about specific components.",
-    "4. Choose one layout wrapper per section.",
-    "5. Fill each section with the smallest set of relevant components.",
-    "6. Generate the app.",
-    "7. Move into the generated app and continue normal UI development there.",
+    "3. Decide whether the app needs database, auth, storage, API routes, or server functions.",
+    "4. Sketch routes using page shells first, before thinking about specific components.",
+    "5. Choose one layout wrapper per section.",
+    "6. Fill each section with the smallest set of relevant components.",
+    "7. Generate the app.",
+    "8. Move into the generated app and continue normal UI and backend development there.",
     "",
     "If uncertain about which components fit, start with `stylyf search` and query by page intent rather than component label.",
     "",
