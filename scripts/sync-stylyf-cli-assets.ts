@@ -14,6 +14,7 @@ async function main() {
     recursive: true,
   });
   await cp(resolve(repoDir, "src/lib/cn.ts"), resolve(outputDir, "src/lib/cn.ts"));
+  await cp(resolve(repoDir, "src/app.css"), resolve(outputDir, "src/app.css"));
 }
 
 main().catch(error => {

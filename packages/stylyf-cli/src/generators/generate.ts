@@ -13,6 +13,7 @@ import type {
 import { assertValidAppIr } from "../ir/validate.js";
 import { loadAssemblyRegistry, type AssemblyItem } from "../manifests/index.js";
 import { bundledSourcePathExists, readBundledSourceFile, writeGeneratedFile } from "./assets.js";
+import { renderGeneratedAppCss, renderGeneratedAppRoot, renderGeneratedEntryServer, renderGeneratedThemeSystem } from "./style.js";
 import { listLayoutTemplates, renderAppShellTemplate, renderLayoutTemplate, renderPageShellTemplate } from "./templates.js";
 
 function normalizeKey(value: string) {
@@ -310,6 +311,11 @@ export async function generateFrontendDraft(irPath: string, targetPath: string) 
   const usedPageShells = new Set<PageShellId>();
   const usedLayouts = new Set<LayoutNodeId>(listLayoutTemplates());
   const registryImportsToCopy = new Set<string>(["~/lib/cn"]);
+
+  await writeGeneratedFile(resolve(targetPath, "src/app.tsx"), renderGeneratedAppRoot(app));
+  await writeGeneratedFile(resolve(targetPath, "src/entry-server.tsx"), renderGeneratedEntryServer());
+  await writeGeneratedFile(resolve(targetPath, "src/app.css"), await renderGeneratedAppCss(app));
+  await writeGeneratedFile(resolve(targetPath, "src/lib/theme-system.ts"), renderGeneratedThemeSystem(app));
 
   for (const route of app.routes) {
     usedAppShells.add(route.shell ?? app.shell);
