@@ -1,4 +1,6 @@
 dist
+packages/*/dist
+packages/*/*.tsbuildinfo
 .wrangler
 .output
 .vercel

@@ -1,0 +1,135 @@
+{
+  "presets": [
+    "amber",
+    "emerald",
+    "pearl",
+    "opal"
+  ],
+  "modes": [
+    "light",
+    "dark",
+    "system"
+  ],
+  "radii": [
+    "edge",
+    "trim",
+    "soft",
+    "mellow"
+  ],
+  "density": [
+    "comfortable",
+    "compact",
+    "relaxed"
+  ],
+  "spacing": [
+    "tight",
+    "balanced",
+    "airy"
+  ],
+  "tokenGroups": {
+    "colors": [
+      "background",
+      "background-subtle",
+      "foreground",
+      "card",
+      "card-foreground",
+      "popover",
+      "popover-foreground",
+      "primary",
+      "primary-foreground",
+      "secondary",
+      "secondary-foreground",
+      "muted",
+      "muted-foreground",
+      "accent",
+      "accent-foreground",
+      "destructive",
+      "destructive-foreground",
+      "border",
+      "input",
+      "ring",
+      "panel",
+      "panel-foreground",
+      "muted-soft",
+      "highlight",
+      "highlight-strong",
+      "accent-strong",
+      "success",
+      "success-foreground",
+      "warning",
+      "warning-foreground",
+      "info",
+      "info-foreground",
+      "ink",
+      "ink-foreground",
+      "chart-1",
+      "chart-2",
+      "chart-3",
+      "chart-4",
+      "chart-5"
+    ],
+    "surfaces": [
+      "background",
+      "background-subtle",
+      "card",
+      "card-foreground",
+      "popover",
+      "popover-foreground",
+      "muted",
+      "muted-foreground",
+      "accent",
+      "accent-foreground",
+      "panel",
+      "panel-foreground",
+      "muted-soft",
+      "highlight",
+      "highlight-strong",
+      "accent-strong",
+      "ink",
+      "ink-foreground"
+    ],
+    "motion": [
+      "duration-fast",
+      "duration-base",
+      "duration-slow"
+    ],
+    "sizing": [
+      "radius",
+      "header-height",
+      "control-height",
+      "control-padding-x",
+      "space-2",
+      "space-3",
+      "space-4",
+      "space-5",
+      "space-6",
+      "space-8",
+      "space-10",
+      "section-gap",
+      "radius-xs",
+      "radius-sm",
+      "radius-md",
+      "radius-lg",
+      "radius-xl",
+      "radius-2xl",
+      "radius-3xl"
+    ]
+  },
+  "fontRoles": [
+    "fancy",
+    "sans",
+    "mono"
+  ],
+  "defaults": {
+    "preset": "opal",
+    "mode": "light",
+    "radius": "trim",
+    "density": "comfortable",
+    "spacing": "tight"
+  },
+  "fonts": {
+    "fancy": "Fraunces Variable",
+    "sans": "Manrope Variable",
+    "mono": "IBM Plex Mono"
+  }
+}

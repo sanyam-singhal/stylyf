@@ -1,0 +1,212 @@
+import type { AppShellId, LayoutNodeId, PageShellId } from "../ir/types.js";
+
+export type CatalogEntry = {
+  id: string;
+  label: string;
+  kind: "layout" | "page-shell" | "app-shell";
+  description: string;
+  summary: string;
+  keywords: string[];
+  snippet: string;
+  props?: string[];
+};
+
+export const appShellCatalog: Array<CatalogEntry & { id: AppShellId }> = [
+  {
+    id: "sidebar-app",
+    label: "Sidebar App Shell",
+    kind: "app-shell",
+    description: "Internal product shell with persistent left navigation and contextual header.",
+    summary: "Best default for SaaS apps, admin surfaces, and operational dashboards.",
+    keywords: ["app", "shell", "sidebar", "dashboard", "saas", "admin", "workspace", "internal"],
+    snippet: `<AppShell shell="sidebar-app">\n  <SidebarNav />\n  <AppHeader />\n  <RouteContent />\n</AppShell>`,
+    props: ["brand", "nav", "actions", "userMenu"],
+  },
+  {
+    id: "topbar-app",
+    label: "Topbar App Shell",
+    kind: "app-shell",
+    description: "Application shell with a horizontal top bar and lighter chrome.",
+    summary: "Good for simpler products, tools with shallow navigation, and reporting surfaces.",
+    keywords: ["app", "shell", "topbar", "header", "workspace", "light"],
+    snippet: `<AppShell shell="topbar-app">\n  <TopNavBar />\n  <RouteContent />\n</AppShell>`,
+    props: ["brand", "nav", "search", "actions"],
+  },
+  {
+    id: "docs-shell",
+    label: "Docs Shell",
+    kind: "app-shell",
+    description: "Documentation shell with article area and side navigation.",
+    summary: "For knowledge bases, technical documentation, and help portals.",
+    keywords: ["docs", "documentation", "shell", "knowledge", "sidebar", "toc"],
+    snippet: `<AppShell shell="docs-shell">\n  <DocsSidebar />\n  <ArticleFrame />\n</AppShell>`,
+    props: ["brand", "docsNav", "toc", "version"],
+  },
+  {
+    id: "marketing-shell",
+    label: "Marketing Shell",
+    kind: "app-shell",
+    description: "Public-facing shell with stronger brand framing and lighter layout constraints.",
+    summary: "For landing pages, product sites, and brochureware surfaces.",
+    keywords: ["marketing", "landing", "shell", "site", "public", "hero"],
+    snippet: `<AppShell shell="marketing-shell">\n  <TopNavBar />\n  <RouteContent />\n  <Footer />\n</AppShell>`,
+    props: ["brand", "primaryNav", "cta"],
+  },
+];
+
+export const pageShellCatalog: Array<CatalogEntry & { id: PageShellId }> = [
+  {
+    id: "dashboard",
+    label: "Dashboard Page Shell",
+    kind: "page-shell",
+    description: "Overview page shell with a strong page header and stacked data sections.",
+    summary: "Use for analytics, home dashboards, and operational summaries.",
+    keywords: ["dashboard", "overview", "page", "stats", "analytics", "activity"],
+    snippet: `<DashboardPage>\n  <PageHeader />\n  <StatGrid />\n  <Section />\n</DashboardPage>`,
+    props: ["title", "description", "actions"],
+  },
+  {
+    id: "resource-index",
+    label: "Resource Index Shell",
+    kind: "page-shell",
+    description: "List-oriented page shell with toolbar, results area, and optional side detail.",
+    summary: "Use for tables, directories, inboxes, logs, and admin indexes.",
+    keywords: ["resource", "index", "table", "list", "toolbar", "filters", "results"],
+    snippet: `<ResourceIndexPage>\n  <PageHeader />\n  <FilterToolbar />\n  <DataTableShell />\n</ResourceIndexPage>`,
+    props: ["title", "toolbar", "results", "detailPanel"],
+  },
+  {
+    id: "resource-detail",
+    label: "Resource Detail Shell",
+    kind: "page-shell",
+    description: "Detail-oriented page shell with hero/header, sections, and supporting meta.",
+    summary: "Use for profiles, project detail, records, and long-form object pages.",
+    keywords: ["resource", "detail", "record", "profile", "page", "header", "sections"],
+    snippet: `<ResourceDetailPage>\n  <PageHeader />\n  <Section />\n  <Section />\n</ResourceDetailPage>`,
+    props: ["title", "meta", "sections", "actions"],
+  },
+  {
+    id: "settings",
+    label: "Settings Page Shell",
+    kind: "page-shell",
+    description: "Settings-oriented shell with calm rhythm and grouped panels.",
+    summary: "Use for account, team, notification, and preference configuration pages.",
+    keywords: ["settings", "preferences", "configuration", "panel", "forms"],
+    snippet: `<SettingsPage>\n  <PageHeader />\n  <SettingsPanel />\n  <SettingsPanel />\n</SettingsPage>`,
+    props: ["title", "description", "sections"],
+  },
+  {
+    id: "auth",
+    label: "Auth Page Shell",
+    kind: "page-shell",
+    description: "Centered authentication shell with restrained content width and legal/support footer.",
+    summary: "Use for login, signup, reset, and verification flows.",
+    keywords: ["auth", "login", "signup", "reset", "verification", "centered"],
+    snippet: `<AuthPage>\n  <AuthSurface />\n</AuthPage>`,
+    props: ["title", "description", "body", "footer"],
+  },
+  {
+    id: "blank",
+    label: "Blank Page Shell",
+    kind: "page-shell",
+    description: "Low-opinion page shell for compositions that need minimal framing.",
+    summary: "Use when the route wants direct control and only light spacing defaults.",
+    keywords: ["blank", "minimal", "page", "shell", "custom"],
+    snippet: `<BlankPage>\n  <Section />\n</BlankPage>`,
+    props: ["children"],
+  },
+];
+
+export const layoutCatalog: Array<CatalogEntry & { id: LayoutNodeId }> = [
+  {
+    id: "stack",
+    label: "Stack Layout",
+    kind: "layout",
+    description: "Vertical layout with token-driven spacing between children.",
+    summary: "Default composition primitive for most page sections.",
+    keywords: ["stack", "vertical", "layout", "column", "spacing"],
+    snippet: `<Stack gap="comfortable">\n  <PageHeader />\n  <StatGrid />\n</Stack>`,
+    props: ["gap", "align"],
+  },
+  {
+    id: "row",
+    label: "Row Layout",
+    kind: "layout",
+    description: "Horizontal flex row for compact grouped controls and metadata.",
+    summary: "Best for toolbars, inline actions, and short information rows.",
+    keywords: ["row", "horizontal", "toolbar", "inline", "layout"],
+    snippet: `<Row gap="tight" justify="between">\n  <SectionHeader />\n  <Button />\n</Row>`,
+    props: ["gap", "align", "justify", "wrap"],
+  },
+  {
+    id: "column",
+    label: "Column Layout",
+    kind: "layout",
+    description: "Single vertical column wrapper with width and alignment control.",
+    summary: "Useful inside split panes and card internals.",
+    keywords: ["column", "vertical", "layout", "align", "width"],
+    snippet: `<Column gap="balanced">\n  <FieldRow />\n  <FieldRow />\n</Column>`,
+    props: ["gap", "align", "width"],
+  },
+  {
+    id: "grid",
+    label: "Grid Layout",
+    kind: "layout",
+    description: "Responsive grid layout for cards, stats, and multicolumn content.",
+    summary: "Best for metrics, card collections, and dashboard arrangements.",
+    keywords: ["grid", "cards", "columns", "responsive", "layout"],
+    snippet: `<Grid cols="3" gap="comfortable">\n  <StatCard />\n  <StatCard />\n</Grid>`,
+    props: ["cols", "gap", "min"],
+  },
+  {
+    id: "split",
+    label: "Split Layout",
+    kind: "layout",
+    description: "Two-pane layout for results plus detail, or content plus sidecar.",
+    summary: "Use for master-detail and content-sidebar pages.",
+    keywords: ["split", "two pane", "detail", "sidebar", "layout"],
+    snippet: `<Split ratio="2:1">\n  <DataTableShell />\n  <DetailPanel />\n</Split>`,
+    props: ["ratio", "gap", "collapse"],
+  },
+  {
+    id: "panel",
+    label: "Panel Layout",
+    kind: "layout",
+    description: "Framed surface wrapper for grouped content blocks.",
+    summary: "Use to organize sections into elevated surfaces.",
+    keywords: ["panel", "surface", "card", "framed", "layout"],
+    snippet: `<Panel tone="default">\n  <SectionHeader />\n  <DataList />\n</Panel>`,
+    props: ["tone", "padding", "bordered"],
+  },
+  {
+    id: "section",
+    label: "Section Layout",
+    kind: "layout",
+    description: "Semantic section wrapper with rhythm and optional heading slots.",
+    summary: "Good for route-level subsections and long-form pages.",
+    keywords: ["section", "page section", "semantic", "layout"],
+    snippet: `<Section>\n  <SectionHeader />\n  <Grid />\n</Section>`,
+    props: ["id", "gap", "tone"],
+  },
+  {
+    id: "toolbar",
+    label: "Toolbar Layout",
+    kind: "layout",
+    description: "Structured action row for filters, search, view controls, and actions.",
+    summary: "Use above lists, tables, and dashboards.",
+    keywords: ["toolbar", "filters", "actions", "search", "layout"],
+    snippet: `<Toolbar>\n  <SearchField />\n  <FilterToolbar />\n</Toolbar>`,
+    props: ["sticky", "wrap", "align"],
+  },
+  {
+    id: "content-frame",
+    label: "Content Frame Layout",
+    kind: "layout",
+    description: "Width-constrained wrapper for central route content.",
+    summary: "Use when the shell provides outer chrome and the page needs readable width.",
+    keywords: ["content", "frame", "width", "container", "layout"],
+    snippet: `<ContentFrame width="wide">\n  <Stack />\n</ContentFrame>`,
+    props: ["width", "padding"],
+  },
+];
+
