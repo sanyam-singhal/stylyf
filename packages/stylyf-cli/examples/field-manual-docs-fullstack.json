@@ -1,0 +1,95 @@
+{
+  "name": "Field Manual",
+  "shell": "docs-shell",
+  "theme": {
+    "preset": "pearl",
+    "mode": "light",
+    "radius": "trim",
+    "density": "comfortable",
+    "spacing": "tight",
+    "fonts": {
+      "fancy": "Fraunces",
+      "sans": "Manrope",
+      "mono": "IBM Plex Mono"
+    }
+  },
+  "database": {
+    "dialect": "postgres",
+    "migrations": "drizzle-kit",
+    "schema": [
+      {
+        "table": "articles",
+        "timestamps": true,
+        "columns": [
+          { "name": "id", "type": "uuid", "primaryKey": true },
+          { "name": "slug", "type": "varchar", "unique": true },
+          { "name": "title", "type": "varchar" },
+          { "name": "body", "type": "text" }
+        ]
+      }
+    ]
+  },
+  "auth": {
+    "provider": "better-auth",
+    "mode": "session",
+    "features": {
+      "emailPassword": true,
+      "magicLink": true
+    },
+    "protect": [
+      { "target": "articles.detail", "kind": "server", "access": "user" }
+    ]
+  },
+  "server": [
+    {
+      "name": "articles.detail",
+      "type": "query",
+      "resource": "articles",
+      "auth": "user"
+    }
+  ],
+  "routes": [
+    {
+      "path": "/",
+      "page": "resource-detail",
+      "title": "Getting Started",
+      "sections": [
+        {
+          "layout": "stack",
+          "children": [
+            {
+              "component": "section-header",
+              "props": {
+                "title": "Install and orient",
+                "description": "Start with a stable shell, then use search and generation to assemble the first route set."
+              }
+            },
+            { "component": "accordion" },
+            { "component": "table" }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/guides/composition",
+      "page": "resource-detail",
+      "title": "Composition Guide",
+      "sections": [
+        {
+          "layout": "stack",
+          "children": [
+            {
+              "component": "section-header",
+              "props": {
+                "title": "Compose with shells and layouts",
+                "description": "Use page shells for rhythm, layouts for space, and copied registry components for the actual UI surface."
+              }
+            },
+            { "component": "tabs" },
+            { "component": "timeline" }
+          ]
+        }
+      ]
+    }
+  ]
+}

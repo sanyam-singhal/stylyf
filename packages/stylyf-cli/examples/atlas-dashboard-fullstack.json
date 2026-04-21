@@ -1,0 +1,110 @@
+{
+  "name": "Atlas",
+  "shell": "sidebar-app",
+  "theme": {
+    "preset": "opal",
+    "mode": "light",
+    "radius": "trim",
+    "density": "comfortable",
+    "spacing": "tight",
+    "fonts": {
+      "fancy": "Fraunces",
+      "sans": "Manrope",
+      "mono": "IBM Plex Mono"
+    }
+  },
+  "database": {
+    "dialect": "postgres",
+    "migrations": "drizzle-kit",
+    "schema": [
+      {
+        "table": "records",
+        "timestamps": true,
+        "columns": [
+          { "name": "id", "type": "uuid", "primaryKey": true },
+          { "name": "name", "type": "varchar" },
+          { "name": "status", "type": "varchar" },
+          { "name": "owner_id", "type": "uuid" }
+        ]
+      }
+    ]
+  },
+  "auth": {
+    "provider": "better-auth",
+    "mode": "session",
+    "features": {
+      "emailPassword": true
+    },
+    "protect": [
+      { "target": "/", "kind": "route", "access": "user" },
+      { "target": "/records", "kind": "route", "access": "user" },
+      { "target": "records.list", "kind": "server", "access": "user" }
+    ]
+  },
+  "storage": {
+    "provider": "s3",
+    "mode": "presigned-put",
+    "bucketAlias": "uploads"
+  },
+  "apis": [
+    {
+      "path": "/api/uploads/presign",
+      "method": "POST",
+      "type": "presign-upload",
+      "name": "create-record-upload",
+      "auth": "user"
+    }
+  ],
+  "server": [
+    {
+      "name": "records.list",
+      "type": "query",
+      "resource": "records",
+      "auth": "user"
+    },
+    {
+      "name": "records.create",
+      "type": "action",
+      "resource": "records",
+      "auth": "user"
+    }
+  ],
+  "routes": [
+    {
+      "path": "/",
+      "page": "dashboard",
+      "title": "Atlas Overview",
+      "sections": [
+        {
+          "layout": "grid",
+          "children": [
+            { "component": "stat-card" },
+            { "component": "stat-grid" }
+          ]
+        },
+        {
+          "layout": "stack",
+          "children": [
+            { "component": "activity-feed" },
+            { "component": "notification-list" }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/records",
+      "page": "resource-index",
+      "title": "Records",
+      "sections": [
+        {
+          "layout": "stack",
+          "children": [
+            { "component": "filter-toolbar" },
+            { "component": "data-table-shell" },
+            { "component": "detail-panel" }
+          ]
+        }
+      ]
+    }
+  ]
+}
