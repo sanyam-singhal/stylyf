@@ -25,9 +25,9 @@ const defaultItems: AccordionItem[] = [
   },
   {
     value: "composition",
-    title: "How opinionated are Tier 2 and Tier 3 blocks?",
+    title: "How opinionated are the larger compositions?",
     description: "Composition model",
-    content: <p class="text-sm leading-6 text-muted-foreground">Tier 2 stays generic; Tier 3 becomes purpose-specific while still composing upward from lower tiers.</p>,
+    content: <p class="text-sm leading-6 text-muted-foreground">They stay reusable, but they can still lean into a clear purpose while composing upward from smaller components.</p>,
   },
 ];
 

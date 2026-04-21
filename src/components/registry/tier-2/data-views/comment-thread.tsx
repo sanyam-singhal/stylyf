@@ -17,7 +17,7 @@ export type CommentThreadProps = Omit<JSX.HTMLAttributes<HTMLElement>, "children
 };
 
 const defaultComments: CommentItem[] = [
-  { author: "Sanyam Singhal", body: "Let’s keep Tier 2 blocks standalone even when that costs some duplication.", meta: "Today · 10:24 UTC" },
+  { author: "Sanyam Singhal", body: "Let’s keep the larger compositions standalone even when that costs some duplication.", meta: "Today · 10:24 UTC" },
   { author: "Registry reviewer", body: "Agreed. That keeps the source tab honest and makes downstream copying cleaner.", meta: "Today · 10:27 UTC" },
 ];
 

@@ -105,16 +105,9 @@ export function RegistryCard(props: {
       <div class="flex flex-col gap-6">
         <header class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div class="min-w-0">
-            <div class="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-              <span>{props.item.tierLabel}</span>
-              <span class="text-border">/</span>
-              <span>{props.item.clusterLabel}</span>
-            </div>
+            <div class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">{props.item.clusterLabel}</div>
             <div class="mt-3 flex flex-wrap items-center gap-3">
               <h3 class="text-2xl font-semibold tracking-tight text-foreground">{props.item.name}</h3>
-              <span class="ui-chip ui-chip-muted">
-                {props.item.registryShape}
-              </span>
             </div>
             <p class="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">{props.item.description}</p>
           </div>

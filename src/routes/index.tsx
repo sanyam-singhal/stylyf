@@ -22,8 +22,6 @@ function matchesCluster(cluster: RegistryClusterSection, query: string) {
   const matchesClusterLabel = [
     cluster.title,
     cluster.description,
-    cluster.tierLabel,
-    cluster.tierTitle,
   ]
     .join(" ")
     .toLowerCase()
@@ -35,7 +33,6 @@ function matchesCluster(cluster: RegistryClusterSection, query: string) {
       item.description,
       item.pattern,
       item.notes,
-      item.registryShape,
       item.clusterLabel,
       ...item.styleParams,
       ...item.stateParams,
@@ -230,8 +227,8 @@ export default function Home() {
           <div class="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
             <div class="ui-shell-muted p-5">
               <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Clusters</div>
-              <div class="mt-2 text-3xl font-semibold tracking-tight text-foreground">{registryClusters.length}</div>
-              <div class="mt-2 text-sm text-muted-foreground">Role-based sections across all three tiers.</div>
+              <div class="mt-2 text-3xl font-semibold tracking-tight text-foreground">{registryCounts.clusters}</div>
+              <div class="mt-2 text-sm text-muted-foreground">Role-based sections across the active registry.</div>
             </div>
             <div class="ui-shell-muted p-5">
               <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Components</div>
@@ -289,12 +286,7 @@ export default function Home() {
                   <header class="ui-shell p-6 lg:p-7" style={clusterVisualStyle(cluster.id)}>
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <div class="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                          <span>{cluster.tierLabel}</span>
-                          <span class="text-border">/</span>
-                          <span>{cluster.tierTitle}</span>
-                        </div>
-                        <div class="mt-3 flex items-center gap-3">
+                        <div class="flex items-center gap-3">
                           <span class="inline-flex size-11 items-center justify-center rounded-[var(--radius-xl)] border border-[color:var(--cluster-line)] bg-[color:var(--cluster-soft)] text-[color:var(--cluster-color)] shadow-inset">
                             <Dynamic component={visualForCluster(cluster.id).icon} class="size-5" />
                           </span>

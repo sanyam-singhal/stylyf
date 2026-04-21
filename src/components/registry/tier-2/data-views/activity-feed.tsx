@@ -18,7 +18,7 @@ export type ActivityFeedProps = Omit<JSX.HTMLAttributes<HTMLElement>, "children"
 const defaultItems: ActivityItem[] = [
   { actor: "Sanyam Singhal", body: "Updated the registry deployment documentation.", meta: "6 min ago" },
   { actor: "Ops team", body: "Verified TLS issuance for stylyf.com.", meta: "28 min ago" },
-  { actor: "Design system", body: "Promoted Tier 1 feedback surfaces to stable.", meta: "2 h ago" },
+  { actor: "Design system", body: "Promoted the feedback surfaces to stable.", meta: "2 h ago" },
 ];
 
 export function ActivityFeed(userProps: ActivityFeedProps) {

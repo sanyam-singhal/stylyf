@@ -56,7 +56,7 @@ export function TablePreview(props: { item: RegistryItem }) {
             )}
           </For>
         </Table.Body>
-        <Table.Caption>Semantic table scaffold only. Sorting, filtering, and bulk actions belong in Tier 2 shells.</Table.Caption>
+        <Table.Caption>Semantic table scaffold only. Sorting, filtering, and bulk actions belong in higher-level data views.</Table.Caption>
       </Table>
     </DemoFrame>
   );

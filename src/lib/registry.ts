@@ -146,7 +146,7 @@ export function starterSourceFor(item: RegistryItem) {
   ].join("\n");
 }
 
-export const registryTiers: RegistryTier[] = [
+const registryTierInventory: RegistryTier[] = [
   {
     id: "tier-1",
     label: "Tier 1",
@@ -1576,6 +1576,8 @@ export const registryTiers: RegistryTier[] = [
   },
 ];
 
+export const registryTiers = registryTierInventory.filter(tier => tier.id !== "tier-3");
+
 export const registryItems = registryTiers.flatMap(tier => tier.clusters.flatMap(cluster => cluster.items));
 
 export const registryItemBySlug = Object.fromEntries(
@@ -1594,9 +1596,5 @@ export const registryClusters: RegistryClusterSection[] = registryTiers.flatMap(
 
 export const registryCounts = {
   total: registryItems.length,
-  tiers: registryTiers.map(tier => ({
-    id: tier.id,
-    label: tier.label,
-    total: tier.clusters.reduce((count, cluster) => count + cluster.items.length, 0),
-  })),
+  clusters: registryClusters.length,
 };

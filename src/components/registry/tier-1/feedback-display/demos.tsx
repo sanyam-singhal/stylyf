@@ -83,7 +83,7 @@ export function ToastPreview(props: { item: RegistryItem }) {
           {
             id: "deploy",
             title: "Registry deploy complete",
-            description: "The latest Tier 1 cluster is live on stylyf.com.",
+            description: "The latest registry cluster is live on stylyf.com.",
             tone: "success",
             actionLabel: "Inspect",
           },

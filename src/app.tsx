@@ -15,7 +15,7 @@ export default function App() {
           <Title>Stylyf</Title>
           <Meta
             name="description"
-            content="A SolidJS + SolidStart component registry shell with tiered primitives, blocks, and route-ready modules."
+            content="A SolidJS + SolidStart component registry shell organized around role-based clusters and source-owned components."
           />
 
           <div class="relative min-h-screen overflow-x-clip bg-background text-foreground">
@@ -52,11 +52,9 @@ export default function App() {
                 <div class="flex items-center justify-self-end gap-3">
                   <div class="ui-pillbar hidden items-center gap-2 px-4 py-2 text-sm text-muted-foreground xl:inline-flex">
                     <Compass class="size-4 text-primary" />
-                    <span>38 primitives</span>
+                    <span>{registryCounts.clusters} clusters</span>
                     <span class="text-border">/</span>
-                    <span>37 compositions</span>
-                    <span class="text-border">/</span>
-                    <span>63 blocks</span>
+                    <span>{registryCounts.total} components</span>
                   </div>
                   <ThemeToggle />
                 </div>
@@ -70,7 +68,7 @@ export default function App() {
                 <div>
                   <p class="text-sm font-medium text-foreground">Stylyf registry shell</p>
                   <p class="mt-1 text-sm text-muted-foreground">
-                    Tailwind v4 tokens, SolidStart v1, and a tiered catalog ready for source-owned component implementation.
+                    Tailwind v4 tokens, SolidStart v1, and a cluster-first catalog for source-owned component implementation.
                   </p>
                 </div>
                 <div class="flex flex-wrap gap-2 text-sm text-muted-foreground">
