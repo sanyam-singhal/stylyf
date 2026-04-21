@@ -2,7 +2,20 @@
   "name": "@stylyf/cli",
   "version": "0.1.0",
   "description": "JSON-driven frontend assembly line CLI for generating SolidStart apps.",
+  "license": "MIT",
+  "author": "Depths AI",
   "type": "module",
+  "keywords": [
+    "solidjs",
+    "solidstart",
+    "cli",
+    "codegen",
+    "generator",
+    "ui",
+    "design-system",
+    "frontend",
+    "assembly-line"
+  ],
   "bin": {
     "stylyf": "./dist/bin.js"
   },
@@ -15,6 +28,15 @@
   "files": [
     "dist"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Depths-AI/stylyf.git",
+    "directory": "packages/stylyf-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/Depths-AI/stylyf/issues"
+  },
+  "homepage": "https://github.com/Depths-AI/stylyf/tree/main/packages/stylyf-cli",
   "engines": {
     "node": ">=22"
   },

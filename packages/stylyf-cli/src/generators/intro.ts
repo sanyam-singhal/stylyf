@@ -2,6 +2,7 @@ import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
 import { listAppShellTemplates, listLayoutTemplates, listPageShellTemplates } from "./templates.js";
 import { loadAssemblyRegistry, loadThemeGrammar } from "../manifests/index.js";
+import { appIrSchema } from "../ir/schema.js";
 
 type ProjectSnapshot = {
   packageName?: string;
@@ -106,12 +107,38 @@ function uniqueSorted(values: string[]) {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
 
+function clusterInventoryLines(
+  clusters: Array<{
+    label: string;
+    items: string[];
+  }>,
+) {
+  return clusters.flatMap(cluster => [`- ${cluster.label}: ${cluster.items.join(", ")}`, ""]);
+}
+
 export async function renderIntroMarkdown(options: IntroOptions = {}) {
   const [themeGrammar, registry] = await Promise.all([loadThemeGrammar(), loadAssemblyRegistry()]);
   const clusterCounts = [...registry.reduce((map, item) => map.set(item.clusterLabel, (map.get(item.clusterLabel) ?? 0) + 1), new Map<string, number>()).entries()].sort(
     ([left], [right]) => left.localeCompare(right),
   );
+  const clusterInventory = [...registry.reduce((map, item) => {
+    const current = map.get(item.clusterLabel) ?? [];
+    current.push(item.label);
+    map.set(item.clusterLabel, current);
+    return map;
+  }, new Map<string, string[]>()).entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([label, items]) => ({
+      label,
+      items: items.sort((left, right) => left.localeCompare(right)),
+    }));
   const project = options.projectPath ? await snapshotProject(options.projectPath) : null;
+  const schemaSummary = {
+    root: Object.keys(appIrSchema.properties),
+    shells: [...(appIrSchema.properties.shell as { enum: readonly string[] }).enum],
+    pageShells: listPageShellTemplates(),
+    layouts: listLayoutTemplates(),
+  };
 
   const intro = [
     "# Stylyf Intro",
@@ -134,6 +161,15 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
     "5. Move into the generated app and iterate there like a normal SolidStart codebase.",
     "6. Use `stylyf intro --project <path>` whenever a coding agent needs a compact refresher on the generated app structure.",
     "",
+    "## Can An Agent Start Cold With This?",
+    "",
+    "Yes, that is the point of this document. A fresh coding agent should be able to:",
+    "",
+    "- understand the available shells, layouts, themes, and components",
+    "- write valid JSON IR without opening the Stylyf source tree first",
+    "- generate a SolidStart app scaffold quickly",
+    "- move into the emitted app and continue iterative UI development there",
+    "",
     "## Core Commands",
     "",
     codeBlock(
@@ -146,6 +182,143 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
         "stylyf serve-search --port 4310",
       ].join("\n"),
       "bash",
+    ),
+    "",
+    "## JSON IR DSL",
+    "",
+    "Stylyf uses a shallow JSON IR. The root shape is:",
+    "",
+    codeBlock(
+      JSON.stringify(
+        {
+          type: "AppIR",
+          properties: {
+            name: "string",
+            shell: schemaSummary.shells,
+            theme: {
+              preset: themeGrammar.presets,
+              mode: themeGrammar.modes,
+              radius: themeGrammar.radii,
+              density: themeGrammar.density,
+              spacing: themeGrammar.spacing,
+              fonts: {
+                fancy: "string",
+                sans: "string",
+                mono: "string",
+              },
+            },
+            routes: [
+              {
+                path: "string",
+                shell: `${schemaSummary.shells.join(" | ")} (optional override)`,
+                page: schemaSummary.pageShells,
+                title: "string (optional)",
+                sections: "SectionIR[]",
+              },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+      "json",
+    ),
+    "",
+    "### Section And Layout Nodes",
+    "",
+    codeBlock(
+      JSON.stringify(
+        {
+          type: "SectionIR",
+          shape: {
+            id: "string (optional)",
+            layout: schemaSummary.layouts,
+            children: [
+              "string component shorthand",
+              {
+                component: "string",
+                variant: "string (optional)",
+                props: { anyProp: "any JSON-serializable value" },
+                items: [{ anyItemShape: "array data for components that accept items" }],
+              },
+              {
+                layout: schemaSummary.layouts,
+                props: { anyLayoutProp: "string | number | boolean" },
+                children: ["recursive child nodes"],
+              },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+      "json",
+    ),
+    "",
+    "### Composition Rules",
+    "",
+    "- `shell` sets the default app shell for all routes",
+    "- each route must choose a `page` shell",
+    "- each route contains one or more `sections`",
+    "- each section starts with one layout wrapper",
+    "- child nodes can be component strings, component objects, or nested layout objects",
+    "- string component children are shorthand for `{ \"component\": \"...\" }`",
+    "- use `props` when a component or layout needs named values",
+    "- use `items` when a component expects repeatable data collections",
+    "",
+    "### Example IR",
+    "",
+    codeBlock(
+      JSON.stringify(
+        {
+          name: "Atlas",
+          shell: "sidebar-app",
+          theme: {
+            preset: "opal",
+            mode: "light",
+            radius: "trim",
+            density: "comfortable",
+            spacing: "tight",
+            fonts: {
+              fancy: "Fraunces",
+              sans: "Manrope",
+              mono: "IBM Plex Mono",
+            },
+          },
+          routes: [
+            {
+              path: "/",
+              page: "dashboard",
+              title: "Atlas Overview",
+              sections: [
+                {
+                  layout: "grid",
+                  children: [
+                    "stat-card",
+                    {
+                      component: "stat-grid",
+                    },
+                  ],
+                },
+                {
+                  layout: "stack",
+                  children: [
+                    {
+                      component: "activity-feed",
+                    },
+                    {
+                      component: "notification-list",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        null,
+        2,
+      ),
+      "json",
     ),
     "",
     "## Quick Start",
@@ -214,6 +387,36 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
     `- spacing: ${themeGrammar.spacing.join(", ")}`,
     `- font roles: ${themeGrammar.fontRoles.join(", ")}`,
     "",
+    "### Theme Control Meanings",
+    "",
+    "- `preset`: picks the color palette family emitted into the generated app",
+    "- `mode`: sets default light, dark, or system-following startup behavior",
+    "- `radius`: controls corner sharpness across cards, controls, panels, and surfaces",
+    "- `density`: controls macro and control sizing such as header height, control height, and horizontal padding",
+    "- `spacing`: controls overall breathing room and section rhythm",
+    "- `fonts.fancy`: display or editorial type role",
+    "- `fonts.sans`: primary UI copy role",
+    "- `fonts.mono`: code, metrics, and tabular detail role",
+    "",
+    "### Radius Semantics",
+    "",
+    "- `edge`: nearly square, just barely softened",
+    "- `trim`: sharp but not harsh; good default for serious product UIs",
+    "- `soft`: visibly rounded but still restrained",
+    "- `mellow`: the most rounded option in the current grammar",
+    "",
+    "### Density Semantics",
+    "",
+    "- `compact`: tighter controls and denser layout rhythm",
+    "- `comfortable`: default balance for most apps",
+    "- `relaxed`: roomier controls and section spacing",
+    "",
+    "### Spacing Semantics",
+    "",
+    "- `tight`: close section rhythm and compact page pacing",
+    "- `balanced`: more even editorial spacing",
+    "- `airy`: the loosest built-in rhythm",
+    "",
     "The styling grammar is emitted from the bundled `src/app.css` baseline. Theme choices remain declarative in the IR, while the generated app gets ordinary CSS and theme bootstrap code it can keep evolving independently.",
     "",
     "## Template Inventory",
@@ -222,17 +425,49 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
     `- page shells: ${listPageShellTemplates().join(", ")}`,
     `- layouts: ${listLayoutTemplates().join(", ")}`,
     "",
+    "### App Shell Intent",
+    "",
+    "- `sidebar-app`: internal tools, dashboards, admin products",
+    "- `topbar-app`: lighter app shells with more horizontal emphasis",
+    "- `docs-shell`: documentation and knowledge-base surfaces",
+    "- `marketing-shell`: public-facing site shells",
+    "",
+    "### Page Shell Intent",
+    "",
+    "- `dashboard`: overview-heavy operational or analytics pages",
+    "- `resource-index`: lists, tables, collections, and filtered indexes",
+    "- `resource-detail`: detail pages and article-like surfaces",
+    "- `settings`: grouped forms and configuration pages",
+    "- `auth`: focused authentication and entry flows",
+    "- `blank`: minimal frame when the route wants to control most of its own structure",
+    "",
+    "### Layout Intent",
+    "",
+    "- `stack`: vertical flow",
+    "- `row`: horizontal flow",
+    "- `column`: constrained vertical column",
+    "- `grid`: responsive grid composition",
+    "- `split`: two-region split layouts",
+    "- `panel`: framed surface wrapper",
+    "- `section`: titled grouped content region",
+    "- `toolbar`: filter/action/control row",
+    "- `content-frame`: max-width and page content framing",
+    "",
     "## Registry Inventory",
     "",
     `Total bundled components: ${registry.length}`,
     "",
     ...clusterCounts.map(([label, count]) => `- ${label}: ${count}`),
     "",
+    "### Components By Cluster",
+    "",
+    ...clusterInventoryLines(clusterInventory),
     "## Search Tips",
     "",
     "- search by user intent first, not exact component name",
     "- combine route shape and UI intent terms, for example `settings panel toggle form`",
     "- use the local HTTP endpoint when an agent wants small targeted reads instead of reopening source trees",
+    "- use `stylyf search` first, then only open the files or blocks you actually plan to use",
     "",
     codeBlock(
       [
@@ -241,6 +476,18 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
       ].join("\n"),
       "bash",
     ),
+    "",
+    "## How To Efficiently Scaffold An App With Zero Prior Context",
+    "",
+    "1. Choose the app shell that matches the product surface.",
+    "2. Choose the default theme values and three font roles.",
+    "3. Sketch routes using page shells first, before thinking about specific components.",
+    "4. Choose one layout wrapper per section.",
+    "5. Fill each section with the smallest set of relevant components.",
+    "6. Generate the app.",
+    "7. Move into the generated app and continue normal UI development there.",
+    "",
+    "If uncertain about which components fit, start with `stylyf search` and query by page intent rather than component label.",
     "",
   ];
 
