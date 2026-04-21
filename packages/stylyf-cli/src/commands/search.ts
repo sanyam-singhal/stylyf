@@ -50,9 +50,11 @@ export async function runSearchCommand(args: string[]) {
             `  area: ${result.area}`,
             `  score: ${result.score}`,
             `  reason: ${result.reason.join(", ") || "match"}`,
+            result.props?.length ? `  props: ${result.props.join(", ")}` : undefined,
             result.importPath ? `  import: ${result.importPath}` : undefined,
             result.sourcePath ? `  source: ${result.sourcePath}` : undefined,
             `  summary: ${result.summary}`,
+            result.snippet ? `  snippet:\n${result.snippet.split("\n").map(line => `    ${line}`).join("\n")}` : undefined,
           ]
             .filter(Boolean)
             .join("\n"),
