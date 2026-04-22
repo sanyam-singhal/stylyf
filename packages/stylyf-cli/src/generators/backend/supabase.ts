@@ -26,6 +26,9 @@ function renderSqlColumn(column: DatabaseSchemaIR["columns"][number]) {
 
   if (column.primaryKey) {
     parts.push("primary key");
+    if (column.type === "uuid") {
+      parts.push("default gen_random_uuid()");
+    }
   }
 
   if (column.unique) {

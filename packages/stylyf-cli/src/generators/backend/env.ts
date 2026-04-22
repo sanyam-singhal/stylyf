@@ -165,6 +165,13 @@ export function collectGeneratedEnvEntries(app: AppIR) {
         description: "Target bucket for generated storage helpers.",
       },
       {
+        name: "AWS_S3_BUCKET",
+        required: false,
+        exposure: "server",
+        example: "app-uploads",
+        description: "AWS-compatible bucket alias used by providers or deployments that prefer AWS_* naming.",
+      },
+      {
         name: "S3_ACCESS_KEY_ID",
         required: false,
         exposure: "server",
