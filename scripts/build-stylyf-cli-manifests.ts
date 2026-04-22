@@ -7,6 +7,13 @@ import {
   registryItems,
   type RegistryItem,
 } from "../src/lib/registry.ts";
+import {
+  backendApiRouteCatalog,
+  backendCapabilityCatalog,
+  backendEnvCatalog,
+  backendServerTemplateCatalog,
+  backendSnippetCatalog,
+} from "../packages/stylyf-cli/src/manifests/backend.ts";
 import { defaultThemeState, themePresets } from "../src/lib/theme-system.ts";
 
 type ThemeGrammar = {
@@ -214,9 +221,17 @@ async function main() {
   const appCss = await readFile(appCssPath, "utf8");
   const themeGrammar = extractThemeGrammar(appCss);
   const assemblyRegistry = await Promise.all(registryItems.map(item => assemblyItemFor(item)));
+  const backendManifestIndex = {
+    capabilities: backendCapabilityCatalog.map(entry => entry.id),
+    serverFunctions: backendServerTemplateCatalog.map(entry => entry.id),
+    apiRoutes: backendApiRouteCatalog.map(entry => entry.id),
+    envBlocks: backendEnvCatalog.map(entry => entry.id),
+    snippets: backendSnippetCatalog.map(entry => entry.id),
+  };
 
   await writeFile(resolve(outputDir, "theme-grammar.json"), `${JSON.stringify(themeGrammar, null, 2)}\n`);
   await writeFile(resolve(outputDir, "assembly-registry.json"), `${JSON.stringify(assemblyRegistry, null, 2)}\n`);
+  await writeFile(resolve(outputDir, "backend-manifests.json"), `${JSON.stringify(backendManifestIndex, null, 2)}\n`);
 }
 
 main().catch(error => {

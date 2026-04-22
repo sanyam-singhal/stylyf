@@ -2,18 +2,20 @@ import type { AppIR } from "../../ir/types.js";
 
 export function renderGeneratedAuthModule(app: AppIR) {
   const emailPasswordEnabled = app.auth?.features?.emailPassword ?? true;
+  const authProvider = app.database?.dialect === "sqlite" ? "sqlite" : "pg";
 
   return [
     'import { betterAuth } from "better-auth";',
     'import { drizzleAdapter } from "better-auth/adapters/drizzle";',
-    'import { db } from "~/lib/db";',
+    'import { db, schema } from "~/lib/db";',
     'import { env } from "~/lib/env";',
     "",
     "export const auth = betterAuth({",
     "  secret: env.BETTER_AUTH_SECRET,",
     "  baseURL: env.BETTER_AUTH_URL,",
     "  database: drizzleAdapter(db, {",
-    '    provider: "pg",',
+    `    provider: "${authProvider}",`,
+    "    schema,",
     "  }),",
     "  emailAndPassword: {",
     `    enabled: ${emailPasswordEnabled ? "true" : "false"},`,

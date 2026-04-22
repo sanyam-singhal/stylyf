@@ -3,6 +3,16 @@
 These example IR files are the primary dogfood targets for the `v0.2.0`
 backend scaffolding pass.
 
+## `atlas-dashboard-local.json`
+
+Local baseline covering:
+
+- sidebar app shell
+- SQLite + libsql
+- Better Auth
+- full local auth + DB development path
+- query + action server modules
+
 ## `atlas-dashboard-fullstack.json`
 
 Internal app baseline covering:

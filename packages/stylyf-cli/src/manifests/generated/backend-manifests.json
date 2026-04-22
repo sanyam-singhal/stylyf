@@ -1,6 +1,7 @@
 {
   "capabilities": [
     "database-postgres",
+    "database-sqlite",
     "auth-better-auth",
     "storage-s3",
     "env-contract"
@@ -23,11 +24,13 @@
   "envBlocks": [
     "env-app-core",
     "env-postgres",
+    "env-sqlite",
     "env-better-auth",
     "env-s3"
   ],
   "snippets": [
     "snippet-drizzle-db-module",
+    "snippet-libsql-db-module",
     "snippet-better-auth-module",
     "snippet-s3-storage-module",
     "snippet-typed-env-module"

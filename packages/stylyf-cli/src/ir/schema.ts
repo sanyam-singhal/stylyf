@@ -62,7 +62,7 @@ export const appIrSchema = {
       required: ["dialect"],
       additionalProperties: false,
       properties: {
-        dialect: { enum: ["postgres"] },
+        dialect: { enum: ["postgres", "sqlite"] },
         migrations: { enum: ["drizzle-kit"] },
         schema: {
           type: "array",

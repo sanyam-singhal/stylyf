@@ -342,9 +342,9 @@ export async function generateFrontendDraft(irPath: string, targetPath: string, 
   await writeGeneratedFile(resolve(targetPath, "src/lib/env.ts"), renderGeneratedEnvModule(app));
 
   if (app.database) {
-    await writeGeneratedFile(resolve(targetPath, "src/lib/db.ts"), renderGeneratedDbModule());
+    await writeGeneratedFile(resolve(targetPath, "src/lib/db.ts"), renderGeneratedDbModule(app));
     await writeGeneratedFile(resolve(targetPath, "src/lib/db/schema.ts"), renderGeneratedDbSchema(app));
-    await writeGeneratedFile(resolve(targetPath, "drizzle.config.ts"), renderGeneratedDrizzleConfig());
+    await writeGeneratedFile(resolve(targetPath, "drizzle.config.ts"), renderGeneratedDrizzleConfig(app));
   }
 
   if (app.auth) {

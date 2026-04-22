@@ -14,7 +14,7 @@ export function helpText() {
   return [
     "Stylyf CLI",
     "",
-    "JSON-driven frontend assembly line for SolidStart apps.",
+    "JSON-driven full-stack assembly line for SolidStart apps.",
     "",
     "Usage:",
     "  stylyf <command> [options]",
@@ -32,8 +32,8 @@ export function helpText() {
     "  -v, --version  Show version",
     "",
     "Phase 1 status:",
-    "  Frontend generation, intro output, dogfooding, and publishability validation are complete.",
-    "  The CLI is ready for Phase 2 refinement and release hardening.",
+    "  Frontend and backend scaffolding are in place, including auth, database, storage, API routes, and server functions.",
+    "  The CLI is ready for local runtime validation and managed-service follow-up.",
   ].join("\n");
 }
 import { runBuildIndexCommand } from "./commands/build-index.js";

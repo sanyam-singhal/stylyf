@@ -1,4 +1,4 @@
-import type { AppIR, DatabaseColumnType, DatabaseSchemaIR } from "../../ir/types.js";
+import type { AppIR, DatabaseColumnType, DatabaseDialect, DatabaseSchemaIR } from "../../ir/types.js";
 
 function camelCase(value: string) {
   return value
@@ -14,7 +14,7 @@ function quote(value: string) {
   return JSON.stringify(value);
 }
 
-function drizzleColumnFactory(type: DatabaseColumnType) {
+function postgresColumnFactory(type: DatabaseColumnType) {
   switch (type) {
     case "text":
       return "text";
@@ -35,13 +35,34 @@ function drizzleColumnFactory(type: DatabaseColumnType) {
   }
 }
 
-function renderColumn(table: DatabaseSchemaIR, column: DatabaseSchemaIR["columns"][number]) {
-  const columnFactory = drizzleColumnFactory(column.type);
+function sqliteColumnFactory(type: DatabaseColumnType, nameArgument: string) {
+  switch (type) {
+    case "text":
+    case "varchar":
+      return `text(${nameArgument})`;
+    case "integer":
+      return `integer(${nameArgument})`;
+    case "boolean":
+      return `integer(${nameArgument}, { mode: "boolean" })`;
+    case "timestamp":
+      return `integer(${nameArgument}, { mode: "timestamp_ms" })`;
+    case "jsonb":
+      return `text(${nameArgument}, { mode: "json" })`;
+    case "uuid":
+      return `text(${nameArgument})`;
+    default:
+      return `text(${nameArgument})`;
+  }
+}
+
+function renderColumn(column: DatabaseSchemaIR["columns"][number], dialect: DatabaseDialect) {
   const nameArgument = quote(column.name);
   const base =
-    column.type === "timestamp"
-      ? `${columnFactory}(${nameArgument}, { withTimezone: true })`
-      : `${columnFactory}(${nameArgument})`;
+    dialect === "sqlite"
+      ? sqliteColumnFactory(column.type, nameArgument)
+      : column.type === "timestamp"
+        ? `${postgresColumnFactory(column.type)}(${nameArgument}, { withTimezone: true })`
+        : `${postgresColumnFactory(column.type)}(${nameArgument})`;
 
   const chained = [
     column.primaryKey ? "primaryKey()" : undefined,
@@ -55,18 +76,25 @@ function renderColumn(table: DatabaseSchemaIR, column: DatabaseSchemaIR["columns
   return `  ${camelCase(column.name)}: ${base}${chained},`;
 }
 
-function renderTable(table: DatabaseSchemaIR) {
+function renderTable(table: DatabaseSchemaIR, dialect: DatabaseDialect) {
   const exportName = camelCase(table.table);
   const lines = [
-    `export const ${exportName} = pgTable(${quote(table.table)}, {`,
-    ...table.columns.map(column => renderColumn(table, column)),
+    `${dialect === "sqlite" ? `export const ${exportName} = sqliteTable(${quote(table.table)}, {` : `export const ${exportName} = pgTable(${quote(table.table)}, {`}`,
+    ...table.columns.map(column => renderColumn(column, dialect)),
   ];
 
   if (table.timestamps) {
-    lines.push(
-      '  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),',
-      '  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),',
-    );
+    if (dialect === "sqlite") {
+      lines.push(
+        '  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(sql`(unixepoch() * 1000)`).notNull(),',
+        '  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(sql`(unixepoch() * 1000)`).notNull(),',
+      );
+    } else {
+      lines.push(
+        '  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),',
+        '  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),',
+      );
+    }
   }
 
   lines.push("});", "");
@@ -74,20 +102,64 @@ function renderTable(table: DatabaseSchemaIR) {
 }
 
 export function renderGeneratedDbSchema(app: AppIR) {
+  const dialect = app.database?.dialect ?? "postgres";
   const tables = app.database?.schema ?? [];
 
   if (tables.length === 0) {
+    if (dialect === "sqlite") {
+      return [
+        'import { sqliteTable, text } from "drizzle-orm/sqlite-core";',
+        "",
+        'export const placeholder = sqliteTable("__stylyf_placeholder", {',
+        '  id: text("id").primaryKey(),',
+        "});",
+        "",
+      ].join("\n");
+    }
+
     return ['import { pgTable, text } from "drizzle-orm/pg-core";', "", 'export const placeholder = pgTable("__stylyf_placeholder", {', '  id: text("id").primaryKey(),', "});", ""].join("\n");
+  }
+
+  if (dialect === "sqlite") {
+    const needsSql = tables.some(table => table.timestamps);
+
+    return [
+      `import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";`,
+      ...(needsSql ? ['import { sql } from "drizzle-orm";'] : []),
+      "",
+      ...tables.map(table => renderTable(table, "sqlite")),
+    ].join("\n");
   }
 
   return [
     'import { boolean, integer, jsonb, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";',
     "",
-    ...tables.map(table => renderTable(table)),
+    ...tables.map(table => renderTable(table, "postgres")),
   ].join("\n");
 }
 
-export function renderGeneratedDbModule() {
+export function renderGeneratedDbModule(app: AppIR) {
+  if (app.database?.dialect === "sqlite") {
+    return [
+      'import { createClient } from "@libsql/client";',
+      'import { drizzle } from "drizzle-orm/libsql";',
+      'import { env } from "~/lib/env";',
+      'import * as appSchema from "~/lib/db/schema";',
+      'import * as authSchema from "~/lib/db/auth-schema";',
+      "",
+      "const client = createClient({",
+      "  url: env.DATABASE_URL,",
+      "  authToken: env.DATABASE_AUTH_TOKEN,",
+      "});",
+      "const schema = { ...appSchema, ...authSchema };",
+      "",
+      "export const db = drizzle(client, { schema });",
+      "export { client, schema };",
+      "export type DB = typeof db;",
+      "",
+    ].join("\n");
+  }
+
   return [
     'import { drizzle } from "drizzle-orm/postgres-js";',
     'import postgres from "postgres";',
@@ -105,7 +177,25 @@ export function renderGeneratedDbModule() {
   ].join("\n");
 }
 
-export function renderGeneratedDrizzleConfig() {
+export function renderGeneratedDrizzleConfig(app: AppIR) {
+  if (app.database?.dialect === "sqlite") {
+    return [
+      'import { defineConfig } from "drizzle-kit";',
+      "",
+      "export default defineConfig({",
+      '  dialect: "sqlite",',
+      '  schema: "./src/lib/db/*.ts",',
+      '  out: "./drizzle",',
+      "  dbCredentials: {",
+      '    url: process.env.DATABASE_URL ?? "file:./local.db",',
+      "  },",
+      "  strict: true,",
+      "  verbose: true,",
+      "});",
+      "",
+    ].join("\n");
+  }
+
   return [
     'import { defineConfig } from "drizzle-kit";',
     "",

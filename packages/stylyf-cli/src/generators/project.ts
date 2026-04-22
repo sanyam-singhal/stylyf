@@ -42,8 +42,12 @@ export function renderGeneratedPackageJson(app: AppIR) {
 
   if (app.database) {
     dependencies["drizzle-orm"] = "^0.45.2";
-    dependencies.postgres = "^3.4.7";
-    devDependencies["drizzle-kit"] = "^0.31.4";
+    if (app.database.dialect === "sqlite") {
+      dependencies["@libsql/client"] = "^0.17.2";
+    } else {
+      dependencies.postgres = "^3.4.9";
+    }
+    devDependencies["drizzle-kit"] = "^0.31.10";
     scripts["db:generate"] = "drizzle-kit generate";
     scripts["db:migrate"] = "drizzle-kit migrate";
     scripts["db:studio"] = "drizzle-kit studio";
@@ -52,7 +56,7 @@ export function renderGeneratedPackageJson(app: AppIR) {
   if (app.auth) {
     dependencies["better-auth"] = "^1.6.6";
     dependencies["@better-auth/drizzle-adapter"] = "^1.6.6";
-    devDependencies["@better-auth/cli"] = "^1.3.8";
+    devDependencies["@better-auth/cli"] = "^1.4.21";
     scripts["auth:generate"] = "better-auth generate --config ./src/lib/auth-schema.config.ts --output ./src/lib/db/auth-schema.ts --yes";
     scripts["auth:sync"] = "npm run auth:generate && npm run db:generate";
     scripts["auth:secret"] = "better-auth secret";

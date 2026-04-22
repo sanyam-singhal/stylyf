@@ -26,7 +26,7 @@ const verifyIr = {
     },
   },
   database: {
-    dialect: "postgres",
+    dialect: "sqlite",
     migrations: "drizzle-kit",
     schema: [
       {
@@ -154,7 +154,7 @@ async function main() {
 
   await run(stylyfBin, ["intro", "--output", "STYLYF_INTRO.md"], verifyRoot);
   const intro = await readFile(resolve(verifyRoot, "STYLYF_INTRO.md"), "utf8");
-  if (!intro.includes("Better Auth") || !intro.includes("PostgreSQL") || !intro.includes("S3")) {
+  if (!intro.includes("Better Auth") || !intro.includes("sqlite") || !intro.includes("S3")) {
     throw new Error("Generated intro output does not mention the backend capability surface");
   }
 

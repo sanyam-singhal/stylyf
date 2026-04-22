@@ -8,7 +8,7 @@ Stylyf is a JSON-driven full-stack assembly line for SolidStart. Its job is to l
 
 - turns a shallow JSON IR into a standalone SolidStart app
 - emits app shell, route files, page shells, layout wrappers, global styling, and copied registry components
-- emits backend capability files for PostgreSQL + Drizzle, Better Auth, S3 storage, API routes, and server functions when requested
+- emits backend capability files for PostgreSQL + Drizzle, SQLite + libsql + Drizzle, Better Auth, S3 storage, API routes, and server functions when requested
 - installs dependencies and runs post-generate auth/db scaffolding so the target app is runnable immediately
 - exposes search and intro commands so an agent can orient itself quickly during follow-up work
 
@@ -74,7 +74,7 @@ Stylyf uses a shallow JSON IR. The root shape is:
     }
   },
   "database": {
-    "dialect": ["postgres"],
+    "dialect": ["postgres", "sqlite"],
     "migrations": ["drizzle-kit"],
     "schema": "DatabaseSchemaIR[]"
   },
@@ -140,7 +140,7 @@ Stylyf uses a shallow JSON IR. The root shape is:
 ```json
 {
   "database": {
-    "dialect": "postgres",
+    "dialect": "sqlite",
     "migrations": "drizzle-kit",
     "schema": [
       {
@@ -226,6 +226,8 @@ Stylyf uses a shallow JSON IR. The root shape is:
   ]
 }
 ```
+
+For the local auth + DB path, use `database.dialect: "sqlite"` and set `DATABASE_URL=file:./local.db`. `DATABASE_AUTH_TOKEN` stays optional and is only needed later for remote libsql providers such as Turso.
 
 ## Quick Start
 
@@ -340,7 +342,7 @@ Current grammar surface:
 
 ### Backend Capability Inventory
 
-- database: `postgres` with `drizzle-kit` migrations
+- database: `postgres` or `sqlite` with `drizzle-kit` migrations
 - auth: `better-auth` in session mode, wired to Drizzle
 - storage: `s3` with presigned PUT upload helpers
 - api route types: `json`, `webhook`, `presign-upload`, plus the generated Better Auth mount route

@@ -53,13 +53,33 @@ export function collectGeneratedEnvEntries(app: AppIR) {
   ];
 
   if (app.database) {
-    entries.push({
-      name: "DATABASE_URL",
-      required: true,
-      exposure: "server",
-      example: "postgres://postgres:postgres@localhost:5432/app",
-      description: "PostgreSQL connection URL used by Drizzle and the postgres driver.",
-    });
+    if (app.database.dialect === "sqlite") {
+      entries.push(
+        {
+          name: "DATABASE_URL",
+          required: true,
+          exposure: "server",
+          example: "file:./local.db",
+          description:
+            "libSQL connection URL used by Drizzle and Better Auth. For local SQLite use the required `file:` prefix.",
+        },
+        {
+          name: "DATABASE_AUTH_TOKEN",
+          required: false,
+          exposure: "server",
+          example: "",
+          description: "Optional libSQL auth token for remote SQLite providers such as Turso.",
+        },
+      );
+    } else {
+      entries.push({
+        name: "DATABASE_URL",
+        required: true,
+        exposure: "server",
+        example: "postgres://postgres:postgres@localhost:5432/app",
+        description: "PostgreSQL connection URL used by Drizzle and the postgres driver.",
+      });
+    }
   }
 
   if (app.auth) {
