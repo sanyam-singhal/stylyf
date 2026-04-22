@@ -1,0 +1,99 @@
+GitHub Repo Hardening Baseline
+
+Scope:
+- public GitHub repository
+- GitHub Free / organization-owned repo
+- applied via `gh api`
+
+Recommended baseline:
+
+1. Protect `main`
+- require pull requests before merge
+- require 1 approving review
+- dismiss stale approvals on new commits
+- require approval of the most recent push
+- enforce rules for admins too
+- disable force-push
+- disable branch deletion
+
+2. Repository security settings
+- enable secret scanning
+- enable secret scanning push protection
+- enable Dependabot security updates
+- enable delete branch on merge
+
+Notes:
+- secret scanning validity checks may remain unavailable/disabled depending on repo or plan eligibility
+- direct collaborator audit should be checked too
+- team access and rulesets should also be reviewed
+
+Useful audit commands:
+
+```bash
+gh repo view OWNER/REPO --json nameWithOwner,visibility,isPrivate,defaultBranchRef,deleteBranchOnMerge,viewerPermission
+gh api repos/OWNER/REPO/collaborators
+gh api repos/OWNER/REPO/teams
+gh api repos/OWNER/REPO/branches/main/protection
+gh api repos/OWNER/REPO/rulesets
+gh api repos/OWNER/REPO --jq '{delete_branch_on_merge,security_and_analysis}'
+```
+
+Apply branch protection:
+
+```bash
+cat > /tmp/repo-main-protection.json <<'EOF'
+{
+  "required_status_checks": null,
+  "enforce_admins": true,
+  "required_pull_request_reviews": {
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": false,
+    "required_approving_review_count": 1,
+    "require_last_push_approval": true
+  },
+  "restrictions": null,
+  "required_linear_history": false,
+  "allow_force_pushes": false,
+  "allow_deletions": false,
+  "block_creations": false,
+  "required_conversation_resolution": false,
+  "lock_branch": false,
+  "allow_fork_syncing": true
+}
+EOF
+
+gh api \
+  --method PUT \
+  -H "Accept: application/vnd.github+json" \
+  repos/OWNER/REPO/branches/main/protection \
+  --input /tmp/repo-main-protection.json
+```
+
+Apply repository security settings:
+
+```bash
+cat > /tmp/repo-security.json <<'EOF'
+{
+  "delete_branch_on_merge": true,
+  "security_and_analysis": {
+    "secret_scanning": { "status": "enabled" },
+    "secret_scanning_push_protection": { "status": "enabled" },
+    "secret_scanning_validity_checks": { "status": "enabled" },
+    "dependabot_security_updates": { "status": "enabled" }
+  }
+}
+EOF
+
+gh api \
+  --method PATCH \
+  -H "Accept: application/vnd.github+json" \
+  repos/OWNER/REPO \
+  --input /tmp/repo-security.json
+```
+
+Verification:
+
+```bash
+gh api repos/OWNER/REPO/branches/main/protection
+gh api repos/OWNER/REPO --jq '{delete_branch_on_merge,security_and_analysis}'
+```
