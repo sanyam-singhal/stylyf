@@ -8,6 +8,7 @@ import type {
   AuthProvider,
   ComponentRefIR,
   DatabaseDialect,
+  DatabaseProvider,
   LayoutNodeIR,
   LayoutNodeId,
   PageShellId,
@@ -36,7 +37,8 @@ const themeRadii = new Set<ThemeRadius>(["edge", "trim", "soft", "mellow"]);
 const themeDensity = new Set<ThemeDensity>(["compact", "comfortable", "relaxed"]);
 const themeSpacing = new Set<ThemeSpacing>(["tight", "balanced", "airy"]);
 const databaseDialects = new Set<DatabaseDialect>(["postgres", "sqlite"]);
-const authProviders = new Set<AuthProvider>(["better-auth"]);
+const databaseProviders = new Set<DatabaseProvider>(["drizzle", "supabase"]);
+const authProviders = new Set<AuthProvider>(["better-auth", "supabase"]);
 const storageProviders = new Set<StorageProvider>(["s3"]);
 const apiRouteMethods = new Set<ApiRouteMethod>(["GET", "POST", "PATCH", "DELETE"]);
 const apiRouteTypes = new Set<ApiRouteType>(["json", "webhook", "presign-upload"]);
@@ -168,12 +170,28 @@ function validateEnv(value: Record<string, unknown>, errors: string[]) {
 }
 
 function validateDatabase(value: Record<string, unknown>, errors: string[]) {
-  if (!databaseDialects.has(value.dialect as DatabaseDialect)) {
-    errors.push(`database.dialect must be one of ${[...databaseDialects].join(", ")}`);
+  const provider = (value.provider as DatabaseProvider | undefined) ?? "drizzle";
+
+  if (value.provider !== undefined && !databaseProviders.has(provider)) {
+    errors.push(`database.provider must be one of ${[...databaseProviders].join(", ")}`);
   }
 
-  if (value.migrations !== undefined && value.migrations !== "drizzle-kit") {
-    errors.push("database.migrations must be 'drizzle-kit' when provided");
+  if (provider === "supabase") {
+    if (value.dialect !== undefined) {
+      errors.push("database.dialect must be omitted when database.provider is 'supabase'");
+    }
+
+    if (value.migrations !== undefined) {
+      errors.push("database.migrations must be omitted when database.provider is 'supabase'");
+    }
+  } else {
+    if (!databaseDialects.has(value.dialect as DatabaseDialect)) {
+      errors.push(`database.dialect must be one of ${[...databaseDialects].join(", ")}`);
+    }
+
+    if (value.migrations !== undefined && value.migrations !== "drizzle-kit") {
+      errors.push("database.migrations must be 'drizzle-kit' when provided");
+    }
   }
 
   if (value.schema !== undefined) {
@@ -228,7 +246,7 @@ function validateAuth(value: Record<string, unknown>, errors: string[]) {
     if (!isRecord(value.features)) {
       errors.push("auth.features must be an object when provided");
     } else {
-      for (const key of ["emailPassword", "magicLink"] as const) {
+      for (const key of ["emailPassword", "emailOtp", "magicLink"] as const) {
         if (value.features[key] !== undefined && typeof value.features[key] !== "boolean") {
           errors.push(`auth.features.${key} must be a boolean when provided`);
         }
@@ -426,10 +444,6 @@ export function validateAppIr(value: unknown): ValidationResult {
     } else {
       validateAuth(value.auth, errors);
     }
-
-    if (!isRecord(value.database)) {
-      errors.push("auth requires database to be enabled");
-    }
   }
 
   if (value.storage !== undefined) {
@@ -472,6 +486,30 @@ export function validateAppIr(value: unknown): ValidationResult {
 
         validateServerModule(entry, `server[${index}]`, errors, seenServerNames, authEnabled);
       });
+    }
+  }
+
+  const authProvider = isRecord(value.auth) ? (value.auth.provider as AuthProvider | undefined) : undefined;
+  const databaseProvider = isRecord(value.database) ? ((value.database.provider as DatabaseProvider | undefined) ?? "drizzle") : undefined;
+
+  if (authProvider === "better-auth") {
+    if (!isRecord(value.database)) {
+      errors.push("better-auth requires database to be enabled");
+    } else if (databaseProvider !== "drizzle") {
+      errors.push("better-auth requires database.provider to be 'drizzle'");
+    }
+  }
+
+  if (authProvider === "supabase") {
+    if (!isRecord(value.database)) {
+      errors.push("supabase auth requires database to be enabled");
+    } else if (databaseProvider !== "supabase") {
+      errors.push("supabase auth requires database.provider to be 'supabase'");
+    }
+
+    const authFeatures = isRecord(value.auth) && isRecord(value.auth.features) ? value.auth.features : null;
+    if (authFeatures && authFeatures.magicLink !== undefined) {
+      errors.push("auth.features.magicLink is not supported when auth.provider is 'supabase'; use emailOtp instead");
     }
   }
 

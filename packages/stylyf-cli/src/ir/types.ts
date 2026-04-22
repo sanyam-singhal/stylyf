@@ -4,7 +4,8 @@ export type ThemeRadius = "edge" | "trim" | "soft" | "mellow";
 export type ThemeDensity = "compact" | "comfortable" | "relaxed";
 export type ThemeSpacing = "tight" | "balanced" | "airy";
 export type DatabaseDialect = "postgres" | "sqlite";
-export type AuthProvider = "better-auth";
+export type DatabaseProvider = "drizzle" | "supabase";
+export type AuthProvider = "better-auth" | "supabase";
 export type StorageProvider = "s3";
 export type ApiRouteMethod = "GET" | "POST" | "PATCH" | "DELETE";
 export type ApiRouteType = "json" | "webhook" | "presign-upload";
@@ -89,7 +90,8 @@ export type DatabaseSchemaIR = {
 };
 
 export type DatabaseIR = {
-  dialect: DatabaseDialect;
+  provider?: DatabaseProvider;
+  dialect?: DatabaseDialect;
   migrations?: "drizzle-kit";
   schema?: DatabaseSchemaIR[];
 };
@@ -105,6 +107,7 @@ export type AuthIR = {
   mode?: "session";
   features?: {
     emailPassword?: boolean;
+    emailOtp?: boolean;
     magicLink?: boolean;
   };
   protect?: AuthProtectionIR[];

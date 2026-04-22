@@ -145,11 +145,20 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
     "",
     "Stylyf is a JSON-driven full-stack assembly line for SolidStart. Its job is to let a coding agent describe the intended app once, generate a real working source tree, and then keep iterating inside that emitted app without redoing the repetitive setup work by hand.",
     "",
+    "## Backend Modes",
+    "",
+    "- portable mode: `better-auth + drizzle + postgres/sqlite + s3-compatible storage`",
+    "- hosted mode: `supabase auth + supabase data sdk + tigris-compatible s3 storage`",
+    "- storage remains presigned-URL based in both modes, so browser code never receives raw object storage credentials",
+    "",
     "## What Stylyf Does",
     "",
     "- turns a shallow JSON IR into a standalone SolidStart app",
     "- emits app shell, route files, page shells, layout wrappers, global styling, and copied registry components",
-    "- emits backend capability files for PostgreSQL + Drizzle, SQLite + libsql + Drizzle, Better Auth, S3 storage, API routes, and server functions when requested",
+    "- emits backend capability files for both supported backend branches when requested",
+    "- the portable branch uses PostgreSQL or SQLite via Drizzle plus Better Auth",
+    "- the hosted branch uses Supabase SDKs for both auth and data access, and emits `supabase/schema.sql` instead of Drizzle files",
+    "- emits S3-compatible storage helpers for both branches, including AWS-compatible aliases that fit Tigris well",
     "- installs dependencies and runs post-generate auth/db scaffolding so the target app is runnable immediately",
     "- exposes search and intro commands so an agent can orient itself quickly during follow-up work",
     "",
@@ -212,14 +221,15 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
               extras: [{ name: "string", exposure: "server | public", required: "boolean", example: "string" }],
             },
             database: {
-              dialect: ["postgres", "sqlite"],
-              migrations: ["drizzle-kit"],
+              provider: ["drizzle", "supabase"],
+              dialect: ["postgres", "sqlite", "(omit for supabase)"],
+              migrations: ["drizzle-kit", "(omit for supabase)"],
               schema: "DatabaseSchemaIR[]",
             },
             auth: {
-              provider: ["better-auth"],
+              provider: ["better-auth", "supabase"],
               mode: ["session"],
-              features: { emailPassword: "boolean", magicLink: "boolean" },
+              features: { emailPassword: "boolean", emailOtp: "boolean", magicLink: "boolean" },
               protect: "AuthProtectionIR[]",
             },
             storage: {
@@ -295,6 +305,7 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
       JSON.stringify(
         {
           database: {
+            provider: "drizzle",
             dialect: "sqlite",
             migrations: "drizzle-kit",
             schema: [
@@ -313,6 +324,7 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
             mode: "session",
             features: {
               emailPassword: true,
+              emailOtp: false,
               magicLink: false,
             },
             protect: [{ target: "/records", kind: "route", access: "user" }],
@@ -352,12 +364,12 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
       "json",
     ),
     "",
-    "### Example IR",
+    "### Hosted Supabase + Tigris Example IR",
     "",
     codeBlock(
       JSON.stringify(
         {
-          name: "Atlas",
+          name: "Atlas Hosted",
           shell: "sidebar-app",
           theme: {
             preset: "opal",
@@ -372,30 +384,32 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
             },
           },
           database: {
-            dialect: "sqlite",
-            migrations: "drizzle-kit",
+            provider: "supabase",
             schema: [
               {
                 table: "records",
                 timestamps: true,
                 columns: [
-                  { "name": "id", "type": "uuid", "primaryKey": true },
-                  { "name": "name", "type": "varchar" }
-                ]
-              }
-            ]
+                  { name: "id", type: "uuid", primaryKey: true },
+                  { name: "name", type: "varchar" },
+                  { name: "status", type: "varchar" },
+                  { name: "owner_id", type: "uuid" },
+                ],
+              },
+            ],
           },
           auth: {
-            provider: "better-auth",
+            provider: "supabase",
             mode: "session",
             features: {
-              emailPassword: true
-            }
+              emailPassword: true,
+              emailOtp: true,
+            },
           },
           storage: {
             provider: "s3",
             mode: "presigned-put",
-            bucketAlias: "uploads"
+            bucketAlias: "uploads",
           },
           apis: [
             {
@@ -403,16 +417,22 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
               method: "POST",
               type: "presign-upload",
               name: "create-record-upload",
-              auth: "user"
-            }
+              auth: "user",
+            },
           ],
           server: [
             {
               name: "records.list",
               type: "query",
               resource: "records",
-              auth: "user"
-            }
+              auth: "user",
+            },
+            {
+              name: "records.create",
+              type: "action",
+              resource: "records",
+              auth: "user",
+            },
           ],
           routes: [
             {
@@ -450,7 +470,11 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
       "json",
     ),
     "",
-    "For the local auth + DB path, use `database.dialect: \"sqlite\"` and set `DATABASE_URL=file:./local.db`. `DATABASE_AUTH_TOKEN` stays optional and is only needed later for remote libsql providers such as Turso.",
+    "Portable local development: use `database.provider: \"drizzle\"`, `database.dialect: \"sqlite\"`, and `DATABASE_URL=file:./local.db`. `DATABASE_AUTH_TOKEN` stays optional and is only needed later for remote libsql providers such as Turso.",
+    "",
+    "Hosted fast path: pair `database.provider: \"supabase\"` with `auth.provider: \"supabase\"`. That branch emits `src/lib/supabase.ts`, `src/lib/supabase-browser.ts`, auth API routes, middleware, and `supabase/schema.sql` instead of Drizzle files.",
+    "",
+    "For email OTP on the Supabase branch, Stylyf scaffolds the code path with `signInWithOtp` and `verifyOtp`. Per Supabase's current docs, whether users receive an OTP code or a magic link depends on the email template variables configured in Supabase.",
     "",
     "## Quick Start",
     "",
@@ -479,16 +503,22 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
         "    env.ts",
         "    theme-system.ts",
         "    cn.ts",
-        "    db.ts",
         "    auth.ts",
         "    auth-client.ts",
         "    storage.ts",
+        "    # portable branch:",
+        "    db.ts",
+        "    db/schema.ts",
+        "    # hosted branch:",
+        "    supabase.ts",
+        "    supabase-browser.ts",
         "    server/",
         "      guards.ts",
         "      queries/",
         "      actions/",
         "  routes/",
         "    api/",
+        "    auth/callback.ts",
         "  components/",
         "    layout/",
         "    shells/",
@@ -506,7 +536,9 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
     "- inspect `src/components/shells/page/` for page rhythm and framing",
     "- inspect `src/components/layout/` for spatial composition wrappers",
     "- inspect `src/components/registry/` for the copied UI building blocks used by the generated routes",
-    "- inspect `src/lib/env.ts`, `src/lib/db.ts`, `src/lib/auth.ts`, and `src/lib/storage.ts` for the generated backend capability surface",
+    "- inspect `src/lib/env.ts`, `src/lib/auth.ts`, and `src/lib/storage.ts` for the generated backend capability surface",
+    "- if the app uses the portable branch, inspect `src/lib/db.ts`, `src/lib/db/schema.ts`, and `drizzle.config.ts`",
+    "- if the app uses the hosted branch, inspect `src/lib/supabase.ts`, `src/lib/supabase-browser.ts`, and `supabase/schema.sql`",
     "- inspect `src/routes/api/` and `src/lib/server/` for explicit machine-facing API routes and server functions",
     "- inspect `src/app.css` and `src/lib/theme-system.ts` for the styling grammar and default theme behavior",
     "",
@@ -571,10 +603,12 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
     "",
     "### Backend Capability Inventory",
     "",
-    "- database: `postgres` or `sqlite` with `drizzle-kit` migrations",
-    "- auth: `better-auth` in session mode, wired to Drizzle",
-    "- storage: `s3` with presigned PUT upload helpers",
-    "- api route types: `json`, `webhook`, `presign-upload`, plus the generated Better Auth mount route",
+    "- portable database: `drizzle` provider with `postgres` or `sqlite`",
+    "- hosted database: `supabase` provider using generated Supabase SDK clients",
+    "- portable auth: `better-auth` in session mode, wired to Drizzle",
+    "- hosted auth: `supabase` in session mode, with `emailPassword` and optional `emailOtp` scaffolding",
+    "- storage: `s3` with presigned PUT upload helpers and AWS-compatible aliases that fit Tigris",
+    "- api route types: `json`, `webhook`, `presign-upload`, plus generated auth routes for the selected auth provider",
     "- server module types: `query`, `action`",
     "",
     "### App Shell Intent",
@@ -701,11 +735,12 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
     "- treat the emitted app as a normal SolidStart codebase",
     "- preserve the styling grammar unless there is a clear reason to extend it",
     "- prefer composing from copied registry components before inventing new base primitives",
+    "- choose one backend branch per generated app: portable (`better-auth + drizzle`) or hosted (`supabase + tigris`)",
     "- keep changes source-owned in the generated app rather than trying to reintroduce runtime abstraction",
     "",
     "## Summary",
     "",
-    "Stylyf is the fast front-end assembly layer. Use it to eliminate setup repetition, then continue inside the generated app with normal SolidStart engineering discipline.",
+    "Stylyf is the fast full-stack assembly layer. Use it to eliminate setup repetition, then continue inside the generated app with normal SolidStart engineering discipline.",
     "",
   );
 

@@ -59,9 +59,9 @@ export const appIrSchema = {
     },
     database: {
       type: "object",
-      required: ["dialect"],
       additionalProperties: false,
       properties: {
+        provider: { enum: ["drizzle", "supabase"] },
         dialect: { enum: ["postgres", "sqlite"] },
         migrations: { enum: ["drizzle-kit"] },
         schema: {
@@ -99,13 +99,14 @@ export const appIrSchema = {
       required: ["provider"],
       additionalProperties: false,
       properties: {
-        provider: { enum: ["better-auth"] },
+        provider: { enum: ["better-auth", "supabase"] },
         mode: { enum: ["session"] },
         features: {
           type: "object",
           additionalProperties: false,
           properties: {
             emailPassword: { type: "boolean" },
+            emailOtp: { type: "boolean" },
             magicLink: { type: "boolean" },
           },
         },

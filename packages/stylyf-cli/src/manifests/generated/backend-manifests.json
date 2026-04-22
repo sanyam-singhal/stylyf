@@ -2,7 +2,9 @@
   "capabilities": [
     "database-postgres",
     "database-sqlite",
+    "database-supabase",
     "auth-better-auth",
+    "auth-supabase",
     "storage-s3",
     "env-contract"
   ],
@@ -17,6 +19,7 @@
   ],
   "apiRoutes": [
     "api-auth-handler",
+    "api-supabase-auth-routes",
     "api-json-route",
     "api-webhook-route",
     "api-presign-upload-route"
@@ -25,6 +28,7 @@
     "env-app-core",
     "env-postgres",
     "env-sqlite",
+    "env-supabase",
     "env-better-auth",
     "env-s3"
   ],
@@ -32,6 +36,9 @@
     "snippet-drizzle-db-module",
     "snippet-libsql-db-module",
     "snippet-better-auth-module",
+    "snippet-supabase-browser-client",
+    "snippet-supabase-server-client",
+    "snippet-supabase-auth-module",
     "snippet-s3-storage-module",
     "snippet-typed-env-module"
   ]

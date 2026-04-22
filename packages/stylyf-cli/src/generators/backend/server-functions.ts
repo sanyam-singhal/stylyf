@@ -80,19 +80,142 @@ function authCall(module: ServerModuleIR, app: AppIR) {
   return "";
 }
 
+function renderSupabaseServerModule(module: ServerModuleIR, app: AppIR) {
+  const exportSymbol = exportName(module);
+  const resourceName = module.resource ?? "records";
+  const authImportLine = authImport(module, app);
+  const authCallLine = authCall(module, app);
+  const typeName = `${pascalCase(module.resource ?? "Resource")}Record`;
+  const inputType = `${pascalCase(module.resource ?? "Resource")}Input`;
+  const imports = [
+    module.type === "query" ? 'import { query } from "@solidjs/router";' : 'import { action } from "@solidjs/router";',
+    'import { createSupabaseAdminClient } from "~/lib/supabase";',
+    authImportLine,
+    "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const authLines = authCallLine ? `${authCallLine}\n` : "";
+
+  if (module.type === "query") {
+    if (module.name.endsWith(".detail")) {
+      return [
+        imports,
+        `export const ${exportSymbol} = query(async (id: string) => {`,
+        '  "use server";',
+        authLines.trimEnd(),
+        "  const supabase = createSupabaseAdminClient();",
+        `  const { data, error } = await supabase.from(${JSON.stringify(resourceName)}).select("*").eq("id", id).limit(1);`,
+        "  if (error) throw error;",
+        "  return data?.[0] ?? null;",
+        `}, ${JSON.stringify(module.name)});`,
+        "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+    }
+
+    return [
+      imports,
+      `export const ${exportSymbol} = query(async () => {`,
+      '  "use server";',
+      authLines.trimEnd(),
+      "  const supabase = createSupabaseAdminClient();",
+      `  const { data, error } = await supabase.from(${JSON.stringify(resourceName)}).select("*");`,
+      "  if (error) throw error;",
+      "  return data ?? [];",
+      `}, ${JSON.stringify(module.name)});`,
+      "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (module.name.includes("upload")) {
+    return [
+      imports.replace('import { createSupabaseAdminClient } from "~/lib/supabase";', 'import { createPresignedUpload, type UploadIntent } from "~/lib/storage";'),
+      `export const ${exportSymbol} = action(async (input: UploadIntent) => {`,
+      '  "use server";',
+      authLines.trimEnd(),
+      "  return createPresignedUpload(input);",
+      `}, ${JSON.stringify(module.name)});`,
+      "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (module.name.endsWith(".delete")) {
+    return [
+      imports,
+      `export const ${exportSymbol} = action(async (id: string) => {`,
+      '  "use server";',
+      authLines.trimEnd(),
+      "  const supabase = createSupabaseAdminClient();",
+      `  const { data, error } = await supabase.from(${JSON.stringify(resourceName)}).delete().eq("id", id).select("*");`,
+      "  if (error) throw error;",
+      "  return data ?? [];",
+      `}, ${JSON.stringify(module.name)});`,
+      "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (module.name.endsWith(".update")) {
+    return [
+      imports,
+      `type ${typeName} = Record<string, unknown> & { id: string };`,
+      "",
+      `export const ${exportSymbol} = action(async (input: ${typeName}) => {`,
+      '  "use server";',
+      authLines.trimEnd(),
+      "  const supabase = createSupabaseAdminClient();",
+      "  const { id, ...changes } = input;",
+      `  const { data, error } = await supabase.from(${JSON.stringify(resourceName)}).update(changes).eq("id", id).select("*");`,
+      "  if (error) throw error;",
+      "  return data ?? [];",
+      `}, ${JSON.stringify(module.name)});`,
+      "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  return [
+    imports,
+    `type ${inputType} = Record<string, unknown>;`,
+    "",
+    `export const ${exportSymbol} = action(async (input: ${inputType}) => {`,
+    '  "use server";',
+    authLines.trimEnd(),
+    "  const supabase = createSupabaseAdminClient();",
+    `  const { data, error } = await supabase.from(${JSON.stringify(resourceName)}).insert(input).select("*");`,
+    "  if (error) throw error;",
+    "  return data ?? [];",
+    `}, ${JSON.stringify(module.name)});`,
+    "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 export async function writeGeneratedServerModules(app: AppIR, targetPath: string) {
   const modules = app.server ?? [];
 
   for (const module of modules) {
-    const templateId = templateIdFor(module);
-    const rendered = await renderServerFunctionTemplate(templateId, {
-      EXPORT_NAME: exportName(module),
-      QUERY_KEY: module.name,
-      RESOURCE_SYMBOL: resourceSymbol(module.resource),
-      TYPE_NAME: `${pascalCase(module.resource ?? "Resource")}UpdateInput`,
-      AUTH_IMPORT: authImport(module, app),
-      AUTH_CALL: authCall(module, app),
-    });
+    const rendered =
+      app.database?.provider === "supabase"
+        ? renderSupabaseServerModule(module, app)
+        : await renderServerFunctionTemplate(templateIdFor(module), {
+            EXPORT_NAME: exportName(module),
+            QUERY_KEY: module.name,
+            RESOURCE_SYMBOL: resourceSymbol(module.resource),
+            TYPE_NAME: `${pascalCase(module.resource ?? "Resource")}UpdateInput`,
+            AUTH_IMPORT: authImport(module, app),
+            AUTH_CALL: authCall(module, app),
+          });
 
     await writeGeneratedFile(resolve(targetPath, filePathFor(module)), rendered);
   }

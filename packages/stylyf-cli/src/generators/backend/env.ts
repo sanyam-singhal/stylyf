@@ -53,7 +53,45 @@ export function collectGeneratedEnvEntries(app: AppIR) {
   ];
 
   if (app.database) {
-    if (app.database.dialect === "sqlite") {
+    if (app.database.provider === "supabase") {
+      entries.push(
+        {
+          name: "SUPABASE_URL",
+          required: true,
+          exposure: "server",
+          example: "https://your-project-ref.supabase.co",
+          description: "Supabase project URL used by server-side auth and data clients.",
+        },
+        {
+          name: "SUPABASE_PUBLISHABLE_KEY",
+          required: true,
+          exposure: "server",
+          example: "sb_publishable_xxx",
+          description: "Server-side copy of the Supabase publishable key used for SSR auth and request-scoped data access.",
+        },
+        {
+          name: "SUPABASE_SECRET_KEY",
+          required: true,
+          exposure: "server",
+          example: "sb_secret_xxx",
+          description: "Server-only Supabase secret key for privileged admin and bypass-RLS operations.",
+        },
+        {
+          name: "VITE_SUPABASE_URL",
+          required: true,
+          exposure: "public",
+          example: "https://your-project-ref.supabase.co",
+          description: "Client-exposed Supabase project URL for browser auth flows.",
+        },
+        {
+          name: "VITE_SUPABASE_PUBLISHABLE_KEY",
+          required: true,
+          exposure: "public",
+          example: "sb_publishable_xxx",
+          description: "Client-exposed Supabase publishable key for browser auth and data access.",
+        },
+      );
+    } else if (app.database.dialect === "sqlite") {
       entries.push(
         {
           name: "DATABASE_URL",
@@ -83,32 +121,41 @@ export function collectGeneratedEnvEntries(app: AppIR) {
   }
 
   if (app.auth) {
-    entries.push(
-      {
-        name: "BETTER_AUTH_SECRET",
-        required: true,
-        exposure: "server",
-        example: "",
-        description: "Secret used by Better Auth for signing and encryption.",
-      },
-      {
-        name: "BETTER_AUTH_URL",
-        required: true,
-        exposure: "server",
-        example: "http://localhost:3000",
-        description: "Canonical Better Auth URL for the generated auth handler.",
-      },
-    );
+    if (app.auth.provider === "better-auth") {
+      entries.push(
+        {
+          name: "BETTER_AUTH_SECRET",
+          required: true,
+          exposure: "server",
+          example: "",
+          description: "Secret used by Better Auth for signing and encryption.",
+        },
+        {
+          name: "BETTER_AUTH_URL",
+          required: true,
+          exposure: "server",
+          example: "http://localhost:3000",
+          description: "Canonical Better Auth URL for the generated auth handler.",
+        },
+      );
+    }
   }
 
   if (app.storage) {
     entries.push(
       {
         name: "S3_REGION",
-        required: true,
+        required: false,
         exposure: "server",
         example: "us-east-1",
         description: "Object storage region.",
+      },
+      {
+        name: "AWS_REGION",
+        required: false,
+        exposure: "server",
+        example: "auto",
+        description: "AWS-compatible region alias used by providers such as Tigris.",
       },
       {
         name: "S3_BUCKET",
@@ -119,17 +166,31 @@ export function collectGeneratedEnvEntries(app: AppIR) {
       },
       {
         name: "S3_ACCESS_KEY_ID",
-        required: true,
+        required: false,
         exposure: "server",
         example: "",
         description: "Access key used by the S3-compatible storage client.",
       },
       {
+        name: "AWS_ACCESS_KEY_ID",
+        required: false,
+        exposure: "server",
+        example: "",
+        description: "AWS SDK-compatible access key alias used by providers such as Tigris.",
+      },
+      {
         name: "S3_SECRET_ACCESS_KEY",
-        required: true,
+        required: false,
         exposure: "server",
         example: "",
         description: "Secret key used by the S3-compatible storage client.",
+      },
+      {
+        name: "AWS_SECRET_ACCESS_KEY",
+        required: false,
+        exposure: "server",
+        example: "",
+        description: "AWS SDK-compatible secret key alias used by providers such as Tigris.",
       },
       {
         name: "S3_ENDPOINT",
@@ -137,6 +198,13 @@ export function collectGeneratedEnvEntries(app: AppIR) {
         exposure: "server",
         example: "",
         description: "Optional endpoint for S3-compatible providers such as Tigris or Spaces.",
+      },
+      {
+        name: "AWS_ENDPOINT_URL_S3",
+        required: false,
+        exposure: "server",
+        example: "https://t3.storage.dev",
+        description: "AWS SDK-compatible S3 endpoint alias used by providers such as Tigris.",
       },
       {
         name: "S3_FORCE_PATH_STYLE",

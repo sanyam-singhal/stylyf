@@ -41,25 +41,35 @@ export function renderGeneratedPackageJson(app: AppIR) {
   };
 
   if (app.database) {
-    dependencies["drizzle-orm"] = "^0.45.2";
-    if (app.database.dialect === "sqlite") {
-      dependencies["@libsql/client"] = "^0.17.2";
+    if (app.database.provider === "supabase") {
+      dependencies["@supabase/ssr"] = "^0.10.2";
+      dependencies["@supabase/supabase-js"] = "^2.104.0";
     } else {
-      dependencies.postgres = "^3.4.9";
+      dependencies["drizzle-orm"] = "^0.45.2";
+      if (app.database.dialect === "sqlite") {
+        dependencies["@libsql/client"] = "^0.17.2";
+      } else {
+        dependencies.postgres = "^3.4.9";
+      }
+      devDependencies["drizzle-kit"] = "^0.31.10";
+      scripts["db:generate"] = "drizzle-kit generate";
+      scripts["db:migrate"] = "drizzle-kit migrate";
+      scripts["db:studio"] = "drizzle-kit studio";
     }
-    devDependencies["drizzle-kit"] = "^0.31.10";
-    scripts["db:generate"] = "drizzle-kit generate";
-    scripts["db:migrate"] = "drizzle-kit migrate";
-    scripts["db:studio"] = "drizzle-kit studio";
   }
 
   if (app.auth) {
-    dependencies["better-auth"] = "^1.6.6";
-    dependencies["@better-auth/drizzle-adapter"] = "^1.6.6";
-    devDependencies["@better-auth/cli"] = "^1.4.21";
-    scripts["auth:generate"] = "better-auth generate --config ./src/lib/auth-schema.config.ts --output ./src/lib/db/auth-schema.ts --yes";
-    scripts["auth:sync"] = "npm run auth:generate && npm run db:generate";
-    scripts["auth:secret"] = "better-auth secret";
+    if (app.auth.provider === "better-auth") {
+      dependencies["better-auth"] = "^1.6.6";
+      dependencies["@better-auth/drizzle-adapter"] = "^1.6.6";
+      devDependencies["@better-auth/cli"] = "^1.4.21";
+      scripts["auth:generate"] = "better-auth generate --config ./src/lib/auth-schema.config.ts --output ./src/lib/db/auth-schema.ts --yes";
+      scripts["auth:sync"] = "npm run auth:generate && npm run db:generate";
+      scripts["auth:secret"] = "better-auth secret";
+    } else {
+      dependencies["@supabase/ssr"] = "^0.10.2";
+      dependencies["@supabase/supabase-js"] = "^2.104.0";
+    }
   }
 
   if (app.storage) {
@@ -84,7 +94,18 @@ export function renderGeneratedPackageJson(app: AppIR) {
   );
 }
 
-export function renderGeneratedAppConfig() {
+export function renderGeneratedAppConfig(app: AppIR) {
+  if (app.auth?.provider === "supabase") {
+    return [
+      'import { defineConfig } from "@solidjs/start/config";',
+      "",
+      "export default defineConfig({",
+      '  middleware: "./src/middleware.ts",',
+      "});",
+      "",
+    ].join("\n");
+  }
+
   return ['import { defineConfig } from "@solidjs/start/config";', "", "export default defineConfig({});", ""].join("\n");
 }
 
@@ -125,7 +146,7 @@ export function renderGeneratedGitignore() {
 
 export async function writeProjectScaffold(app: AppIR, targetPath: string) {
   await writeGeneratedFile(`${targetPath}/package.json`, `${renderGeneratedPackageJson(app)}\n`);
-  await writeGeneratedFile(`${targetPath}/app.config.ts`, renderGeneratedAppConfig());
+  await writeGeneratedFile(`${targetPath}/app.config.ts`, renderGeneratedAppConfig(app));
   await writeGeneratedFile(`${targetPath}/postcss.config.mjs`, renderGeneratedPostcssConfig());
   await writeGeneratedFile(`${targetPath}/tsconfig.json`, `${renderGeneratedTsConfig()}\n`);
   await writeGeneratedFile(`${targetPath}/.gitignore`, renderGeneratedGitignore());

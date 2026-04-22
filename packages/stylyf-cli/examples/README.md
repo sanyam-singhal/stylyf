@@ -24,6 +24,18 @@ Internal app baseline covering:
 - presigned upload API route
 - query + action server modules
 
+## `atlas-dashboard-supabase.json`
+
+Hosted fast-path baseline covering:
+
+- sidebar app shell
+- Supabase for both auth and data access
+- email + password auth enabled
+- email OTP scaffolding enabled for later passwordless flows
+- Tigris-friendly S3-compatible storage wiring
+- generated `supabase/schema.sql` instead of Drizzle files
+- query + action server modules backed by the Supabase SDK
+
 ## `field-manual-docs-fullstack.json`
 
 Content/docs baseline covering:
