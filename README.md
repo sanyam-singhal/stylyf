@@ -42,6 +42,13 @@ This is the fastest deployment path.
 
 In both branches, object storage stays presigned-URL based so the browser never receives raw bucket credentials.
 
+## Choosing A Path
+
+- choose `portable` for provider-agnostic auth/data control, Better Auth plugins, Drizzle-owned schema, and local SQLite smoke testing
+- choose `hosted` for the fastest managed deployment path with Supabase for auth+data and Tigris for object storage
+- the portable branch is the better fit when you want long-term portability
+- the hosted branch is the better fit when you want the shortest path from scaffold to deployed app
+
 ## Package
 
 Install globally:
@@ -71,7 +78,6 @@ stylyf serve-search --port 4310
 - [packages/stylyf-cli](./packages/stylyf-cli): publishable CLI package
 - [src](./src): Stylyf registry site and source-owned component inventory used to build bundled manifests/assets
 - [scripts](./scripts): manifest sync, package verification, and related build tooling
-- [WEB_CODING_ASSEMBLY_LINE.md](./WEB_CODING_ASSEMBLY_LINE.md): broader assembly-line direction beyond the current CLI release
 - [DEPLOYMENT.md](./DEPLOYMENT.md): deployment notes for the Stylyf site
 
 ## Local Development
@@ -104,7 +110,7 @@ npm run ui:interact
 ## Release Status
 
 - npm package: [`@depths/stylyf-cli`](https://www.npmjs.com/package/@depths/stylyf-cli)
-- current shipped milestone: `v0.2.0`
+- current codebase milestone: `v0.3.0`
 - GitHub releases: [Depths-AI/stylyf releases](https://github.com/Depths-AI/stylyf/releases)
 
 ## License

@@ -77,6 +77,17 @@ Hosted v0.3 foundation example covering:
 - hosted branch: `atlas-dashboard-v0.3-supabase.json`
 - broad contract reference: `atlas-dashboard-v0.3.json`
 
+## Hosted example note
+
+For the hosted Supabase path, generation is only the first half of the setup.
+After generating the app, apply:
+
+- `supabase/schema.sql`
+- `supabase/policies.sql`
+
+and only then treat hosted CRUD/runtime testing as representative of the
+generated scaffold.
+
 ## `field-manual-docs-fullstack.json`
 
 Content/docs baseline covering:

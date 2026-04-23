@@ -10,6 +10,13 @@ Stylyf is a JSON-driven full-stack assembly line for SolidStart. Its job is to l
 - hosted mode: `supabase auth + supabase data sdk + tigris-compatible s3 storage`
 - storage stays presigned-URL based in both modes, so the browser never receives raw object-storage credentials
 
+### Which Mode To Choose
+
+- choose `portable` when you want provider-agnostic auth/data control, Better Auth plugins, Drizzle ownership over schema, or local SQLite smoke testing
+- choose `hosted` when you want the fastest managed deployment path and are comfortable treating Supabase as both the auth and data platform
+- choose `portable + sqlite` for the quickest local backend iteration loop
+- choose `hosted + supabase + tigris` for the fastest managed deployment path
+
 ## What Stylyf Does
 
 - turns a shallow JSON IR into a standalone SolidStart app
@@ -30,6 +37,14 @@ Stylyf is a JSON-driven full-stack assembly line for SolidStart. Its job is to l
 5. Move into the generated app and iterate there like a normal SolidStart codebase.
 6. Use `stylyf intro --project <path>` whenever a coding agent needs a compact refresher on the generated app structure.
 7. Treat `auth.protect` as the route/API/server default policy surface; explicit `auth` fields on API routes and server modules still win when set.
+
+## What Stylyf Still Expects The Agent To Decide
+
+- product-specific domain logic and ranking/moderation/business rules
+- final role and authorization design beyond the bundled access presets
+- final Supabase RLS policy shape for production-grade hosted apps
+- email delivery/provider wiring for Better Auth OTP or notification delivery
+- storage retention, moderation, and lifecycle policy beyond the generated attachment baseline
 
 ## Can An Agent Start Cold With This?
 
@@ -232,6 +247,15 @@ The v0.3 surface is deliberately broad. It is meant to describe generalized app 
 - Supabase RLS policy SQL for the hosted branch
 - attachment metadata tables plus presign, confirm, replace, and delete flows
 - workflow definitions, transition actions, event log queries, and notification queries/actions
+
+### Hosted Branch Apply Checklist
+
+After generating a hosted app:
+
+1. fill in `.env` with `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, and the S3/Tigris values
+2. apply the generated `supabase/schema.sql` to the target Supabase project
+3. review and apply the generated `supabase/policies.sql` before treating the hosted CRUD surface as production-ready
+4. only then run hosted auth, CRUD, and attachment smoke tests against the real project
 
 ### Recommended Starting Points
 
