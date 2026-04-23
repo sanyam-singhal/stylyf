@@ -1,0 +1,34 @@
+{
+  "database": {
+    "dialect": "sqlite",
+    "migrations": "drizzle-kit"
+  },
+  "auth": {
+    "provider": "better-auth",
+    "mode": "session",
+    "features": {
+      "emailPassword": true
+    },
+    "protect": [
+      { "target": "/", "kind": "route", "access": "user" },
+      { "target": "/records", "kind": "route", "access": "user" },
+      { "target": "/records/new", "kind": "route", "access": "user" },
+      { "target": "/records/:id/edit", "kind": "route", "access": "user" },
+      { "target": "records.list", "kind": "server", "access": "user" }
+    ]
+  },
+  "storage": {
+    "provider": "s3",
+    "mode": "presigned-put",
+    "bucketAlias": "uploads"
+  },
+  "apis": [
+    {
+      "path": "/api/uploads/presign",
+      "method": "POST",
+      "type": "presign-upload",
+      "name": "create-record-upload",
+      "auth": "user"
+    }
+  ]
+}

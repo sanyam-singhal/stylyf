@@ -1,83 +1,95 @@
 # Stylyf CLI Examples
 
-These example IR files are the primary dogfood targets for the current Stylyf
-scaffolding passes.
+Stylyf now has two example stories:
 
-## `atlas-dashboard-local.json`
+- **canonical** examples for the cleanest operator starting points
+- **reference** examples for broader coverage and deeper capability reminders
 
-Local baseline covering:
+## Canonical Examples
 
-- sidebar app shell
-- SQLite + libsql
+### Portable canonical example
+
+Monolithic:
+
+- `atlas-dashboard-v0.3-local.json`
+
+Additive:
+
+- `atlas-dashboard-portable.app.core.json`
+- `atlas-dashboard-portable.backend.json`
+- `atlas-dashboard-portable.resources.json`
+- `atlas-dashboard-portable.routes.json`
+
+This is the clearest starting point for:
+
 - Better Auth
-- full local auth + DB development path
-- query + action server modules
+- Drizzle
+- local SQLite development
+- Tigris-friendly S3 storage
+- resource/workflow-driven scaffolding
 
-## `atlas-dashboard-fullstack.json`
+Validate or generate it additively like this:
 
-Internal app baseline covering:
+```bash
+stylyf validate \
+  --ir packages/stylyf-cli/examples/atlas-dashboard-portable.app.core.json \
+  --ir packages/stylyf-cli/examples/atlas-dashboard-portable.backend.json \
+  --ir packages/stylyf-cli/examples/atlas-dashboard-portable.resources.json \
+  --ir packages/stylyf-cli/examples/atlas-dashboard-portable.routes.json \
+  --print-resolved
+```
 
-- sidebar app shell
-- PostgreSQL + Drizzle
-- Better Auth
-- S3 storage
-- presigned upload API route
-- query + action server modules
+### Hosted canonical example
 
-## `atlas-dashboard-supabase.json`
+Monolithic:
 
-Hosted fast-path baseline covering:
+- `atlas-dashboard-v0.3-supabase.json`
 
-- sidebar app shell
-- Supabase for both auth and data access
-- email + password auth enabled
-- email OTP scaffolding enabled for later passwordless flows
-- Tigris-friendly S3-compatible storage wiring
-- generated `supabase/schema.sql` instead of Drizzle files
-- query + action server modules backed by the Supabase SDK
+Additive:
 
-## `atlas-dashboard-v0.3.json`
+- `atlas-dashboard-hosted.app.core.json`
+- `atlas-dashboard-hosted.backend.json`
+- `atlas-dashboard-hosted.resources.json`
+- `atlas-dashboard-hosted.routes.json`
 
-Validation-first v0.3 foundation example covering:
+This is the clearest starting point for:
 
-- generalized `resources` grammar
-- ownership and access presets
-- resource relations
-- attachment declarations
-- workflow transitions with emitted events and notification audiences
-- compatibility with the existing portable full-stack scaffold
+- Supabase auth
+- Supabase data access
+- Tigris-friendly S3 storage
+- resource/workflow-driven hosted scaffolding
 
-## `atlas-dashboard-v0.3-local.json`
+Validate or generate it additively like this:
 
-Local portable v0.3 validation example covering:
+```bash
+stylyf generate \
+  --ir packages/stylyf-cli/examples/atlas-dashboard-hosted.app.core.json \
+  --ir packages/stylyf-cli/examples/atlas-dashboard-hosted.backend.json \
+  --ir packages/stylyf-cli/examples/atlas-dashboard-hosted.resources.json \
+  --ir packages/stylyf-cli/examples/atlas-dashboard-hosted.routes.json \
+  --target ./atlas-hosted
+```
 
-- SQLite + libsql
-- Better Auth
-- resource-driven schema and CRUD generation
-- owner/public policy defaults on a local development stack
-- generated create/edit routes and resource form scaffolds
-- attachment metadata plus presign/confirm/delete lifecycles
-- workflow transitions, event logging, and notifications
+## Reference Examples
 
-## `atlas-dashboard-v0.3-supabase.json`
+These remain useful as broader reminders of the system surface.
 
-Hosted v0.3 foundation example covering:
+### Frontend and pre-v0.3 baselines
 
-- resource-first IR with Supabase data/auth
-- derived `supabase/schema.sql` from `resources`
-- derived query/action server modules from `resources`
-- ownership, relation, attachment, and workflow declarations
-- generated create/edit routes and resource form scaffolds
-- hosted RLS policy SQL plus request-scoped server clients
-- workflow transitions, event logging, and notifications
+- `atlas-dashboard.json`
+- `atlas-dashboard-local.json`
+- `atlas-dashboard-fullstack.json`
+- `atlas-dashboard-supabase.json`
+- `field-manual-docs.json`
+- `field-manual-docs-fullstack.json`
 
-## Recommended v0.3 starting points
+### v0.3 reference contracts
 
-- portable branch: `atlas-dashboard-v0.3-local.json`
-- hosted branch: `atlas-dashboard-v0.3-supabase.json`
-- broad contract reference: `atlas-dashboard-v0.3.json`
+- `atlas-dashboard-v0.3.json`
+- `atlas-dashboard-v0.3-local.json`
+- `atlas-dashboard-v0.3-supabase.json`
 
-## Hosted example note
+## Hosted Example Note
 
 For the hosted Supabase path, generation is only the first half of the setup.
 After generating the app, apply:
@@ -88,15 +100,10 @@ After generating the app, apply:
 and only then treat hosted CRUD/runtime testing as representative of the
 generated scaffold.
 
-## `field-manual-docs-fullstack.json`
+## Why Keep Both Monolithic And Additive Examples?
 
-Content/docs baseline covering:
+- monolithic examples are fast to scan
+- additive examples teach the cleaner composition workflow
+- both resolve to the same final `AppIR`
 
-- docs shell
-- PostgreSQL + Drizzle
-- Better Auth
-- lighter server-side surface
-- no storage capability
-
-Both examples should generate successfully with one `stylyf generate` command
-and build without importing from this repo or from `@depths/stylyf-cli`.
+The additive examples are the preferred teaching surface for `v0.3.1`.
