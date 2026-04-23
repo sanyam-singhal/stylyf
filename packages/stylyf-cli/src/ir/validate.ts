@@ -348,6 +348,27 @@ function validateResources(resources: unknown[], errors: string[]) {
             errors.push(`resources[${index}].access.${key} must be one of ${[...resourceAccessPresets].join(", ")}`);
           }
         }
+
+        const accesses = Object.values(resource.access);
+        if (accesses.includes("owner") || accesses.includes("owner-or-public")) {
+          if (!isRecord(resource.ownership) || resource.ownership.model !== "user") {
+            errors.push(`resources[${index}] must use ownership.model 'user' when access includes owner or owner-or-public`);
+          }
+        }
+
+        if (accesses.includes("workspace-member")) {
+          if (!isRecord(resource.ownership) || resource.ownership.model !== "workspace") {
+            errors.push(`resources[${index}] must use ownership.model 'workspace' when access includes workspace-member`);
+          }
+        }
+
+        if (
+          isRecord(resource.ownership) &&
+          (resource.ownership.model === "user" || resource.ownership.model === "workspace") &&
+          resource.access.create === "public"
+        ) {
+          errors.push(`resources[${index}] cannot use access.create 'public' for owned resources`);
+        }
       }
     }
 

@@ -47,6 +47,15 @@ Validation-first v0.3 foundation example covering:
 - workflow transitions with emitted events and notification audiences
 - compatibility with the existing portable full-stack scaffold
 
+## `atlas-dashboard-v0.3-local.json`
+
+Local portable v0.3 validation example covering:
+
+- SQLite + libsql
+- Better Auth
+- resource-driven schema and CRUD generation
+- owner/public policy defaults on a local development stack
+
 ## `atlas-dashboard-v0.3-supabase.json`
 
 Hosted v0.3 foundation example covering:

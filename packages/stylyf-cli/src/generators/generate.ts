@@ -23,8 +23,10 @@ import { renderGeneratedDbModule, renderGeneratedDbSchema, renderGeneratedDrizzl
 import { renderGeneratedEnvExample, renderGeneratedEnvModule } from "./backend/env.js";
 import {
   materializeAppForGeneration,
+  renderGeneratedResourcePolicyModule,
   renderGeneratedRelationsModule,
   renderGeneratedResourcesModule,
+  renderGeneratedSupabasePoliciesSql,
 } from "./backend/resources.js";
 import { writeGeneratedServerModules } from "./backend/server-functions.js";
 import { renderGeneratedStorageModule } from "./backend/storage.js";
@@ -364,11 +366,15 @@ export async function generateFrontendDraft(irPath: string, targetPath: string, 
   await writeGeneratedFile(resolve(targetPath, "src/lib/env.ts"), renderGeneratedEnvModule(app));
   if ((app.resources?.length ?? 0) > 0 || (app.workflows?.length ?? 0) > 0) {
     await writeGeneratedFile(resolve(targetPath, "src/lib/resources.ts"), renderGeneratedResourcesModule(app));
+    await writeGeneratedFile(resolve(targetPath, "src/lib/server/resource-policy.ts"), renderGeneratedResourcePolicyModule(app));
   }
 
   if (app.database) {
     if (app.database.provider === "supabase") {
       await writeGeneratedFile(resolve(targetPath, "supabase/schema.sql"), renderGeneratedSupabaseSqlSchema(app));
+      if ((app.resources?.length ?? 0) > 0) {
+        await writeGeneratedFile(resolve(targetPath, "supabase/policies.sql"), renderGeneratedSupabasePoliciesSql(app));
+      }
     } else {
       await writeGeneratedFile(resolve(targetPath, "src/lib/db.ts"), renderGeneratedDbModule(app));
       await writeGeneratedFile(resolve(targetPath, "src/lib/db/schema.ts"), renderGeneratedDbSchema(app));
