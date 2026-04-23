@@ -1,326 +1,274 @@
 import { Title } from "@solidjs/meta";
-import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js";
-import type { Component } from "solid-js";
-import { Dynamic } from "solid-js/web";
-import { Layers3, Orbit } from "lucide-solid";
-import { RegistryCard } from "~/components/registry-card";
-import { RegistrySidebar } from "~/components/registry-sidebar";
-import { ThemeStudio } from "~/components/theme-studio";
-import { eagerClusterIds, eagerPreviewMapForCluster, loadPreviewMapForCluster } from "~/lib/registry-previews";
-import { registryClusters, registryCounts, registryItemBySlug, type RegistryClusterSection, type RegistryItem } from "~/lib/registry";
-import { clusterVisualStyle, visualForCluster } from "~/lib/registry-visuals";
+import { ArrowRight, Boxes, Database, GitBranch, HardDriveUpload, Route, ShieldCheck, Sparkles, TerminalSquare } from "lucide-solid";
 
-type PreviewMap = Record<string, Component<{ item: RegistryItem }>>;
+const repoUrl = "https://github.com/Depths-AI/stylyf";
+const npmUrl = "https://www.npmjs.com/package/@depths/stylyf-cli";
 
-function matchesCluster(cluster: RegistryClusterSection, query: string) {
-  const normalizedQuery = query.trim().toLowerCase();
+const capabilityCards = [
+  {
+    icon: Boxes,
+    eyebrow: "Frontend assembly",
+    title: "Shells, routes, layouts, and copied UI inventory",
+    body: "Generate SolidStart structure from a shallow JSON IR instead of hand-writing the same scaffolding every time.",
+  },
+  {
+    icon: ShieldCheck,
+    eyebrow: "Portable backend path",
+    title: "Better Auth + Drizzle + Postgres or SQLite/libsql",
+    body: "Use the provider-agnostic branch when you want long-term control, local SQLite smoke tests, or explicit schema ownership.",
+  },
+  {
+    icon: Database,
+    eyebrow: "Hosted backend path",
+    title: "Supabase auth + data, with Tigris-backed object storage",
+    body: "Use the faster hosted branch when you want the shortest route from scaffold to deployment.",
+  },
+  {
+    icon: HardDriveUpload,
+    eyebrow: "Storage substrate",
+    title: "Presigned upload flows over S3-compatible storage",
+    body: "Generated apps keep raw bucket credentials on the server and hand browsers only short-lived presigned URLs.",
+  },
+];
 
-  if (!normalizedQuery) {
-    return cluster;
-  }
-
-  const matchesClusterLabel = [
-    cluster.title,
-    cluster.description,
-  ]
-    .join(" ")
-    .toLowerCase()
-    .includes(normalizedQuery);
-
-  const items = cluster.items.filter(item => {
-    const haystack = [
-      item.name,
-      item.description,
-      item.pattern,
-      item.notes,
-      item.clusterLabel,
-      ...item.styleParams,
-      ...item.stateParams,
-    ]
-      .join(" ")
-      .toLowerCase();
-
-    return haystack.includes(normalizedQuery);
-  });
-
-  if (matchesClusterLabel && items.length === 0) {
-    return cluster;
-  }
-
-  return {
-    ...cluster,
-    items,
-  };
-}
+const deliveryPoints = [
+  "Generated apps are standalone checked-in SolidStart source trees.",
+  "Generated apps do not import this repo or the Stylyf CLI at runtime.",
+  "The same CLI can be reused for first-pass scaffolding and iterative product work.",
+];
 
 export default function Home() {
-  const [query, setQuery] = createSignal("");
-  const initialPreviewMaps: Record<string, PreviewMap> = {};
-
-  for (const cluster of registryClusters) {
-    const eagerPreviewMap = eagerPreviewMapForCluster(cluster.id);
-
-    if (eagerPreviewMap) {
-      initialPreviewMaps[cluster.id] = eagerPreviewMap;
-    }
-  }
-
-  const [previewMaps, setPreviewMaps] = createSignal<Record<string, PreviewMap>>(initialPreviewMaps);
-  const [loadedClusters, setLoadedClusters] = createSignal<Set<string>>(new Set(eagerClusterIds));
-  const [loadingClusters, setLoadingClusters] = createSignal<Set<string>>(new Set());
-  const sectionRefs = new Map<string, HTMLElement>();
-  const preloadPromises = new Map<string, Promise<void>>();
-  let observer: IntersectionObserver | undefined;
-
-  const filteredClusters = createMemo(() =>
-    registryClusters
-      .map(cluster => matchesCluster(cluster, query()))
-      .filter(cluster => cluster.items.length),
-  );
-
-  const visibleComponentCount = createMemo(() =>
-    filteredClusters().reduce((sum, cluster) => sum + cluster.items.length, 0),
-  );
-
-  const clusterById = new Map(registryClusters.map(cluster => [cluster.id, cluster]));
-
-  const preloadCluster = (clusterId: string) => {
-    if (loadedClusters().has(clusterId)) {
-      return Promise.resolve();
-    }
-
-    const existing = preloadPromises.get(clusterId);
-
-    if (existing) {
-      return existing;
-    }
-
-    const cluster = clusterById.get(clusterId);
-
-    if (!cluster) {
-      return Promise.resolve();
-    }
-
-    setLoadingClusters(current => {
-      const next = new Set(current);
-      next.add(clusterId);
-      return next;
-    });
-
-    const promise = loadPreviewMapForCluster(cluster)
-      .then(map => {
-        setPreviewMaps(current => ({ ...current, [clusterId]: map }));
-        setLoadedClusters(current => {
-          const next = new Set(current);
-          next.add(clusterId);
-          return next;
-        });
-      })
-      .finally(() => {
-        setLoadingClusters(current => {
-          const next = new Set(current);
-          next.delete(clusterId);
-          return next;
-        });
-        preloadPromises.delete(clusterId);
-      });
-
-    preloadPromises.set(clusterId, promise);
-    return promise;
-  };
-
-  const observeCurrentSections = () => {
-    if (!observer) {
-      return;
-    }
-
-    observer.disconnect();
-
-    for (const cluster of filteredClusters()) {
-      const element = sectionRefs.get(cluster.id);
-
-      if (element) {
-        observer.observe(element);
-      }
-    }
-  };
-
-  createEffect(() => {
-    const firstVisibleCluster = filteredClusters()[0];
-
-    if (firstVisibleCluster) {
-      void preloadCluster(firstVisibleCluster.id);
-    }
-  });
-
-  onMount(() => {
-    observer = new IntersectionObserver(
-      entries => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            void preloadCluster((entry.target as HTMLElement).id);
-          }
-        }
-      },
-      { rootMargin: "1000px 0px" },
-    );
-
-    const preloadHashTarget = () => {
-      const hash = decodeURIComponent(window.location.hash.replace(/^#/, ""));
-
-      if (!hash) {
-        return;
-      }
-
-      const item = registryItemBySlug[hash];
-
-      if (item) {
-        void preloadCluster(item.clusterId);
-        return;
-      }
-
-      if (clusterById.has(hash)) {
-        void preloadCluster(hash);
-      }
-    };
-
-    createEffect(() => {
-      filteredClusters();
-
-      queueMicrotask(observeCurrentSections);
-    });
-
-    queueMicrotask(() => {
-      observeCurrentSections();
-      preloadHashTarget();
-    });
-    window.addEventListener("hashchange", preloadHashTarget);
-
-    onCleanup(() => {
-      observer?.disconnect();
-      window.removeEventListener("hashchange", preloadHashTarget);
-    });
-  });
-
   return (
-    <main id="library" class="mx-auto flex w-full max-w-[1600px] flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-      <Title>Stylyf | Registry</Title>
+    <main>
+      <Title>Stylyf | Full-stack SolidStart assembly line</Title>
 
-      <section class="ui-shell relative overflow-hidden px-6 py-7 sm:px-8 sm:py-8 lg:px-10 lg:py-10">
-        <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,color-mix(in_oklab,var(--primary)_10%,transparent),transparent_38%,color-mix(in_oklab,var(--secondary)_10%,transparent))]" />
-        <div class="relative grid gap-8 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] xl:items-end">
-          <div>
+      <section class="mx-auto grid w-full max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)] lg:px-8 lg:py-16">
+        <div class="ui-shell relative overflow-hidden px-6 py-8 sm:px-8 sm:py-10">
+          <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(140deg,color-mix(in_oklab,var(--primary)_12%,transparent),transparent_38%,color-mix(in_oklab,var(--secondary)_12%,transparent))]" />
+          <div class="relative">
             <div class="ui-pillbar inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-              <Orbit class="size-3.5" />
-              <span>Cluster-first registry demo</span>
+              <Sparkles class="size-3.5" />
+              <span>CLI-first monorepo</span>
             </div>
-            <h1 class="mt-5 max-w-4xl text-balance text-4xl font-semibold tracking-[-0.04em] text-foreground sm:text-5xl lg:text-6xl">
-              One scrollable section per cluster, one subsection per component.
-            </h1>
-            <p class="mt-5 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg">
-              The demo app is structured as a single vertical registry page. Each cluster is a section. Each component
-              inside that cluster is rendered as its own subsection with the same review contract: name, description,
-              style params, state params, actual display, source display, and copy action.
-            </p>
-          </div>
 
-          <div class="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
-            <div class="ui-shell-muted p-5">
-              <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Clusters</div>
-              <div class="mt-2 text-3xl font-semibold tracking-tight text-foreground">{registryCounts.clusters}</div>
-              <div class="mt-2 text-sm text-muted-foreground">Role-based sections across the active registry.</div>
+            <h1 class="mt-5 max-w-4xl text-balance text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-5xl lg:text-6xl">
+              Stylyf turns repeatable SolidStart app setup into an assembly line.
+            </h1>
+
+            <p class="mt-5 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg">
+              It is designed for coding agents and teams who want to start from a serious full-stack baseline: routed
+              UI shells, copied SolidJS components, backend wiring, auth, data access, storage helpers, and explicit
+              source files ready for normal iterative development.
+            </p>
+
+            <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a
+                href={repoUrl}
+                target="_blank"
+                rel="noreferrer"
+                class="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-xl)] bg-foreground px-5 text-sm font-medium text-background shadow-soft transition hover:opacity-92"
+              >
+                <GitBranch class="size-4" />
+                <span>View GitHub repo</span>
+              </a>
+              <a
+                href={npmUrl}
+                target="_blank"
+                rel="noreferrer"
+                class="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-xl)] border border-border bg-card px-5 text-sm font-medium text-foreground shadow-soft transition hover:border-primary/40"
+              >
+                <PackageBadge />
+                <span>Open npm package</span>
+              </a>
             </div>
-            <div class="ui-shell-muted p-5">
-              <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Components</div>
-              <div class="mt-2 text-3xl font-semibold tracking-tight text-foreground">{registryCounts.total}</div>
-              <div class="mt-2 text-sm text-muted-foreground">Each one rendered with the same preview and source contract.</div>
-            </div>
-            <div class="ui-shell-muted p-5">
-              <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Current view</div>
-              <div class="mt-2 text-3xl font-semibold tracking-tight text-foreground">{visibleComponentCount()}</div>
-              <div class="mt-2 text-sm text-muted-foreground">Visible after cluster and component filtering.</div>
+
+            <div class="mt-8 grid gap-3 sm:grid-cols-3">
+              <StatTile label="Current package" value="@depths/stylyf-cli" hint="Published on npm" />
+              <StatTile label="Generated contract" value="Standalone source" hint="No runtime CLI dependency" />
+              <StatTile label="Primary stack" value="SolidStart v1" hint="JSON-driven app generation" />
             </div>
           </div>
         </div>
+
+        <aside class="ui-shell-muted grid content-start gap-4 p-5 sm:p-6">
+          <div>
+            <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">What ships</div>
+            <ul class="mt-4 space-y-3 text-sm leading-6 text-foreground">
+              <li>App shell, page shell, layout wrappers, routes, and global styling.</li>
+              <li>Copied source-owned SolidJS components and composition-ready UI surfaces.</li>
+              <li>Backend wiring for either portable or hosted full-stack delivery.</li>
+              <li>Typed environment contracts, API routes, and server modules.</li>
+            </ul>
+          </div>
+
+          <div class="ui-demo-inset">
+            <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Install</div>
+            <pre class="ui-code mt-3 overflow-x-auto px-4 py-4 text-[12px] leading-6"><code>npm install -g @depths/stylyf-cli</code></pre>
+          </div>
+
+          <div class="ui-demo-inset">
+            <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">First command</div>
+            <pre class="ui-code mt-3 overflow-x-auto px-4 py-4 text-[12px] leading-6"><code>stylyf intro</code></pre>
+          </div>
+        </aside>
       </section>
 
-      <ThemeStudio />
+      <section id="capabilities" class="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8 lg:py-8">
+        <div class="max-w-3xl">
+          <div class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Core capabilities</div>
+          <h2 class="mt-3 text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">
+            The repo now converges around the CLI, not the old component showcase.
+          </h2>
+          <p class="mt-4 text-base leading-7 text-muted-foreground">
+            The public web surface is intentionally small. The heavier value lives inside the published CLI and the
+            source-owned inventory it bundles into generated apps.
+          </p>
+        </div>
 
-      <section class="grid gap-6 xl:grid-cols-[auto_minmax(0,1fr)]">
-        <RegistrySidebar
-          clusters={filteredClusters()}
-          onClusterIntent={preloadCluster}
-          onComponentIntent={preloadCluster}
-          query={query()}
-          totalComponents={visibleComponentCount()}
-          onQueryInput={setQuery}
-        />
+        <div class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {capabilityCards.map(card => (
+            <article class="ui-card p-5">
+              <div class="inline-flex size-11 items-center justify-center rounded-[var(--radius-xl)] border border-border bg-card text-primary shadow-inset">
+                <card.icon class="size-5" />
+              </div>
+              <div class="mt-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">{card.eyebrow}</div>
+              <h3 class="mt-2 text-lg font-semibold tracking-tight text-foreground">{card.title}</h3>
+              <p class="mt-3 text-sm leading-6 text-muted-foreground">{card.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
-        <div class="space-y-8">
-          <Show
-            when={filteredClusters().length}
-            fallback={
-              <section class="ui-shell p-8">
-                <div class="max-w-xl">
-                  <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">No matches</div>
-                  <h2 class="mt-3 text-2xl font-semibold tracking-tight text-foreground">The current filter hides every cluster.</h2>
-                  <p class="mt-3 text-sm leading-6 text-muted-foreground">
-                    Try a cluster term like <code class="rounded bg-background px-1.5 py-0.5">navigation</code> or a
-                    component/state term like <code class="rounded bg-background px-1.5 py-0.5">dialog</code> or{" "}
-                    <code class="rounded bg-background px-1.5 py-0.5">loading</code>.
-                  </p>
-                </div>
-              </section>
-            }
-          >
-            <For each={filteredClusters()}>
-              {cluster => (
-                <section
-                  id={cluster.id}
-                  ref={element => {
-                    sectionRefs.set(cluster.id, element);
-                    observer?.observe(element);
-                  }}
-                  class="scroll-mt-28 space-y-5"
-                >
-                  <header class="ui-shell p-6 lg:p-7" style={clusterVisualStyle(cluster.id)}>
-                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div class="flex items-center gap-3">
-                          <span class="inline-flex size-11 items-center justify-center rounded-[var(--radius-xl)] border border-[color:var(--cluster-line)] bg-[color:var(--cluster-soft)] text-[color:var(--cluster-color)] shadow-inset">
-                            <Dynamic component={visualForCluster(cluster.id).icon} class="size-5" />
-                          </span>
-                          <h2 class="text-3xl font-semibold tracking-tight text-foreground">{cluster.title}</h2>
-                        </div>
-                        <p class="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">{cluster.description}</p>
-                      </div>
-                      <div class="rounded-[calc(var(--radius-xl)+0.06rem)] border border-[color:var(--cluster-line)] bg-[color:var(--cluster-soft)] px-4 py-2 text-sm text-[color:var(--cluster-color)]">
-                        {loadedClusters().has(cluster.id)
-                          ? `${cluster.items.length} components`
-                          : loadingClusters().has(cluster.id)
-                            ? "Loading preview payload"
-                            : `${cluster.items.length} components`}
-                      </div>
-                    </div>
-                  </header>
+      <section id="modes" class="mx-auto grid w-full max-w-7xl gap-4 px-4 py-4 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-8">
+        <article class="ui-card p-6">
+          <div class="ui-pillbar inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+            <ShieldCheck class="size-3.5" />
+            <span>Portable mode</span>
+          </div>
+          <h3 class="mt-4 text-2xl font-semibold tracking-tight text-foreground">Better Auth + Drizzle + Postgres or SQLite/libsql</h3>
+          <p class="mt-3 text-sm leading-6 text-muted-foreground">
+            Best when we want provider-agnostic auth and ORM control, explicit database ownership, Better Auth plugins,
+            and local SQLite smoke tests before moving to managed infrastructure.
+          </p>
+          <ul class="mt-5 space-y-2 text-sm text-foreground">
+            <li>Portable schema ownership with Drizzle migrations.</li>
+            <li>SQLite/libsql local testing path already proven.</li>
+            <li>Shared Tigris/S3-compatible object storage substrate.</li>
+          </ul>
+        </article>
 
-                  <div class="space-y-5">
-                    <For each={cluster.items}>
-                      {item => (
-                        <RegistryCard
-                          item={item}
-                          previewComponent={previewMaps()[cluster.id]?.[item.slug]}
-                          previewReady={loadedClusters().has(cluster.id)}
-                        />
-                      )}
-                    </For>
-                  </div>
-                </section>
-              )}
-            </For>
-          </Show>
+        <article class="ui-card p-6">
+          <div class="ui-pillbar inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+            <Database class="size-3.5" />
+            <span>Hosted mode</span>
+          </div>
+          <h3 class="mt-4 text-2xl font-semibold tracking-tight text-foreground">Supabase auth + Supabase data SDK + Tigris</h3>
+          <p class="mt-3 text-sm leading-6 text-muted-foreground">
+            Best when we want the fastest managed path: Supabase for auth and data, Tigris for object storage, and
+            presigned upload flows so browsers never see raw storage credentials.
+          </p>
+          <ul class="mt-5 space-y-2 text-sm text-foreground">
+            <li>Email + password scaffolded and hosted smoke-tested.</li>
+            <li>Email OTP also scaffolded for the same branch.</li>
+            <li>Live Tigris presigned put/get/delete flow already proven.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="mx-auto grid w-full max-w-7xl gap-6 px-4 py-4 sm:px-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)] lg:px-8 lg:py-8">
+        <article class="ui-shell p-6 sm:p-7">
+          <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Why agents use it</div>
+          <h2 class="mt-3 text-3xl font-semibold tracking-[-0.04em] text-foreground">It removes repeatable work, not product decisions.</h2>
+          <div class="mt-5 grid gap-3">
+            {deliveryPoints.map(point => (
+              <div class="ui-shell-muted flex items-start gap-3 px-4 py-4 text-sm leading-6 text-foreground">
+                <ArrowRight class="mt-0.5 size-4 shrink-0 text-primary" />
+                <span>{point}</span>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article id="quickstart" class="ui-shell-muted p-6 sm:p-7">
+          <div class="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            <TerminalSquare class="size-3.5" />
+            <span>Quickstart</span>
+          </div>
+          <div class="mt-5 space-y-5">
+            <div>
+              <div class="text-sm font-medium text-foreground">1. Read the operator briefing</div>
+              <pre class="ui-code mt-2 overflow-x-auto px-4 py-4 text-[12px] leading-6"><code>stylyf intro</code></pre>
+            </div>
+
+            <div>
+              <div class="text-sm font-medium text-foreground">2. Validate your shallow JSON IR</div>
+              <pre class="ui-code mt-2 overflow-x-auto px-4 py-4 text-[12px] leading-6"><code>stylyf validate --ir app.json</code></pre>
+            </div>
+
+            <div>
+              <div class="text-sm font-medium text-foreground">3. Generate the app</div>
+              <pre class="ui-code mt-2 overflow-x-auto px-4 py-4 text-[12px] leading-6"><code>stylyf generate --ir app.json --target ./my-app</code></pre>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:pb-16">
+        <div class="ui-shell relative overflow-hidden px-6 py-8 text-center sm:px-8 sm:py-10">
+          <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(140deg,color-mix(in_oklab,var(--accent)_14%,transparent),transparent_40%,color-mix(in_oklab,var(--primary)_10%,transparent))]" />
+          <div class="relative">
+            <div class="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+              <Route class="size-3.5" />
+              <span>From scaffold to product work</span>
+            </div>
+            <h2 class="mt-4 text-balance text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">
+              Start from a generated full-stack baseline, then keep iterating in ordinary app code.
+            </h2>
+            <p class="mx-auto mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
+              That is the whole role of Stylyf: remove the repetitive setup so the next turns go into product logic,
+              workflows, policy, and polish instead of rebuilding the same foundation.
+            </p>
+            <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              <a
+                href={repoUrl}
+                target="_blank"
+                rel="noreferrer"
+                class="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-xl)] bg-foreground px-5 text-sm font-medium text-background shadow-soft transition hover:opacity-92"
+              >
+                <GitBranch class="size-4" />
+                <span>Open GitHub repo</span>
+              </a>
+              <a
+                href={npmUrl}
+                target="_blank"
+                rel="noreferrer"
+                class="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-xl)] border border-border bg-card px-5 text-sm font-medium text-foreground shadow-soft transition hover:border-primary/40"
+              >
+                <PackageBadge />
+                <span>View npm package</span>
+              </a>
+            </div>
+          </div>
         </div>
       </section>
     </main>
   );
+}
+
+function StatTile(props: { label: string; value: string; hint: string }) {
+  return (
+    <div class="ui-shell-muted p-4">
+      <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">{props.label}</div>
+      <div class="mt-2 text-lg font-semibold tracking-tight text-foreground">{props.value}</div>
+      <div class="mt-1 text-sm text-muted-foreground">{props.hint}</div>
+    </div>
+  );
+}
+
+function PackageBadge() {
+  return <Package2Badge />;
+}
+
+function Package2Badge() {
+  return <Boxes class="size-4" />;
 }
