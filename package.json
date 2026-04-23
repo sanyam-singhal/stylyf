@@ -1,6 +1,11 @@
 {
   "name": "stylyf",
+  "private": true,
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "vinxi dev",
     "dev:ui": "vinxi dev --host 127.0.0.1 --port 4173",
