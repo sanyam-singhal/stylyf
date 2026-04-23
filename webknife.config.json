@@ -1,7 +1,0 @@
-{
-  "outDir": ".webknife",
-  "viewport": { "width": 1440, "height": 1200, "deviceScaleFactor": 1 },
-  "navigation": { "waitUntil": "load", "timeoutMs": 45000 },
-  "shot": { "fullPage": true, "selector": null },
-  "interact": { "screenshotEachStep": true, "console": true, "networkFailures": true }
-}

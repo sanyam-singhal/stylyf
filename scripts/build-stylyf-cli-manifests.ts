@@ -6,7 +6,7 @@ import {
   componentImportPath,
   registryItems,
   type RegistryItem,
-} from "../src/lib/registry.ts";
+} from "../packages/stylyf-source/src/lib/registry.ts";
 import {
   backendApiRouteCatalog,
   backendCapabilityCatalog,
@@ -14,7 +14,7 @@ import {
   backendServerTemplateCatalog,
   backendSnippetCatalog,
 } from "../packages/stylyf-cli/src/manifests/backend.ts";
-import { defaultThemeState, themePresets } from "../src/lib/theme-system.ts";
+import { defaultThemeState, themePresets } from "../packages/stylyf-source/src/lib/theme-system.ts";
 
 type ThemeGrammar = {
   presets: string[];
@@ -70,8 +70,9 @@ type AssemblyItem = {
 
 const rootDir = dirname(fileURLToPath(import.meta.url));
 const repoDir = resolve(rootDir, "..");
+const sourcePackageDir = resolve(repoDir, "packages/stylyf-source");
 const outputDir = resolve(repoDir, "packages/stylyf-cli/src/manifests/generated");
-const appCssPath = resolve(repoDir, "src/app.css");
+const appCssPath = resolve(sourcePackageDir, "src/app.css");
 
 function unique(values: string[]) {
   return [...new Set(values)];
@@ -162,7 +163,7 @@ function localDependenciesForSource(source: string) {
 
 async function assemblyItemFor(item: RegistryItem): Promise<AssemblyItem> {
   const sourcePath = componentFilePath(item);
-  const absoluteSourcePath = resolve(repoDir, sourcePath);
+  const absoluteSourcePath = resolve(sourcePackageDir, sourcePath);
   const source = await readFile(absoluteSourcePath, "utf8");
   const clusterDirectory = sourcePath.split("/").slice(-2, -1)[0] ?? item.clusterId;
   const keywords = unique(

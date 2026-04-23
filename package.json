@@ -1,47 +1,27 @@
 {
   "name": "stylyf",
+  "private": true,
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vinxi dev",
-    "dev:ui": "vinxi dev --host 127.0.0.1 --port 4173",
-    "build": "vinxi build",
-    "start": "vinxi start",
-    "preview": "vinxi preview",
-    "check": "tsc --noEmit",
+    "dev": "npm --prefix apps/landing run dev",
+    "dev:ui": "npm --prefix apps/landing run dev:ui",
+    "build": "npm --prefix apps/landing run build",
+    "start": "npm --prefix apps/landing run start",
+    "preview": "npm --prefix apps/landing run preview",
+    "check": "npm --prefix apps/landing run check",
     "cli:build-manifests": "node --experimental-strip-types scripts/build-stylyf-cli-manifests.ts",
     "cli:sync-assets": "node --experimental-strip-types scripts/sync-stylyf-cli-assets.ts",
     "cli:build": "npm run cli:build-manifests && npm run cli:sync-assets && npm --prefix packages/stylyf-cli run build",
     "cli:help": "npm run cli:build && node packages/stylyf-cli/dist/bin.js --help",
     "cli:dev": "node --experimental-strip-types packages/stylyf-cli/src/bin.ts",
-    "cli:verify-pack": "node scripts/verify-stylyf-cli-package.mjs",
-    "generate:registry-shells": "node scripts/generate-registry-shells.mjs",
-    "generate:webknife:tier1": "node scripts/generate-webknife-tier1.mjs",
-    "ui:shot": "webknife shot http://127.0.0.1:4173 --config webknife.config.json",
-    "ui:interact": "webknife --ci interact http://127.0.0.1:4173 --config webknife.config.json --steps webknife/registry-smoke.yaml",
-    "ui:tier1:themes": "webknife --ci interact http://127.0.0.1:4173 --config webknife.config.json --steps webknife/tier1-theme-sweep.yaml",
-    "ui:tier1:tour": "webknife --ci interact http://127.0.0.1:4173 --config webknife.config.json --steps webknife/tier1-tour.yaml",
-    "ui:review": "webknife ui:review --url http://127.0.0.1:4173 --config webknife.config.json"
-  },
-  "dependencies": {
-    "@solidjs/meta": "^0.29.4",
-    "@solidjs/router": "^0.15.0",
-    "@solidjs/start": "1.3.2",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "lucide-solid": "^1.8.0",
-    "solid-js": "^1.9.12",
-    "tailwind-merge": "^3.5.0",
-    "vinxi": "^0.5.7"
+    "cli:verify-pack": "node scripts/verify-stylyf-cli-package.mjs"
   },
   "engines": {
     "node": ">=22"
-  },
-  "devDependencies": {
-    "@depths/webknife": "^0.1.0",
-    "@tailwindcss/postcss": "^4.2.2",
-    "@types/node": "^25.6.0",
-    "tailwindcss": "^4.2.2",
-    "typescript": "^5.9.3"
   },
   "overrides": {
     "h3": "1.15.11"

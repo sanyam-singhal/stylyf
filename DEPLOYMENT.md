@@ -1,11 +1,12 @@
 # Stylyf Deployment
 
-Stylyf is deployed directly from the repository checkout. The server does not use a copied release directory, helper scripts, or a separate deployment user.
+Stylyf is deployed directly from the repository checkout. The live website is the landing app at `apps/landing`.
 
 ## Production shape
 
 - Repo path: `/root/stylyf`
-- App runtime: SolidStart production build at `.output/server/index.mjs`
+- App path: `/root/stylyf/apps/landing`
+- App runtime: `apps/landing/.output/server/index.mjs`
 - Local bind: `127.0.0.1:3001`
 - Public entry: `Caddy` on `:80` and `:443`
 - Domains: `stylyf.com`, `www.stylyf.com`
@@ -27,18 +28,18 @@ File: `/etc/systemd/system/stylyf.service`
 
 ```ini
 [Unit]
-Description=Stylyf SolidStart App
+Description=Stylyf Landing App
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/stylyf
+WorkingDirectory=/root/stylyf/apps/landing
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=3001
-ExecStart=/usr/bin/node /root/stylyf/.output/server/index.mjs
+ExecStart=/usr/bin/node /root/stylyf/apps/landing/.output/server/index.mjs
 Restart=always
 RestartSec=3
 
@@ -58,11 +59,6 @@ systemctl enable --now stylyf
 File: `/etc/caddy/Caddyfile`
 
 ```caddy
-searchupp.com, www.searchupp.com {
-	encode zstd gzip
-	reverse_proxy 127.0.0.1:3000
-}
-
 stylyf.com, www.stylyf.com {
 	encode zstd gzip
 	reverse_proxy 127.0.0.1:3001 {
@@ -81,11 +77,7 @@ caddy validate --config /etc/caddy/Caddyfile
 systemctl reload caddy
 ```
 
-## Deployment learnings
-
-- Keep the proxy contract simple. Let `Caddy` handle edge compression and let the SolidStart/Nitro app serve normal upstream responses.
-- Strip `Accept-Encoding` on the upstream proxy request for Stylyf. Caddy passes request headers through by default, and Nitro uses `Accept-Encoding` when deciding whether to serve precompressed public assets. If that contract gets out of sync with the build output, asset requests can fail.
-- Do not add Stylyf-specific helper scripts or copied release directories. The repo checkout is the deployment source of truth, so the update flow stays:
+## Update flow
 
 ```bash
 git pull
@@ -93,15 +85,6 @@ npm install
 npm run build
 systemctl restart stylyf
 systemctl reload caddy
-```
-
-## DNS
-
-Required records:
-
-```text
-A      @      62.72.56.232
-CNAME  www    stylyf.com
 ```
 
 ## Verification

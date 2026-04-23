@@ -7,6 +7,9 @@ packages/*/*.tsbuildinfo
 .netlify
 .vinxi
 .webknife
+apps/*/.output
+apps/*/.vinxi
+apps/*/node_modules
 app.config.timestamp_*.js
 
 # Environment

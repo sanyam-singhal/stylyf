@@ -1,0 +1,30 @@
+{
+  "name": "@depths/stylyf-landing",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vinxi dev",
+    "dev:ui": "vinxi dev --host 127.0.0.1 --port 4173",
+    "build": "vinxi build",
+    "start": "vinxi start",
+    "preview": "vinxi preview",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@solidjs/meta": "^0.29.4",
+    "@solidjs/router": "^0.15.0",
+    "@solidjs/start": "1.3.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-solid": "^1.8.0",
+    "solid-js": "^1.9.12",
+    "tailwind-merge": "^3.5.0",
+    "vinxi": "^0.5.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "@types/node": "^25.6.0",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.9.3"
+  }
+}
