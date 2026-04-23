@@ -39,6 +39,13 @@ import {
 import { writeGeneratedServerModules } from "./backend/server-functions.js";
 import { renderGeneratedStorageModule } from "./backend/storage.js";
 import {
+  hasGeneratedWorkflows,
+  materializeWorkflowSupport,
+  renderGeneratedSupabaseWorkflowPoliciesSql,
+  renderGeneratedWorkflowServerModule,
+  renderGeneratedWorkflowsModule,
+} from "./backend/workflows.js";
+import {
   renderGeneratedSupabaseAuthApiRoutes,
   renderGeneratedSupabaseAuthCallbackRoute,
   renderGeneratedSupabaseAuthClientModule,
@@ -440,7 +447,7 @@ export async function generateFrontendDraft(irPath: string, targetPath: string, 
   const parsed = JSON.parse(raw) as unknown;
   assertValidAppIr(parsed);
 
-  const app = materializeAppForGeneration(parsed as AppIR);
+  const app = materializeWorkflowSupport(materializeAppForGeneration(parsed as AppIR));
   const install = options?.install ?? true;
   const assemblyLookup = createAssemblyLookup(await loadAssemblyRegistry());
   const usedAppShells = new Set<AppShellId>([app.shell]);
@@ -469,6 +476,10 @@ export async function generateFrontendDraft(irPath: string, targetPath: string, 
     await writeGeneratedFile(resolve(targetPath, "src/lib/resources.ts"), renderGeneratedResourcesModule(app));
     await writeGeneratedFile(resolve(targetPath, "src/lib/server/resource-policy.ts"), renderGeneratedResourcePolicyModule(app));
   }
+  if (hasGeneratedWorkflows(app)) {
+    await writeGeneratedFile(resolve(targetPath, "src/lib/workflows.ts"), renderGeneratedWorkflowsModule(app));
+    await writeGeneratedFile(resolve(targetPath, "src/lib/server/workflows.ts"), renderGeneratedWorkflowServerModule(app));
+  }
   if ((app.resources?.length ?? 0) > 0) {
     await writeGeneratedResourceForms(app, targetPath);
   }
@@ -480,8 +491,12 @@ export async function generateFrontendDraft(irPath: string, targetPath: string, 
   if (app.database) {
     if (app.database.provider === "supabase") {
       await writeGeneratedFile(resolve(targetPath, "supabase/schema.sql"), renderGeneratedSupabaseSqlSchema(app));
-      if ((app.resources?.length ?? 0) > 0) {
-        const policies = [renderGeneratedSupabasePoliciesSql(app), renderGeneratedSupabaseAttachmentPoliciesSql(app)]
+      if ((app.resources?.length ?? 0) > 0 || hasGeneratedWorkflows(app)) {
+        const policies = [
+          renderGeneratedSupabasePoliciesSql(app),
+          renderGeneratedSupabaseAttachmentPoliciesSql(app),
+          renderGeneratedSupabaseWorkflowPoliciesSql(app),
+        ]
           .filter(Boolean)
           .join("\n");
         await writeGeneratedFile(resolve(targetPath, "supabase/policies.sql"), policies);
