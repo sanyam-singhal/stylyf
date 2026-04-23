@@ -389,24 +389,68 @@ async function main() {
     throw new Error("Installed stylyf binary did not return expected help output");
   }
 
-  await run(stylyfBin, ["intro", "--output", "STYLYF_INTRO.md"], verifyRoot);
+  await run(stylyfBin, ["intro", "--topic", "overview", "--output", "STYLYF_INTRO.md"], verifyRoot);
+  await run(stylyfBin, ["intro", "--topic", "dsl", "--output", "STYLYF_DSL.md"], verifyRoot);
   const intro = await readFile(resolve(verifyRoot, "STYLYF_INTRO.md"), "utf8");
-  if (
-    !intro.includes("Better Auth") ||
-    !intro.includes("sqlite") ||
-    !intro.includes("Supabase") ||
-    !intro.includes("Tigris") ||
-    !intro.includes("resource-create") ||
-    !intro.includes("attachment kinds") ||
-    !intro.includes("workflow definitions")
-  ) {
-    throw new Error("Generated intro output does not mention the backend capability surface");
+  const dsl = await readFile(resolve(verifyRoot, "STYLYF_DSL.md"), "utf8");
+  if (!intro.includes("Better Auth") || !intro.includes("Supabase") || !intro.includes("Tigris")) {
+    throw new Error("Generated intro overview does not mention the backend path surface");
+  }
+  if (!dsl.includes("resources") || !dsl.includes("workflows") || !dsl.includes("attachments")) {
+    throw new Error("Generated DSL intro topic does not mention the v0.3 mechanics surface");
   }
 
-  await writeFile(resolve(verifyRoot, "verify-ir.json"), `${JSON.stringify(verifyIr, null, 2)}\n`);
-  await run(stylyfBin, ["generate", "--ir", "verify-ir.json", "--target", "./generated-app"], verifyRoot);
+  const portableFragments = {
+    "verify-portable.app.core.json": {
+      name: verifyIr.name,
+      shell: verifyIr.shell,
+      theme: verifyIr.theme,
+    },
+    "verify-portable.backend.json": {
+      database: verifyIr.database,
+      auth: verifyIr.auth,
+      storage: verifyIr.storage,
+      apis: verifyIr.apis,
+      server: verifyIr.server,
+    },
+    "verify-portable.resources.json": {
+      resources: verifyIr.resources,
+      workflows: verifyIr.workflows,
+    },
+    "verify-portable.routes.json": {
+      routes: verifyIr.routes,
+    },
+  };
+
+  for (const [filename, value] of Object.entries(portableFragments)) {
+    await writeFile(resolve(verifyRoot, filename), `${JSON.stringify(value, null, 2)}\n`);
+  }
+
+  await run(
+    stylyfBin,
+    [
+      "generate",
+      "--ir",
+      "verify-portable.app.core.json",
+      "--ir",
+      "verify-portable.backend.json",
+      "--ir",
+      "verify-portable.resources.json",
+      "--ir",
+      "verify-portable.routes.json",
+      "--target",
+      "./generated-app",
+      "--write-resolved",
+      "./generated-app.resolved.json",
+    ],
+    verifyRoot,
+  );
   await run("npm", ["run", "check"], resolve(verifyRoot, "generated-app"));
   await run("npm", ["run", "build"], resolve(verifyRoot, "generated-app"));
+  const portableResolved = JSON.parse(await readFile(resolve(verifyRoot, "generated-app.resolved.json"), "utf8"));
+  if (!portableResolved.resources?.length || portableResolved.resources[0].name !== "records") {
+    throw new Error("Resolved portable IR did not contain the expected resource");
+  }
 
   const requiredGeneratedFiles = [
     "generated-app/drizzle.config.ts",
@@ -453,8 +497,51 @@ async function main() {
     throw new Error(`Generated packaged app still references the repo or CLI package:\n${importScan}`);
   }
 
-  await writeFile(resolve(verifyRoot, "verify-supabase-ir.json"), `${JSON.stringify(verifySupabaseIr, null, 2)}\n`);
-  await run(stylyfBin, ["generate", "--ir", "verify-supabase-ir.json", "--target", "./generated-hosted-app"], verifyRoot);
+  const hostedFragments = {
+    "verify-hosted.app.core.json": {
+      name: verifySupabaseIr.name,
+      shell: verifySupabaseIr.shell,
+      theme: verifySupabaseIr.theme,
+    },
+    "verify-hosted.backend.json": {
+      database: verifySupabaseIr.database,
+      auth: verifySupabaseIr.auth,
+      storage: verifySupabaseIr.storage,
+      apis: verifySupabaseIr.apis,
+      server: verifySupabaseIr.server,
+    },
+    "verify-hosted.resources.json": {
+      resources: verifySupabaseIr.resources,
+      workflows: verifySupabaseIr.workflows,
+    },
+    "verify-hosted.routes.json": {
+      routes: verifySupabaseIr.routes,
+    },
+  };
+
+  for (const [filename, value] of Object.entries(hostedFragments)) {
+    await writeFile(resolve(verifyRoot, filename), `${JSON.stringify(value, null, 2)}\n`);
+  }
+
+  await run(
+    stylyfBin,
+    [
+      "generate",
+      "--ir",
+      "verify-hosted.app.core.json",
+      "--ir",
+      "verify-hosted.backend.json",
+      "--ir",
+      "verify-hosted.resources.json",
+      "--ir",
+      "verify-hosted.routes.json",
+      "--target",
+      "./generated-hosted-app",
+      "--write-resolved",
+      "./generated-hosted-app.resolved.json",
+    ],
+    verifyRoot,
+  );
   await writeFile(
     resolve(verifyRoot, "generated-hosted-app/.env"),
     [
@@ -475,6 +562,10 @@ async function main() {
   );
   await run("npm", ["run", "check"], resolve(verifyRoot, "generated-hosted-app"));
   await run("npm", ["run", "build"], resolve(verifyRoot, "generated-hosted-app"));
+  const hostedResolved = JSON.parse(await readFile(resolve(verifyRoot, "generated-hosted-app.resolved.json"), "utf8"));
+  if (!hostedResolved.resources?.length || !hostedResolved.resources.some(resource => resource.name === "profiles")) {
+    throw new Error("Resolved hosted IR did not contain the expected resources");
+  }
 
   const requiredHostedFiles = [
     "generated-hosted-app/src/lib/supabase.ts",

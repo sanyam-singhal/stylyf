@@ -38,6 +38,9 @@
     "env-s3"
   ],
   "snippets": [
+    "snippet-additive-ir-composition",
+    "snippet-canonical-portable-example",
+    "snippet-canonical-hosted-example",
     "snippet-v0-resource-grammar",
     "snippet-v0-resource-form-routes",
     "snippet-v0-attachment-lifecycle",
