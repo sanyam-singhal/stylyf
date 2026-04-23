@@ -430,6 +430,45 @@ export const backendEnvCatalog: Array<BackendCatalogEntry> = [
 
 export const backendSnippetCatalog: Array<BackendCatalogEntry> = [
   {
+    id: "snippet-additive-ir-composition",
+    label: "Additive IR Composition",
+    kind: "backend-snippet",
+    area: "Operator Workflow",
+    description: "Compose one final Stylyf app from several explicit IR fragments passed in CLI argument order.",
+    summary: "Useful when you want a cleaner authoring flow without giving up the final resolved AppIR contract.",
+    keywords: ["additive", "composition", "compose", "ir", "fragment", "merge", "resolved", "workflow"],
+    snippet:
+      `stylyf validate \\\n  --ir app.core.json \\\n  --ir backend.portable.json \\\n  --ir resources.json \\\n  --ir routes.json \\\n  --print-resolved`,
+    props: ["--ir", "--print-resolved", "--write-resolved"],
+    sourcePath: "src/ir/compose.ts",
+  },
+  {
+    id: "snippet-canonical-portable-example",
+    label: "Canonical Portable Example Set",
+    kind: "backend-snippet",
+    area: "Operator Workflow",
+    description: "The clearest example set for the Better Auth + Drizzle + Tigris path.",
+    summary: "Points operators toward the portable canonical monolithic and additive examples instead of the broader reference set.",
+    keywords: ["portable", "example", "canonical", "better-auth", "drizzle", "sqlite", "tigris"],
+    snippet:
+      `packages/stylyf-cli/examples/atlas-dashboard-v0.3-local.json\npackages/stylyf-cli/examples/atlas-dashboard-portable.app.core.json\npackages/stylyf-cli/examples/atlas-dashboard-portable.backend.json\npackages/stylyf-cli/examples/atlas-dashboard-portable.resources.json\npackages/stylyf-cli/examples/atlas-dashboard-portable.routes.json`,
+    props: ["portable", "local", "additive"],
+    sourcePath: "examples/README.md",
+  },
+  {
+    id: "snippet-canonical-hosted-example",
+    label: "Canonical Hosted Example Set",
+    kind: "backend-snippet",
+    area: "Operator Workflow",
+    description: "The clearest example set for the Supabase + Tigris hosted path.",
+    summary: "Points operators toward the hosted canonical monolithic and additive examples instead of the broader reference set.",
+    keywords: ["hosted", "example", "canonical", "supabase", "tigris", "managed", "additive"],
+    snippet:
+      `packages/stylyf-cli/examples/atlas-dashboard-v0.3-supabase.json\npackages/stylyf-cli/examples/atlas-dashboard-hosted.app.core.json\npackages/stylyf-cli/examples/atlas-dashboard-hosted.backend.json\npackages/stylyf-cli/examples/atlas-dashboard-hosted.resources.json\npackages/stylyf-cli/examples/atlas-dashboard-hosted.routes.json`,
+    props: ["hosted", "supabase", "additive"],
+    sourcePath: "examples/README.md",
+  },
+  {
     id: "snippet-v0-resource-grammar",
     label: "v0.3 Resource Grammar",
     kind: "backend-snippet",

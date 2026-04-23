@@ -20,9 +20,9 @@ export function helpText() {
     "  stylyf <command> [options]",
     "",
     "Commands:",
-    "  intro         Emit a markdown briefing for coding agents",
-    "  generate      Generate an app from a JSON IR",
-    "  validate      Validate a JSON IR",
+    "  intro         Emit a layered markdown briefing for coding agents",
+    "  generate      Generate an app from one or more explicit IR fragments",
+    "  validate      Validate one or more explicit IR fragments",
     "  search        Search bundled registry/codeblock manifests",
     "  serve-search  Start the local search HTTP endpoint",
     "  build-index   Rebuild the bundled search index",
@@ -31,9 +31,10 @@ export function helpText() {
     "  -h, --help     Show help",
     "  -v, --version  Show version",
     "",
-    "Phase 1 status:",
-    "  Frontend and backend scaffolding are in place, including auth, database, storage, API routes, and server functions.",
-    "  The CLI is ready for local runtime validation and managed-service follow-up.",
+    "Typical flow:",
+    "  stylyf intro",
+    "  stylyf validate --ir app.core.json --ir backend.portable.json --ir routes.json --print-resolved",
+    "  stylyf generate --ir app.core.json --ir backend.portable.json --ir routes.json --target ./my-app",
   ].join("\n");
 }
 import { runBuildIndexCommand } from "./commands/build-index.js";
