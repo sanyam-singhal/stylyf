@@ -1,27 +1,43 @@
 # Stylyf
 
-Stylyf is the authoring repo for [`@depths/stylyf-cli`](https://www.npmjs.com/package/@depths/stylyf-cli), a JSON-driven assembly-line CLI for generating standalone full-stack SolidStart apps.
+Stylyf is a monorepo centered on [`@depths/stylyf-cli`](https://www.npmjs.com/package/@depths/stylyf-cli), a JSON-driven CLI for generating standalone full-stack SolidStart apps.
 
-The intended operator is a coding agent. Stylyf exists to remove repeatable setup work so an agent can describe an app once, emit a real source tree, and then keep iterating inside the generated app instead of redoing scaffolding by hand.
+The repo now has a simple split:
+
+- `packages/stylyf-cli`: the publishable CLI
+- `packages/stylyf-source`: the internal source-owned UI inventory and styling grammar used to build CLI manifests and bundled assets
+- `apps/landing`: the public landing page for the CLI
 
 Generated apps:
 
-- are ordinary checked-in SolidStart source code
+- are ordinary checked-in SolidStart source trees
 - run on their own
-- do not import from this repo
+- do not import this repo
 - do not depend on `@depths/stylyf-cli` at runtime
 
-## What The CLI Generates
+## Install
 
-- app shell, route files, page shells, layout wrappers, and global styling
-- copied registry components and composition-ready UI surfaces
-- backend capability files when requested by the IR
-- typed env scaffolding for frontend and backend capabilities
-- explicit API routes and server modules
+```bash
+npm install -g @depths/stylyf-cli
+```
 
-## Backend Paths
+or:
 
-Stylyf currently supports two full-stack branches.
+```bash
+npx @depths/stylyf-cli --help
+```
+
+## Core CLI Commands
+
+```bash
+stylyf intro
+stylyf search auth supabase tigris
+stylyf validate --ir app.json
+stylyf generate --ir app.json --target ./my-app
+stylyf serve-search --port 4310
+```
+
+## Backend Modes
 
 ### Portable
 
@@ -30,59 +46,36 @@ Stylyf currently supports two full-stack branches.
 - PostgreSQL or SQLite/libsql
 - S3-compatible object storage via AWS SDK v3 presigned URLs
 
-This is the provider-agnostic path.
-
 ### Hosted
 
 - Supabase Auth
 - Supabase SDK data access
 - Tigris-compatible S3 object storage via AWS SDK v3 presigned URLs
 
-This is the fastest deployment path.
+Both modes keep storage presigned-URL based so browsers never receive raw bucket credentials.
 
-In both branches, object storage stays presigned-URL based so the browser never receives raw bucket credentials.
+## Monorepo Layout
 
-## Choosing A Path
-
-- choose `portable` for provider-agnostic auth/data control, Better Auth plugins, Drizzle-owned schema, and local SQLite smoke testing
-- choose `hosted` for the fastest managed deployment path with Supabase for auth+data and Tigris for object storage
-- the portable branch is the better fit when you want long-term portability
-- the hosted branch is the better fit when you want the shortest path from scaffold to deployed app
-
-## Package
-
-Install globally:
-
-```bash
-npm install -g @depths/stylyf-cli
-```
-
-Or use it directly:
-
-```bash
-npx @depths/stylyf-cli --help
-```
-
-Core commands:
-
-```bash
-stylyf intro
-stylyf search dashboard filters table
-stylyf validate --ir app.json
-stylyf generate --ir app.json --target ./my-app
-stylyf serve-search --port 4310
-```
-
-## Repo Structure
-
-- [packages/stylyf-cli](./packages/stylyf-cli): publishable CLI package
-- [src](./src): Stylyf registry site and source-owned component inventory used to build bundled manifests/assets
-- [scripts](./scripts): manifest sync, package verification, and related build tooling
-- [DEPLOYMENT.md](./DEPLOYMENT.md): deployment notes for the Stylyf site
+- [apps/landing](./apps/landing): small SolidStart landing page for Stylyf
+- [packages/stylyf-cli](./packages/stylyf-cli): published CLI package
+- [packages/stylyf-source](./packages/stylyf-source): internal source inventory used to build bundled assets/manifests
+- [scripts](./scripts): repo-level manifest sync and package verification tooling
 
 ## Local Development
 
-Build the published CLI from this repo:
+Run the landing page:
+
+```bash
+npm run dev
+```
+
+Build the landing page:
+
+```bash
+npm run build
+```
+
+Build the CLI package from repo source:
 
 ```bash
 npm run cli:build
@@ -94,23 +87,13 @@ Verify the packaged CLI end to end:
 npm run cli:verify-pack
 ```
 
-Run the registry site locally:
+## Deployment
 
-```bash
-npm run dev
-```
+The public site is the landing app in `apps/landing`. See [DEPLOYMENT.md](./DEPLOYMENT.md).
 
-Run the local UI review loop:
-
-```bash
-npm run dev:ui
-npm run ui:interact
-```
-
-## Release Status
+## Releases
 
 - npm package: [`@depths/stylyf-cli`](https://www.npmjs.com/package/@depths/stylyf-cli)
-- current codebase milestone: `v0.3.0`
 - GitHub releases: [Depths-AI/stylyf releases](https://github.com/Depths-AI/stylyf/releases)
 
 ## License

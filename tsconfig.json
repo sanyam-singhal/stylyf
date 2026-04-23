@@ -6,27 +6,17 @@
     "allowSyntheticDefaultImports": true,
     "allowImportingTsExtensions": true,
     "esModuleInterop": true,
-    "jsx": "preserve",
-    "jsxImportSource": "solid-js",
-    "allowJs": true,
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["vinxi/types/client", "node"],
-    "isolatedModules": true,
-    "paths": {
-      "~/*": ["./src/*"]
-    }
+    "types": ["node"],
+    "isolatedModules": true
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
     "scripts/**/*.ts",
     "packages/stylyf-cli/src/**/*.ts"
   ],
   "exclude": [
-    ".vinxi",
-    ".output",
     "packages/stylyf-cli/dist"
   ]
 }
