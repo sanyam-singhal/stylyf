@@ -28,17 +28,53 @@ const verifyIr = {
   database: {
     dialect: "sqlite",
     migrations: "drizzle-kit",
-    schema: [
-      {
-        table: "records",
-        timestamps: true,
-        columns: [
-          { name: "id", type: "uuid", primaryKey: true },
-          { name: "name", type: "varchar" },
-        ],
-      },
-    ],
   },
+  resources: [
+    {
+      name: "records",
+      visibility: "mixed",
+      fields: [
+        { name: "title", type: "varchar", required: true },
+        { name: "status", type: "enum", enumValues: ["draft", "review", "published"] },
+        { name: "summary", type: "longtext" },
+      ],
+      ownership: {
+        model: "user",
+        ownerField: "owner_id",
+      },
+      access: {
+        list: "owner-or-public",
+        read: "owner-or-public",
+        create: "user",
+        update: "owner",
+        delete: "owner",
+      },
+      attachments: [
+        { name: "coverImage", kind: "image" },
+        { name: "sourceFiles", kind: "document", multiple: true },
+      ],
+      workflow: "recordLifecycle",
+    },
+  ],
+  workflows: [
+    {
+      name: "recordLifecycle",
+      resource: "records",
+      field: "status",
+      initial: "draft",
+      states: ["draft", "review", "published"],
+      transitions: [
+        {
+          name: "submitForReview",
+          from: "draft",
+          to: "review",
+          actor: "owner",
+          emits: ["record.submitted"],
+          notifies: ["owner", "admins"],
+        },
+      ],
+    },
+  ],
   auth: {
     provider: "better-auth",
     mode: "session",
@@ -91,6 +127,31 @@ const verifyIr = {
         },
       ],
     },
+    {
+      path: "/records",
+      page: "resource-index",
+      title: "Records",
+      sections: [
+        {
+          layout: "stack",
+          children: [{ component: "filter-toolbar" }, { component: "data-table-shell" }, { component: "detail-panel" }],
+        },
+      ],
+    },
+    {
+      path: "/records/new",
+      page: "resource-create",
+      resource: "records",
+      title: "Create record",
+      sections: [],
+    },
+    {
+      path: "/records/:id/edit",
+      page: "resource-edit",
+      resource: "records",
+      title: "Edit record",
+      sections: [],
+    },
   ],
 };
 
@@ -111,17 +172,81 @@ const verifySupabaseIr = {
   },
   database: {
     provider: "supabase",
-    schema: [
-      {
-        table: "records",
-        timestamps: true,
-        columns: [
-          { name: "id", type: "uuid", primaryKey: true },
-          { name: "name", type: "varchar" },
-        ],
-      },
-    ],
   },
+  resources: [
+    {
+      name: "profiles",
+      visibility: "private",
+      fields: [
+        { name: "displayName", type: "varchar", required: true },
+        { name: "slug", type: "varchar", required: true, unique: true },
+      ],
+      ownership: {
+        model: "user",
+        ownerField: "user_id",
+      },
+      access: {
+        list: "owner",
+        read: "owner",
+        create: "user",
+        update: "owner",
+        delete: "owner",
+      },
+    },
+    {
+      name: "records",
+      visibility: "mixed",
+      fields: [
+        { name: "title", type: "varchar", required: true },
+        { name: "status", type: "enum", enumValues: ["draft", "review", "published"] },
+        { name: "summary", type: "longtext" },
+      ],
+      ownership: {
+        model: "user",
+        ownerField: "owner_id",
+      },
+      access: {
+        list: "owner-or-public",
+        read: "owner-or-public",
+        create: "user",
+        update: "owner",
+        delete: "owner",
+      },
+      relations: [{ target: "profiles", kind: "belongs-to", field: "owner_id" }],
+      attachments: [
+        { name: "coverImage", kind: "image" },
+        { name: "sourceFiles", kind: "document", multiple: true },
+      ],
+      workflow: "recordLifecycle",
+    },
+  ],
+  workflows: [
+    {
+      name: "recordLifecycle",
+      resource: "records",
+      field: "status",
+      initial: "draft",
+      states: ["draft", "review", "published"],
+      transitions: [
+        {
+          name: "submitForReview",
+          from: "draft",
+          to: "review",
+          actor: "owner",
+          emits: ["record.submitted"],
+          notifies: ["owner", "admins"],
+        },
+        {
+          name: "publish",
+          from: ["review"],
+          to: "published",
+          actor: "owner",
+          emits: ["record.published"],
+          notifies: ["owner", "watchers"],
+        },
+      ],
+    },
+  ],
   auth: {
     provider: "supabase",
     mode: "session",
@@ -170,6 +295,31 @@ const verifySupabaseIr = {
           children: [{ component: "stat-card" }, { component: "stat-grid" }],
         },
       ],
+    },
+    {
+      path: "/records",
+      page: "resource-index",
+      title: "Records",
+      sections: [
+        {
+          layout: "stack",
+          children: [{ component: "filter-toolbar" }, { component: "data-table-shell" }, { component: "detail-panel" }],
+        },
+      ],
+    },
+    {
+      path: "/records/new",
+      page: "resource-create",
+      resource: "records",
+      title: "Create record",
+      sections: [],
+    },
+    {
+      path: "/records/:id/edit",
+      page: "resource-edit",
+      resource: "records",
+      title: "Edit record",
+      sections: [],
     },
   ],
 };
@@ -241,7 +391,15 @@ async function main() {
 
   await run(stylyfBin, ["intro", "--output", "STYLYF_INTRO.md"], verifyRoot);
   const intro = await readFile(resolve(verifyRoot, "STYLYF_INTRO.md"), "utf8");
-  if (!intro.includes("Better Auth") || !intro.includes("sqlite") || !intro.includes("Supabase") || !intro.includes("Tigris")) {
+  if (
+    !intro.includes("Better Auth") ||
+    !intro.includes("sqlite") ||
+    !intro.includes("Supabase") ||
+    !intro.includes("Tigris") ||
+    !intro.includes("resource-create") ||
+    !intro.includes("attachment kinds") ||
+    !intro.includes("workflow definitions")
+  ) {
     throw new Error("Generated intro output does not mention the backend capability surface");
   }
 
@@ -254,8 +412,20 @@ async function main() {
     "generated-app/drizzle.config.ts",
     "generated-app/src/routes/api/auth/[...auth].ts",
     "generated-app/src/routes/api/uploads/presign.ts",
+    "generated-app/src/routes/api/attachments/intent.ts",
+    "generated-app/src/routes/api/attachments/confirm.ts",
+    "generated-app/src/routes/api/attachments/delete.ts",
     "generated-app/src/lib/storage.ts",
+    "generated-app/src/lib/resources.ts",
+    "generated-app/src/lib/attachments.ts",
+    "generated-app/src/lib/forms.ts",
+    "generated-app/src/lib/workflows.ts",
+    "generated-app/src/lib/server/resource-policy.ts",
+    "generated-app/src/lib/server/forms/records.ts",
+    "generated-app/src/lib/server/workflows.ts",
     "generated-app/src/lib/server/queries/records-list.ts",
+    "generated-app/src/routes/records/new.tsx",
+    "generated-app/src/routes/records/[id]/edit.tsx",
     "generated-app/src/middleware.ts",
   ];
 
@@ -309,11 +479,24 @@ async function main() {
   const requiredHostedFiles = [
     "generated-hosted-app/src/lib/supabase.ts",
     "generated-hosted-app/src/lib/supabase-browser.ts",
+    "generated-hosted-app/src/lib/resources.ts",
+    "generated-hosted-app/src/lib/attachments.ts",
+    "generated-hosted-app/src/lib/forms.ts",
+    "generated-hosted-app/src/lib/workflows.ts",
+    "generated-hosted-app/src/lib/server/resource-policy.ts",
+    "generated-hosted-app/src/lib/server/forms/records.ts",
+    "generated-hosted-app/src/lib/server/workflows.ts",
     "generated-hosted-app/src/routes/api/auth/sign-up/password.ts",
     "generated-hosted-app/src/routes/api/auth/sign-in/password.ts",
     "generated-hosted-app/src/routes/api/auth/sign-in/otp.ts",
+    "generated-hosted-app/src/routes/api/attachments/intent.ts",
+    "generated-hosted-app/src/routes/api/attachments/confirm.ts",
+    "generated-hosted-app/src/routes/api/attachments/delete.ts",
     "generated-hosted-app/src/routes/auth/callback.ts",
     "generated-hosted-app/supabase/schema.sql",
+    "generated-hosted-app/supabase/policies.sql",
+    "generated-hosted-app/src/routes/records/new.tsx",
+    "generated-hosted-app/src/routes/records/[id]/edit.tsx",
   ];
 
   for (const relativePath of requiredHostedFiles) {
@@ -349,8 +532,8 @@ async function main() {
       "  - installed stylyf binary runs outside the repo",
       "  - packaged intro command reflects backend capabilities",
       "  - packaged generate command works in a clean temp directory",
-      "  - generated backend files are present",
-      "  - generated hosted Supabase/Tigris files are present",
+      "  - generated v0.3 portable files are present",
+      "  - generated v0.3 hosted Supabase/Tigris files are present",
       "  - generated app does not import the repo or CLI package",
       "  - generated hosted app does not import the repo or CLI package",
       "  - generated app checks and builds successfully",

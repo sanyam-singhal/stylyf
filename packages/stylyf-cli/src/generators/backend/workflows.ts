@@ -168,6 +168,11 @@ function renderPortableTransitionAction(workflow: WorkflowIR, transition: Workfl
               '  if (!record) throw new Error("Resource not found or not accessible.");',
               "  const actorId = userId;",
             ]
+          : actor === "admin"
+            ? [
+                "  await requireViewerIdentity();",
+                '  throw new Error("Admin workflow transitions require explicit role wiring. Generated defaults fail closed until you customize this policy.");',
+              ]
           : [
               `  const resourceTable = resolveSchemaTable(${JSON.stringify(resourceTableNameValue)});`,
               "  const { userId } = await requireViewerIdentity();",
@@ -335,6 +340,9 @@ function renderPortableWorkflowServerModule(app: AppIR) {
     "    const memberships = await db.select({ workspaceId: membershipTable[workspaceField] }).from(membershipTable).where(eq(membershipTable.userId, userId));",
     "    const rows = await db.select().from(resourceTable).where(and(eq(resourceTable.id, resourceId), inArray(resourceTable[workspaceField], memberships.map(row => row.workspaceId)))).limit(1);",
     '    if (!rows[0]) throw new Error("Resource not found or not accessible.");',
+    "  } else if (policy === \"admin\") {",
+    "    await requireViewerIdentity();",
+    '    throw new Error("Admin event access requires explicit role wiring. Generated defaults fail closed until you customize this policy.");',
     "  } else if (policy !== \"public\") {",
     "    await requireViewerIdentity();",
     "  }",
@@ -401,6 +409,11 @@ function renderHostedTransitionAction(workflow: WorkflowIR, transition: Workflow
               '  if (!record) throw new Error("Resource not found or not accessible.");',
               "  const actorId = session.user.id;",
             ]
+          : actor === "admin"
+            ? [
+                "  await requireSession();",
+                '  throw new Error("Admin workflow transitions require explicit role wiring. Generated defaults fail closed until you customize this policy.");',
+              ]
           : [
               "  const session = await requireSession();",
               `  const { data: resourceRows, error: resourceError } = await (supabase as any).from(${JSON.stringify(resourceTableName(resource))}).select("*").eq("id", id).limit(1);`,
@@ -559,6 +572,9 @@ function renderHostedWorkflowServerModule(app: AppIR) {
     `    const { data, error } = await (supabase as any).from(resource.table ?? resource.name).select("*").eq("id", resourceId).in(workspaceField, workspaceIds).limit(1);`,
     "    if (error) throw error;",
     '    if (!data?.[0]) throw new Error("Resource not found or not accessible.");',
+    "  } else if (policy === \"admin\") {",
+    "    await requireSession();",
+    '    throw new Error("Admin event access requires explicit role wiring. Generated defaults fail closed until you customize this policy.");',
     "  } else if (policy !== \"public\") {",
     "    await requireSession();",
     "  }",

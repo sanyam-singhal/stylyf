@@ -112,6 +112,13 @@ function policySessionHelperName(policy: ResourceAccessPreset) {
   return policy === "public" || policy === "owner-or-public" ? "getViewerIdentity" : "requireViewerIdentity";
 }
 
+function adminPolicyErrorLines() {
+  return [
+    "  await requireViewerIdentity();",
+    '  throw new Error("Admin access preset requires explicit role wiring. Generated defaults fail closed until you customize this policy.");',
+  ].join("\n");
+}
+
 function buildPortableResourceRenderer(module: ServerModuleIR, resource: ResourceIR) {
   const operation = operationFor(module);
   if (!operation) return null;
@@ -138,8 +145,10 @@ function buildPortableResourceRenderer(module: ServerModuleIR, resource: Resourc
         body = `  return db.select().from(${tableSymbol});`;
         break;
       case "user":
-      case "admin":
         body = `  await ${sessionHelper}();\n  return db.select().from(${tableSymbol});`;
+        break;
+      case "admin":
+        body = adminPolicyErrorLines();
         break;
       case "owner":
         drizzleImports.add("eq");
@@ -178,8 +187,10 @@ function buildPortableResourceRenderer(module: ServerModuleIR, resource: Resourc
         body = `${base}\n  const rows = await statement;\n  return rows[0] ?? null;`;
         break;
       case "user":
-      case "admin":
         body = `  await ${sessionHelper}();\n${base}\n  const rows = await statement;\n  return rows[0] ?? null;`;
+        break;
+      case "admin":
+        body = adminPolicyErrorLines();
         break;
       case "owner":
         drizzleImports.add("and");
@@ -221,7 +232,6 @@ function buildPortableResourceRenderer(module: ServerModuleIR, resource: Resourc
         body = `  return db.insert(${tableSymbol}).values(input).returning();`;
         break;
       case "user":
-      case "admin":
         if (ownershipModel === "user") {
           body =
             `  const { userId } = await ${sessionHelper}();\n` +
@@ -230,6 +240,9 @@ function buildPortableResourceRenderer(module: ServerModuleIR, resource: Resourc
         } else {
           body = `  await ${sessionHelper}();\n  return db.insert(${tableSymbol}).values(input).returning();`;
         }
+        break;
+      case "admin":
+        body = adminPolicyErrorLines();
         break;
       case "owner":
       case "owner-or-public":
@@ -262,11 +275,13 @@ function buildPortableResourceRenderer(module: ServerModuleIR, resource: Resourc
           `  return db.update(${tableSymbol}).set(changes).where(eq(${tableSymbol}.id, id)).returning();`;
         break;
       case "user":
-      case "admin":
         body =
           `  await ${sessionHelper}();\n` +
           "  const { id, ...changes } = input;\n" +
           `  return db.update(${tableSymbol}).set(changes).where(eq(${tableSymbol}.id, id)).returning();`;
+        break;
+      case "admin":
+        body = adminPolicyErrorLines();
         break;
       case "owner":
       case "owner-or-public":
@@ -297,8 +312,10 @@ function buildPortableResourceRenderer(module: ServerModuleIR, resource: Resourc
         body = `  return db.delete(${tableSymbol}).where(eq(${tableSymbol}.id, id)).returning();`;
         break;
       case "user":
-      case "admin":
         body = `  await ${sessionHelper}();\n  return db.delete(${tableSymbol}).where(eq(${tableSymbol}.id, id)).returning();`;
+        break;
+      case "admin":
+        body = adminPolicyErrorLines();
         break;
       case "owner":
       case "owner-or-public":
@@ -387,13 +404,15 @@ function buildSupabaseResourceRenderer(module: ServerModuleIR, resource: Resourc
           "  return data ?? [];";
         break;
       case "user":
-      case "admin":
         body =
           `  await ${sessionHelper}();\n` +
           "  const supabase = createSupabaseServerClient();\n" +
           `  const { data, error } = await supabase.from(${JSON.stringify(tableName)}).select("*");\n` +
           "  if (error) throw error;\n" +
           "  return data ?? [];";
+        break;
+      case "admin":
+        body = adminPolicyErrorLines();
         break;
       case "owner":
         body =
@@ -438,13 +457,15 @@ function buildSupabaseResourceRenderer(module: ServerModuleIR, resource: Resourc
           "  return data?.[0] ?? null;";
         break;
       case "user":
-      case "admin":
         body =
           `  await ${sessionHelper}();\n` +
           "  const supabase = createSupabaseServerClient();\n" +
           `  const { data, error } = await supabase.from(${JSON.stringify(tableName)}).select("*").eq("id", id).limit(1);\n` +
           "  if (error) throw error;\n" +
           "  return data?.[0] ?? null;";
+        break;
+      case "admin":
+        body = adminPolicyErrorLines();
         break;
       case "owner":
         body =
@@ -489,7 +510,6 @@ function buildSupabaseResourceRenderer(module: ServerModuleIR, resource: Resourc
           "  return data ?? [];";
         break;
       case "user":
-      case "admin":
         if (ownershipModel === "user") {
           body =
             `  const { userId } = await ${sessionHelper}();\n` +
@@ -506,6 +526,9 @@ function buildSupabaseResourceRenderer(module: ServerModuleIR, resource: Resourc
             "  if (error) throw error;\n" +
             "  return data ?? [];";
         }
+        break;
+      case "admin":
+        body = adminPolicyErrorLines();
         break;
       case "owner":
       case "owner-or-public":
@@ -544,7 +567,6 @@ function buildSupabaseResourceRenderer(module: ServerModuleIR, resource: Resourc
           "  return data ?? [];";
         break;
       case "user":
-      case "admin":
         body =
           `  await ${sessionHelper}();\n` +
           "  const { id, ...changes } = input;\n" +
@@ -552,6 +574,9 @@ function buildSupabaseResourceRenderer(module: ServerModuleIR, resource: Resourc
           `  const { data, error } = await supabase.from(${JSON.stringify(tableName)}).update(changes).eq("id", id).select("*");\n` +
           "  if (error) throw error;\n" +
           "  return data ?? [];";
+        break;
+      case "admin":
+        body = adminPolicyErrorLines();
         break;
       case "owner":
       case "owner-or-public":
@@ -589,13 +614,15 @@ function buildSupabaseResourceRenderer(module: ServerModuleIR, resource: Resourc
           "  return data ?? [];";
         break;
       case "user":
-      case "admin":
         body =
           `  await ${sessionHelper}();\n` +
           "  const supabase = createSupabaseServerClient();\n" +
           `  const { data, error } = await supabase.from(${JSON.stringify(tableName)}).delete().eq("id", id).select("*");\n` +
           "  if (error) throw error;\n" +
           "  return data ?? [];";
+        break;
+      case "admin":
+        body = adminPolicyErrorLines();
         break;
       case "owner":
       case "owner-or-public":

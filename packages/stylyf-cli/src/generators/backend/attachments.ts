@@ -24,13 +24,18 @@ function sqlWorkspaceMemberExpression(resource: ResourceIR) {
   return `${sqlQuoted(workspaceField)} in (select ${sqlQuoted(workspaceField)} from public.${sqlQuoted(membershipTable)} where ${sqlQuoted("user_id")} = (select auth.uid()))`;
 }
 
+function sqlReservedAdminExpression() {
+  return "false";
+}
+
 function sqlReadPredicate(resource: ResourceIR, access: ResourceAccessPreset) {
   switch (access) {
     case "public":
       return "true";
     case "user":
-    case "admin":
       return "(select auth.uid()) is not null";
+    case "admin":
+      return sqlReservedAdminExpression();
     case "owner":
       return sqlOwnershipExpression(resource);
     case "owner-or-public":
@@ -53,8 +58,9 @@ function sqlMutationPredicate(resource: ResourceIR, access: ResourceAccessPreset
     case "public":
       return "true";
     case "user":
-    case "admin":
       return "(select auth.uid()) is not null";
+    case "admin":
+      return sqlReservedAdminExpression();
     case "owner":
     case "owner-or-public":
       return sqlOwnershipExpression(resource);
@@ -233,12 +239,15 @@ function renderPortableAttachmentServerModule(app: AppIR) {
     "      if (!rows[0]) throw new Error(\"Resource not found or not accessible.\");",
     "      return { resource, userId: null as string | null };",
     "    }",
-    "    case \"user\":",
-    "    case \"admin\": {",
+    "    case \"user\": {",
     "      const { userId } = await requireViewerIdentity();",
     "      const rows = (await db.select().from(resourceTable).where(eq(resourceTable.id, resourceId)).limit(1)) as any[];",
     "      if (!rows[0]) throw new Error(\"Resource not found or not accessible.\");",
     "      return { resource, userId };",
+    "    }",
+    "    case \"admin\": {",
+    "      await requireViewerIdentity();",
+    "      throw new Error(\"Admin access preset requires explicit role wiring. Generated defaults fail closed until you customize this policy.\");",
     "    }",
     "    case \"owner\": {",
     "      const { userId } = await requireViewerIdentity();",
@@ -452,13 +461,16 @@ function renderHostedAttachmentServerModule(app: AppIR) {
     "      if (!data?.[0]) throw new Error(\"Resource not found or not accessible.\");",
     "      return { resource, userId: null as string | null };",
     "    }",
-    "    case \"user\":",
-    "    case \"admin\": {",
+    "    case \"user\": {",
     "      const { userId } = await requireViewerIdentity();",
     "      const { data, error } = await supabase.from(tableName).select(\"id\").eq(\"id\", resourceId).limit(1);",
     "      if (error) throw error;",
     "      if (!data?.[0]) throw new Error(\"Resource not found or not accessible.\");",
     "      return { resource, userId };",
+    "    }",
+    "    case \"admin\": {",
+    "      await requireViewerIdentity();",
+    "      throw new Error(\"Admin access preset requires explicit role wiring. Generated defaults fail closed until you customize this policy.\");",
     "    }",
     "    case \"owner\": {",
     "      const { userId } = await requireViewerIdentity();",

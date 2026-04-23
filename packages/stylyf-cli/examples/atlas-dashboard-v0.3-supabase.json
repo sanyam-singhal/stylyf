@@ -29,11 +29,11 @@
         "ownerField": "user_id"
       },
       "access": {
-        "list": "admin",
+        "list": "owner",
         "read": "owner",
         "create": "user",
         "update": "owner",
-        "delete": "admin"
+        "delete": "owner"
       }
     },
     {
@@ -85,7 +85,7 @@
           "name": "publish",
           "from": ["review"],
           "to": "published",
-          "actor": "admin",
+          "actor": "owner",
           "emits": ["record.published"],
           "notifies": ["owner", "watchers"]
         }

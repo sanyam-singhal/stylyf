@@ -115,12 +115,32 @@ function layoutComponentName(id: LayoutNodeId) {
   return pascalCase(id);
 }
 
-function routeFilePath(pathname: string) {
+function toRouteFileSegment(segment: string) {
+  return segment.startsWith(":") ? `[${segment.slice(1)}]` : segment;
+}
+
+function hasRouteDescendants(pathname: string, routes: RouteIR[]) {
+  const normalized = pathname.replace(/\/+$/g, "");
+  if (!normalized || normalized === "/") {
+    return false;
+  }
+
+  const prefix = `${normalized}/`;
+  return routes.some(route => route.path !== pathname && route.path.startsWith(prefix));
+}
+
+function routeFilePath(pathname: string, routes: RouteIR[]) {
   const clean = pathname.replace(/^\/+|\/+$/g, "");
   if (!clean) {
     return "src/routes/index.tsx";
   }
-  return `src/routes/${clean}.tsx`;
+
+  const segments = clean.split("/").map(toRouteFileSegment);
+  if (hasRouteDescendants(pathname, routes)) {
+    return `src/routes/${segments.join("/")}/index.tsx`;
+  }
+
+  return `src/routes/${segments.join("/")}.tsx`;
 }
 
 function routeComponentName(pathname: string) {
@@ -586,7 +606,7 @@ export async function generateFrontendDraft(irPath: string, targetPath: string, 
 
   for (const route of app.routes) {
     const renderedRoute = renderRouteSource(route, app, assemblyLookup);
-    await writeGeneratedFile(resolve(targetPath, routeFilePath(route.path)), renderedRoute.source);
+    await writeGeneratedFile(resolve(targetPath, routeFilePath(route.path, app.routes)), renderedRoute.source);
     for (const importPath of renderedRoute.copiedRegistryImports) {
       registryImportsToCopy.add(importPath);
     }

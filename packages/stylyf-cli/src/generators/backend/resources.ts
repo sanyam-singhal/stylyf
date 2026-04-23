@@ -425,13 +425,18 @@ function sqlWorkspaceMemberExpression(resource: ResourceIR) {
   return `${sqlQuoted(workspaceField)} in (select ${sqlQuoted(workspaceField)} from public.${sqlQuoted(membershipTable)} where ${sqlQuoted("user_id")} = (select auth.uid()))`;
 }
 
+function sqlReservedAdminExpression() {
+  return "false";
+}
+
 function sqlReadPredicate(resource: ResourceIR, access: ResourceAccessPreset) {
   switch (access) {
     case "public":
       return "true";
     case "user":
-    case "admin":
       return "(select auth.uid()) is not null";
+    case "admin":
+      return sqlReservedAdminExpression();
     case "owner":
       return sqlOwnershipExpression(resource);
     case "owner-or-public":
@@ -460,8 +465,9 @@ function sqlWriteCheck(
     case "public":
       return "true";
     case "user":
-    case "admin":
       return "(select auth.uid()) is not null";
+    case "admin":
+      return sqlReservedAdminExpression();
     case "owner":
     case "owner-or-public":
       return sqlOwnershipExpression(resource);

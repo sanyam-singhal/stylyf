@@ -378,6 +378,7 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
     "- relation kinds: `belongs-to`, `has-many`, `many-to-many`",
     "- attachment kinds: `file`, `image`, `video`, `audio`, `document`",
     "- workflow notification audiences: `owner`, `workspace`, `watchers`, `admins`",
+    "- note: the `admin` access preset is reserved for explicit role-aware customization; generated defaults fail closed until you wire app-specific admin logic",
     "",
     "### What v0.3 Generates From That DSL",
     "",
