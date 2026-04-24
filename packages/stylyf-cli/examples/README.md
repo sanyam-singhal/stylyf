@@ -8,6 +8,7 @@ layout trees as the primary authoring surface.
 
 - `v0.4/internal-tool.basic.json`
 - `v0.4/internal-tool.rich.json`
+- `v0.4/generic.basic.json`
 - `v0.4/cms-site.basic.json`
 - `v0.4/cms-site.rich.json`
 - `v0.4/free-saas-tool.basic.json`
@@ -47,7 +48,9 @@ After generation, apply:
 
 Then run hosted CRUD/runtime checks with real Supabase and Tigris env values.
 
-## Reference v0.3 Files
+## Generic Path
 
-The older v0.3 files remain in this package as implementation reference while
-v0.4 stabilizes, but they are no longer the preferred authoring surface.
+Use `v0.4/generic.basic.json` when the requested app should stay general:
+resource-backed routes, auth/data/storage primitives, and explicit high-level
+surfaces without the assumptions of internal tools, CMS publishing, or free
+utility apps.

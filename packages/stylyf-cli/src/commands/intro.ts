@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { renderIntroMarkdown, writeIntroMarkdown, type IntroKind, type IntroTopic } from "../generators/intro.js";
+import { introKinds, introTopics, renderIntroMarkdown, writeIntroMarkdown, type IntroKind, type IntroTopic } from "../generators/intro.js";
 
 export async function runIntroCommand(args: string[]) {
   let projectPath: string | undefined;
@@ -23,13 +23,23 @@ export async function runIntroCommand(args: string[]) {
     }
 
     if (arg === "--topic") {
-      topic = args[index + 1] as IntroTopic | undefined;
+      const value = args[index + 1];
+      if (!introTopics.includes(value as IntroTopic)) {
+        process.stderr.write(`Invalid --topic value. Use one of: ${introTopics.join(", ")}\n`);
+        return 1;
+      }
+      topic = value as IntroTopic;
       index += 1;
       continue;
     }
 
     if (arg === "--kind") {
-      kind = args[index + 1] as IntroKind | undefined;
+      const value = args[index + 1];
+      if (!introKinds.includes(value as IntroKind)) {
+        process.stderr.write(`Invalid --kind value. Use one of: ${introKinds.join(", ")}\n`);
+        return 1;
+      }
+      kind = value as IntroKind;
       index += 1;
     }
   }

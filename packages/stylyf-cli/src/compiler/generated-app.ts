@@ -62,6 +62,7 @@ export type RouteIR = {
   page: PageShellId;
   resource?: string;
   title?: string;
+  access?: AuthAccess;
   sections: SectionIR[];
 };
 

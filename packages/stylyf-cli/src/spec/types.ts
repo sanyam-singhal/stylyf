@@ -1,4 +1,4 @@
-export type AppKind = "internal-tool" | "cms-site" | "free-saas-tool";
+export type AppKind = "generic" | "internal-tool" | "cms-site" | "free-saas-tool";
 export type BackendMode = "portable" | "hosted";
 export type MediaMode = "none" | "basic" | "rich";
 export type ActorKind = "public" | "user" | "member" | "admin" | "editor" | "owner";

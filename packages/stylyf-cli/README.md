@@ -15,7 +15,14 @@ this repo and does not depend on `@depths/stylyf-cli` at runtime.
 - theme system, global styling, and emitted app-owned CSS
 - backend capability files for either supported backend path
 - explicit source files for auth, data, storage, API routes, and server modules
-- resource-driven app mechanics when `resources` and `workflows` are used
+- resource-driven app mechanics when `objects`, `flows`, and `surfaces` are used
+
+## App Paths
+
+- `generic`: general full-stack app scaffolding without niche assumptions
+- `internal-tool`: authenticated operational apps, dashboards, approval queues, and admin-style CRUD
+- `cms-site`: public publishing surfaces plus authenticated editorial management
+- `free-saas-tool`: public/free utility surfaces with optional saved results and no billing gateway
 
 ## Two Backend Paths
 
@@ -53,10 +60,12 @@ Use the layered intro:
 
 ```bash
 stylyf intro
-stylyf intro --topic dsl
-stylyf intro --topic portable
-stylyf intro --topic hosted
-stylyf intro --topic examples
+stylyf intro --kind generic
+stylyf intro --kind internal-tool
+stylyf intro --topic spec
+stylyf intro --topic backend
+stylyf intro --topic media
+stylyf intro --topic generated-output
 stylyf intro --topic full
 ```
 
@@ -74,7 +83,7 @@ stylyf search auth session route protection
 Use `stylyf new` to create a small v0.4 spec:
 
 ```bash
-stylyf new internal-tool --name "Acme Ops" --backend portable --media rich --output stylyf.spec.json
+stylyf new generic --name "Atlas" --backend portable --media basic --output stylyf.spec.json
 stylyf validate --spec stylyf.spec.json
 stylyf plan --spec stylyf.spec.json
 stylyf generate --spec stylyf.spec.json --target ./my-app
@@ -83,9 +92,9 @@ stylyf generate --spec stylyf.spec.json --target ./my-app
 ## Minimal Composition Flow
 
 1. choose the backend path
-2. define the app frame: `name`, `shell`, `theme`
-3. define routes and page composition
-4. add `resources` and `workflows` when you want resource-driven mechanics
+2. choose an app kind: `generic`, `internal-tool`, `cms-site`, or `free-saas-tool`
+3. define `objects`, `flows`, and optional `surfaces`
+4. let Stylyf expand surfaces into routes, shells, forms, backend modules, and handoff docs
 5. validate the spec
 6. generate into a clean target directory
 7. move into the emitted app and keep developing there
@@ -97,7 +106,7 @@ stylyf generate --spec stylyf.spec.json --target ./my-app
   "version": "0.4",
   "app": {
     "name": "Atlas",
-    "kind": "internal-tool"
+    "kind": "generic"
   },
   "backend": {
     "mode": "portable",
@@ -120,6 +129,24 @@ stylyf generate --spec stylyf.spec.json --target ./my-app
   ]
 }
 ```
+
+## Surface-Driven Routes
+
+`surfaces` are high-level route hints. They intentionally do not expose layout
+trees or route files, but they do drive generated routes.
+
+```json
+{
+  "surfaces": [
+    { "name": "Home", "kind": "dashboard", "path": "/", "audience": "user" },
+    { "name": "Records", "kind": "list", "object": "records", "path": "/records", "audience": "user" },
+    { "name": "New Record", "kind": "create", "object": "records", "path": "/records/new", "audience": "user" }
+  ]
+}
+```
+
+Supported surface kinds are `dashboard`, `list`, `detail`, `create`, `edit`,
+`settings`, `landing`, `content-index`, `content-detail`, and `tool`.
 
 ## Portable Quick Sketch
 
@@ -167,16 +194,17 @@ stylyf generate --spec stylyf.spec.json --target ./my-app
 }
 ```
 
-## v0.3 App Mechanics Layer
+## App Mechanics Layer
 
 When you want more than just raw backend primitives, Stylyf supports:
 
-- `resources`
+- `objects`
 - `ownership`
 - `access`
 - `relations`
 - `attachments`
-- `workflows`
+- `flows`
+- `surfaces`
 
 That generalized layer drives:
 
@@ -206,11 +234,13 @@ For the hosted Supabase path:
 
 ## Where To Drill Deeper
 
-- `stylyf intro --topic dsl`
-- `stylyf intro --topic portable`
-- `stylyf intro --topic hosted`
-- `stylyf intro --topic components`
-- `stylyf intro --topic examples`
+- `stylyf intro --topic spec`
+- `stylyf intro --kind generic`
+- `stylyf intro --kind internal-tool`
+- `stylyf intro --kind cms-site`
+- `stylyf intro --kind free-saas-tool`
+- `stylyf intro --topic backend`
+- `stylyf intro --topic media`
 - `stylyf intro --topic generated-output`
 - `stylyf intro --topic full`
 

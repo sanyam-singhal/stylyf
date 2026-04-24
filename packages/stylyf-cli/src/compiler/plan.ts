@@ -115,6 +115,7 @@ export function createGenerationPlan(spec: StylyfSpecV04, app: AppIR): Generatio
     files.add("src/lib/server/attachments.ts");
     files.add("src/routes/api/attachments/intent.ts");
     files.add("src/routes/api/attachments/confirm.ts");
+    files.add("src/routes/api/attachments/replace.ts");
     files.add("src/routes/api/attachments/delete.ts");
   }
 

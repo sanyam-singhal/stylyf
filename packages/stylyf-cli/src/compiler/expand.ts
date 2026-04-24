@@ -13,7 +13,7 @@ import type {
   WorkflowIR,
 } from "./generated-app.js";
 import { defaultTheme, humanize, singularize } from "./defaults.js";
-import type { FieldSpec, FlowSpec, MediaAttachmentSpec, ObjectSpec, StylyfSpecV04 } from "../spec/types.js";
+import type { FieldSpec, FlowSpec, MediaAttachmentSpec, ObjectSpec, StylyfSpecV04, SurfaceSpec } from "../spec/types.js";
 
 function slugify(value: string) {
   return value
@@ -206,8 +206,8 @@ function backendFor(spec: StylyfSpecV04): { database?: DatabaseIR; auth?: AuthIR
 
 function protectedRoutes(routes: RouteIR[]) {
   return routes
-    .filter(route => route.path !== "/" || route.shell !== "marketing-shell")
-    .filter(route => !route.path.startsWith("/articles/"))
+    .filter(route => route.access !== "public")
+    .filter(route => route.shell !== "marketing-shell")
     .map(route => ({
       target: route.path,
       kind: "route" as const,
@@ -233,86 +233,225 @@ function dashboardSections(): SectionIR[] {
   ];
 }
 
-function internalToolRoutes(resources: ResourceIR[]): RouteIR[] {
-  const primary = resources[0]?.name ?? "records";
+function primaryResourceName(resources: ResourceIR[], surface?: Pick<SurfaceSpec, "object">) {
+  return surface?.object ?? resources[0]?.name ?? "records";
+}
+
+function surfaceDefaultPath(surface: SurfaceSpec, resources: ResourceIR[]) {
+  const resource = primaryResourceName(resources, surface);
+  const slug = slugify(resource);
+
+  switch (surface.kind) {
+    case "dashboard":
+      return "/";
+    case "landing":
+      return "/";
+    case "list":
+      return `/${slug}`;
+    case "detail":
+      return `/${slug}/:id`;
+    case "create":
+      return `/${slug}/new`;
+    case "edit":
+      return `/${slug}/:id/edit`;
+    case "settings":
+      return "/settings";
+    case "content-index":
+      return surface.audience === "admin" || surface.audience === "editor" ? "/admin/content" : `/${slug}`;
+    case "content-detail":
+      return `/${slug}/:slug`;
+    case "tool":
+      return "/tool";
+  }
+}
+
+function shellForSurface(surface: SurfaceSpec, fallbackShell: RouteIR["shell"]): RouteIR["shell"] {
+  if (surface.audience === "public" || surface.kind === "landing" || surface.kind === "content-index" || surface.kind === "content-detail") {
+    return "marketing-shell";
+  }
+  if (surface.kind === "tool") {
+    return "topbar-app";
+  }
+  return fallbackShell;
+}
+
+function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackShell?: RouteIR["shell"]): RouteIR {
+  const resource = primaryResourceName(resources, surface);
+  const resourceTitle = titleFor(resource);
+  const path = surface.path ?? surfaceDefaultPath(surface, resources);
+  const shell = shellForSurface(surface, fallbackShell);
+
+  switch (surface.kind) {
+    case "dashboard":
+      return {
+        path,
+        shell,
+        page: "dashboard",
+        title: surface.name || "Dashboard",
+        access: surface.audience === "public" ? "public" : "user",
+        sections: dashboardSections(),
+      };
+    case "landing":
+      return {
+        path,
+        shell: "marketing-shell",
+        page: "blank",
+        title: surface.name || "Home",
+        access: "public",
+        sections: [section("stack", [component("page-header"), component("empty-state")])],
+      };
+    case "list":
+      return {
+        path,
+        shell,
+        page: "resource-index",
+        resource,
+        title: surface.name || resourceTitle,
+        access: surface.audience === "public" ? "public" : "user",
+        sections: resourceListSections(resource),
+      };
+    case "detail":
+      return {
+        path,
+        shell,
+        page: "resource-detail",
+        resource,
+        title: surface.name || `${resourceTitle} detail`,
+        access: surface.audience === "public" ? "public" : "user",
+        sections: [section("stack", [component("page-header"), component("detail-panel")])],
+      };
+    case "create":
+      return {
+        path,
+        shell,
+        page: "resource-create",
+        resource,
+        title: surface.name || `Create ${titleFor(singularize(resource))}`,
+        access: surface.audience === "public" ? "public" : "user",
+        sections: [],
+      };
+    case "edit":
+      return {
+        path,
+        shell,
+        page: "resource-edit",
+        resource,
+        title: surface.name || `Edit ${titleFor(singularize(resource))}`,
+        access: surface.audience === "public" ? "public" : "user",
+        sections: [],
+      };
+    case "settings":
+      return {
+        path,
+        shell,
+        page: "settings",
+        title: surface.name || "Settings",
+        access: surface.audience === "public" ? "public" : "user",
+        sections: [section("stack", [component("settings-panel"), component("settings-row")])],
+      };
+    case "content-index":
+      if (surface.audience === "admin" || surface.audience === "editor") {
+        return {
+          path,
+          shell: fallbackShell,
+          page: "resource-index",
+          resource,
+          title: surface.name || "Content",
+          access: "user",
+          sections: resourceListSections(resource),
+        };
+      }
+      return {
+        path,
+        shell: "marketing-shell",
+        page: "blank",
+        title: surface.name || resourceTitle,
+        access: "public",
+        sections: [section("stack", [component("section-header"), component("data-list")])],
+      };
+    case "content-detail":
+      return {
+        path,
+        shell: "marketing-shell",
+        page: "blank",
+        title: surface.name || titleFor(singularize(resource)),
+        access: "public",
+        sections: [section("stack", [component("page-header"), component("separator")])],
+      };
+    case "tool":
+      return {
+        path,
+        shell: "topbar-app",
+        page: "blank",
+        title: surface.name || "Tool",
+        access: surface.audience === "user" || surface.audience === "admin" || surface.audience === "editor" ? "user" : "public",
+        sections: [section("stack", [component("form-section"), component("progress"), component("toast")])],
+      };
+  }
+}
+
+function mergeSurfaces(defaults: SurfaceSpec[], overrides?: SurfaceSpec[]) {
+  if (!overrides || overrides.length === 0) {
+    return defaults;
+  }
+
+  const merged = new Map<string, SurfaceSpec>();
+  for (const surface of defaults) {
+    merged.set(surface.path ?? `${surface.kind}:${surface.object ?? ""}:${surface.name}`, surface);
+  }
+  for (const surface of overrides) {
+    merged.set(surface.path ?? `${surface.kind}:${surface.object ?? ""}:${surface.name}`, surface);
+  }
+  return [...merged.values()];
+}
+
+function genericSurfaces(resources: ResourceIR[]): SurfaceSpec[] {
+  const resource = resources[0]?.name;
   return [
-    { path: "/", page: "dashboard", title: "Overview", sections: dashboardSections() },
-    ...resources.flatMap(resource => [
-      { path: `/${slugify(resource.name)}`, page: "resource-index" as const, resource: resource.name, title: titleFor(resource.name), sections: resourceListSections(resource.name) },
-      { path: `/${slugify(resource.name)}/new`, page: "resource-create" as const, resource: resource.name, title: `Create ${titleFor(singularize(resource.name))}`, sections: [] },
-      { path: `/${slugify(resource.name)}/:id/edit`, page: "resource-edit" as const, resource: resource.name, title: `Edit ${titleFor(singularize(resource.name))}`, sections: [] },
-    ]),
-    {
-      path: "/settings",
-      page: "settings",
-      title: "Settings",
-      sections: [section("stack", [component("settings-panel"), component("settings-row")])],
-    },
+    { name: "Home", kind: resource ? "dashboard" : "landing", path: "/", audience: resource ? "user" : "public" },
+    ...(resource
+      ? [
+          { name: titleFor(resource), kind: "list" as const, object: resource, path: `/${slugify(resource)}`, audience: "user" as const },
+          { name: `Create ${titleFor(singularize(resource))}`, kind: "create" as const, object: resource, path: `/${slugify(resource)}/new`, audience: "user" as const },
+          { name: "Settings", kind: "settings" as const, path: "/settings", audience: "user" as const },
+        ]
+      : []),
   ];
 }
 
-function cmsRoutes(resources: ResourceIR[]): RouteIR[] {
+function internalToolSurfaces(resources: ResourceIR[]): SurfaceSpec[] {
+  return [
+    { name: "Overview", kind: "dashboard", path: "/", audience: "user" },
+    ...resources.flatMap(resource => [
+      { name: titleFor(resource.name), kind: "list" as const, object: resource.name, path: `/${slugify(resource.name)}`, audience: "user" as const },
+      { name: `Create ${titleFor(singularize(resource.name))}`, kind: "create" as const, object: resource.name, path: `/${slugify(resource.name)}/new`, audience: "user" as const },
+      { name: `Edit ${titleFor(singularize(resource.name))}`, kind: "edit" as const, object: resource.name, path: `/${slugify(resource.name)}/:id/edit`, audience: "user" as const },
+    ]),
+    { name: "Settings", kind: "settings", path: "/settings", audience: "user" },
+  ];
+}
+
+function cmsSurfaces(resources: ResourceIR[]): SurfaceSpec[] {
   const article = resources.find(resource => resource.name === "articles") ?? resources[0];
   const articleName = article?.name ?? "articles";
   return [
-    {
-      path: "/",
-      shell: "marketing-shell",
-      page: "blank",
-      title: "Home",
-      sections: [section("stack", [component("page-header"), component("empty-state")])],
-    },
-    {
-      path: "/articles",
-      shell: "marketing-shell",
-      page: "blank",
-      title: "Articles",
-      sections: [section("stack", [component("section-header"), component("data-list")])],
-    },
-    {
-      path: "/articles/:slug",
-      shell: "marketing-shell",
-      page: "blank",
-      title: "Article",
-      sections: [section("stack", [component("page-header"), component("separator")])],
-    },
-    {
-      path: "/admin/content",
-      page: "resource-index",
-      resource: articleName,
-      title: "Content",
-      sections: resourceListSections(articleName),
-    },
-    { path: "/admin/content/new", page: "resource-create", resource: articleName, title: "Create content", sections: [] },
-    { path: "/admin/content/:id/edit", page: "resource-edit", resource: articleName, title: "Edit content", sections: [] },
+    { name: "Home", kind: "landing", path: "/", audience: "public" },
+    { name: titleFor(articleName), kind: "content-index", object: articleName, path: `/${slugify(articleName)}`, audience: "public" },
+    { name: titleFor(singularize(articleName)), kind: "content-detail", object: articleName, path: `/${slugify(articleName)}/:slug`, audience: "public" },
+    { name: "Content", kind: "content-index", object: articleName, path: "/admin/content", audience: "admin" },
+    { name: "Create content", kind: "create", object: articleName, path: "/admin/content/new", audience: "admin" },
+    { name: "Edit content", kind: "edit", object: articleName, path: "/admin/content/:id/edit", audience: "admin" },
   ];
 }
 
-function freeToolRoutes(hasSavedResults: boolean): RouteIR[] {
+function freeToolSurfaces(hasSavedResults: boolean): SurfaceSpec[] {
   return [
-    {
-      path: "/",
-      shell: "marketing-shell",
-      page: "blank",
-      title: "Home",
-      sections: [section("stack", [component("page-header"), component("empty-state")])],
-    },
-    {
-      path: "/tool",
-      shell: "topbar-app",
-      page: "blank",
-      title: "Tool",
-      sections: [section("stack", [component("form-section"), component("progress"), component("toast")])],
-    },
+    { name: "Home", kind: "landing", path: "/", audience: "public" },
+    { name: "Tool", kind: "tool", path: "/tool", audience: "public" },
     ...(hasSavedResults
       ? [
-          { path: "/dashboard", page: "dashboard" as const, title: "Dashboard", sections: dashboardSections() },
-          {
-            path: "/settings",
-            page: "settings" as const,
-            title: "Settings",
-            sections: [section("stack", [component("settings-panel"), component("settings-row")])],
-          },
+          { name: "Dashboard", kind: "dashboard" as const, path: "/dashboard", audience: "user" as const },
+          { name: "Settings", kind: "settings" as const, path: "/settings", audience: "user" as const },
         ]
       : []),
   ];
@@ -390,14 +529,22 @@ function defaultFlowsFor(spec: StylyfSpecV04, resources: ResourceIR[]): FlowSpec
   return [];
 }
 
-function routesFor(spec: StylyfSpecV04, resources: ResourceIR[]) {
+function defaultSurfacesFor(spec: StylyfSpecV04, resources: ResourceIR[]): SurfaceSpec[] {
   if (spec.app.kind === "cms-site") {
-    return cmsRoutes(resources);
+    return cmsSurfaces(resources);
   }
   if (spec.app.kind === "free-saas-tool") {
-    return freeToolRoutes(resources.some(resource => resource.name === "tool_runs"));
+    return freeToolSurfaces(resources.some(resource => resource.name === "tool_runs"));
   }
-  return internalToolRoutes(resources);
+  if (spec.app.kind === "internal-tool") {
+    return internalToolSurfaces(resources);
+  }
+  return genericSurfaces(resources);
+}
+
+function routesFor(spec: StylyfSpecV04, resources: ResourceIR[]) {
+  const fallbackShell = spec.app.kind === "free-saas-tool" ? "topbar-app" : "sidebar-app";
+  return mergeSurfaces(defaultSurfacesFor(spec, resources), spec.surfaces).map(surface => surfaceToRoute(surface, resources, fallbackShell));
 }
 
 export function expandSpecToGeneratedApp(spec: StylyfSpecV04): AppIR {
@@ -405,7 +552,7 @@ export function expandSpecToGeneratedApp(spec: StylyfSpecV04): AppIR {
   const workflows = defaultFlowsFor(spec, resources).map(flowToWorkflow);
   const routes = routesFor(spec, resources);
   const backend = backendFor(spec);
-  const shell = spec.app.kind === "cms-site" ? "sidebar-app" : spec.app.kind === "free-saas-tool" ? "topbar-app" : "sidebar-app";
+  const shell = spec.app.kind === "free-saas-tool" ? "topbar-app" : "sidebar-app";
 
   const auth = backend.auth
     ? {

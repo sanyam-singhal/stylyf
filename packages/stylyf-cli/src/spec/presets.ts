@@ -94,6 +94,34 @@ export function createSpecPreset(options: {
     };
   }
 
+  if (options.kind === "generic") {
+    return {
+      ...base,
+      app: {
+        ...base.app,
+        description: "A general full-stack SolidStart app scaffold with reusable resources and surfaces.",
+      },
+      objects: [
+        {
+          name: "records",
+          ownership: "user",
+          visibility: "private",
+          fields: [
+            { name: "title", type: "short-text", required: true },
+            { name: "status", type: "status", options: ["draft", "active", "archived"] },
+            { name: "notes", type: "long-text" },
+          ],
+        },
+      ],
+      surfaces: [
+        { name: "Home", kind: "dashboard", path: "/", audience: "user" },
+        { name: "Records", kind: "list", object: "records", path: "/records", audience: "user" },
+        { name: "New Record", kind: "create", object: "records", path: "/records/new", audience: "user" },
+        { name: "Settings", kind: "settings", path: "/settings", audience: "user" },
+      ],
+    };
+  }
+
   return {
     ...base,
     app: {

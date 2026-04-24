@@ -2,6 +2,17 @@ import type { SearchableEntry } from "../search/index.js";
 
 export const appKindCatalog: SearchableEntry[] = [
   {
+    id: "kind-generic",
+    label: "Generic Full-Stack App",
+    kind: "app-kind",
+    area: "v0.4 App Kinds",
+    description: "General-purpose full-stack SolidStart scaffold using the same auth, data, storage, resources, flows, and surfaces without niche assumptions.",
+    summary: "Best when a prompt does not cleanly fit internal tools, CMS publishing, or free SaaS utilities.",
+    keywords: ["generic", "general", "fullstack", "full-stack", "resource", "crud", "auth", "database", "storage", "surface"],
+    snippet: "stylyf new generic --name \"Atlas\" --backend portable --media basic --output stylyf.spec.json",
+    searchText: "generic general fullstack full-stack resource crud auth database storage surfaces flexible app",
+  },
+  {
     id: "kind-internal-tool",
     label: "Internal Tool",
     kind: "app-kind",

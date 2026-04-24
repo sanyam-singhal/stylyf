@@ -51,6 +51,38 @@ const hostedRichSpec = {
   },
 };
 
+const genericSpec = {
+  version: "0.4",
+  app: {
+    name: "Pack Verify Generic",
+    kind: "generic",
+  },
+  backend: {
+    mode: "portable",
+    portable: {
+      database: "sqlite",
+    },
+  },
+  media: {
+    mode: "basic",
+  },
+  objects: [
+    {
+      name: "records",
+      ownership: "user",
+      visibility: "private",
+      fields: [
+        { name: "title", type: "short-text", required: true },
+        { name: "status", type: "status", options: ["draft", "active", "archived"] },
+      ],
+    },
+  ],
+  surfaces: [
+    { name: "Records Inbox", kind: "list", object: "records", path: "/inbox", audience: "user" },
+    { name: "Record Detail", kind: "detail", object: "records", path: "/inbox/:id", audience: "user" },
+  ],
+};
+
 const freeToolSpec = {
   version: "0.4",
   app: {
@@ -168,6 +200,9 @@ async function main() {
       throw new Error(`Packed tarball is missing required entry: ${entry}`);
     }
   }
+  if (tarEntries.some(entry => entry.startsWith("package/dist/ir/"))) {
+    throw new Error("Packed tarball still contains the removed public v0.3 IR layer");
+  }
 
   process.stdout.write("Installing packed CLI outside the repo...\n");
   await writeJson(resolve(verifyRoot, "package.json"), {
@@ -191,27 +226,32 @@ async function main() {
 
   const intro = await readFile(resolve(verifyRoot, "STYLYF_INTRO.md"), "utf8");
   const specIntro = await readFile(resolve(verifyRoot, "STYLYF_SPEC.md"), "utf8");
-  if (!intro.includes("internal-tool") || !intro.includes("Supabase") || !intro.includes("Tigris/S3-compatible")) {
+  if (!intro.includes("generic") || !intro.includes("internal-tool") || !intro.includes("Supabase") || !intro.includes("Tigris/S3-compatible")) {
     throw new Error("Generated intro overview does not mention v0.4 app kinds and backend paths");
   }
-  if (!specIntro.includes("SpecV04") || !specIntro.includes("objects") || !specIntro.includes("flows")) {
+  if (!specIntro.includes("SpecV04") || !specIntro.includes("objects") || !specIntro.includes("flows") || !specIntro.includes("surfaces")) {
     throw new Error("Generated spec intro topic does not explain the v0.4 DSL");
   }
 
-  await run(
-    stylyfBin,
-    ["new", "internal-tool", "--name", "New Command Verify", "--backend", "portable", "--media", "rich", "--output", "new-command.spec.json"],
-    verifyRoot,
-  );
-  await run(stylyfBin, ["validate", "--spec", "new-command.spec.json"], verifyRoot);
-  await run(stylyfBin, ["plan", "--spec", "new-command.spec.json", "--json"], verifyRoot);
+  for (const kind of ["generic", "internal-tool", "cms-site", "free-saas-tool"]) {
+    const output = `new-command-${kind}.spec.json`;
+    await run(
+      stylyfBin,
+      ["new", kind, "--name", `New Command Verify ${kind}`, "--backend", "portable", "--media", "rich", "--output", output],
+      verifyRoot,
+    );
+    await run(stylyfBin, ["validate", "--spec", output], verifyRoot);
+    await run(stylyfBin, ["plan", "--spec", output, "--json"], verifyRoot);
+  }
 
+  await writeJson(resolve(verifyRoot, "generic.spec.json"), genericSpec);
   await writeJson(resolve(verifyRoot, "internal-rich.spec.json"), internalRichSpec);
   await writeJson(resolve(verifyRoot, "hosted-rich.spec.json"), hostedRichSpec);
   await writeJson(resolve(verifyRoot, "free-tool.spec.json"), freeToolSpec);
 
   process.stdout.write("Generating/checking v0.4 archetypes in parallel...\n");
   await Promise.all([
+    ["generic.spec.json", "./generated-generic"],
     ["internal-rich.spec.json", "./generated-internal"],
     ["free-tool.spec.json", "./generated-free-tool"],
     ["hosted-rich.spec.json", "./generated-hosted"],
@@ -220,6 +260,20 @@ async function main() {
     await run(stylyfBin, ["plan", "--spec", specPath], verifyRoot);
     await run(stylyfBin, ["generate", "--spec", specPath, "--target", targetPath, "--no-install"], verifyRoot);
   }));
+
+  const genericRoot = resolve(verifyRoot, "generated-generic");
+  for (const relativePath of [
+    "src/routes/inbox/index.tsx",
+    "src/routes/inbox/[id].tsx",
+    "src/routes/records/index.tsx",
+    "src/routes/records/new.tsx",
+    "src/routes/login.tsx",
+    "stylyf.spec.json",
+    "stylyf.plan.json",
+  ]) {
+    await assertFile(resolve(genericRoot, relativePath));
+  }
+  await assertNoRuntimeStylyfImports(genericRoot, "Generated generic app");
 
   const internalRoot = resolve(verifyRoot, "generated-internal");
 
@@ -286,6 +340,7 @@ async function main() {
       "  - tarball bundles dist manifests, templates, and source assets",
       "  - installed stylyf binary runs outside the repo",
       "  - intro/new/validate/plan/generate v0.4 commands work",
+      "  - generic app source honors explicit surface route hints",
       "  - portable internal rich app source is generated with auth/data/media files",
       "  - free SaaS tool app generates and has no billing/payment surface",
       "  - hosted Supabase/Tigris app generates expected auth/data/storage files",

@@ -16,9 +16,10 @@ The current source is useful as implementation substrate, but the public authori
 
 v0.4 user-facing app kinds:
 
-1. `internal-tool`
-2. `cms-site`
-3. `free-saas-tool`
+1. `generic`
+2. `internal-tool`
+3. `cms-site`
+4. `free-saas-tool`
 
 Backend modes:
 
@@ -125,7 +126,7 @@ packages/stylyf-cli/src/spec/read.ts
 Initial type shape:
 
 ```ts
-export type AppKind = "internal-tool" | "cms-site" | "free-saas-tool";
+export type AppKind = "generic" | "internal-tool" | "cms-site" | "free-saas-tool";
 export type BackendMode = "portable" | "hosted";
 export type MediaMode = "none" | "basic" | "rich";
 
@@ -456,14 +457,16 @@ packages/stylyf-cli/src/spec/validate.ts
 packages/stylyf-cli/src/spec/read.ts
 ```
 
-Remove or stop using:
+Remove:
 
 ```text
 packages/stylyf-cli/src/ir/schema.ts
 packages/stylyf-cli/src/ir/compose.ts
+packages/stylyf-cli/src/ir/types.ts
+packages/stylyf-cli/src/ir/validate.ts
 ```
 
-Keep old `ir/types.ts` only temporarily if generator imports still depend on it, but rename/move in a later step.
+Generator-facing types now live under `compiler/generated-app.ts`, not `src/ir`.
 
 ### Behavior
 
@@ -547,6 +550,7 @@ packages/stylyf-cli/src/index.ts
 Commands:
 
 ```bash
+stylyf new generic --name "Atlas" --backend portable --media basic --output stylyf.spec.json
 stylyf new internal-tool --name "Acme Ops" --backend portable --media rich --output stylyf.spec.json
 stylyf new cms-site --name "Field Notes" --backend portable --media rich --output stylyf.spec.json
 stylyf new free-saas-tool --name "Resize Kit" --backend portable --media basic --output stylyf.spec.json
@@ -1426,12 +1430,13 @@ Codex should maintain these invariants:
 1. **No v0.3 compatibility.**
 2. **No public low-level escape hatches.**
 3. **User spec remains small and intent-level.**
-4. **Generated app remains ordinary source with no runtime Stylyf dependency.**
-5. **Portable SQLite path is the default local dogfood path.**
-6. **Hosted path remains Supabase SDK + Supabase auth.**
-7. **Tigris/S3-compatible storage remains common object substrate.**
-8. **Free SaaS tool path has no billing/payment gateway.**
-9. **`intro`, `search`, `plan`, and generated handoff docs are first-class agent UX, not afterthought docs.**
-10. **Every meaningful step has a local smoke test.**
+4. **The generic path preserves broad full-stack primitives without niche assumptions.**
+5. **Generated app remains ordinary source with no runtime Stylyf dependency.**
+6. **Portable SQLite path is the default local dogfood path.**
+7. **Hosted path remains Supabase SDK + Supabase auth.**
+8. **Tigris/S3-compatible storage remains common object substrate.**
+9. **Free SaaS tool path has no billing/payment gateway.**
+10. **`intro`, `search`, `plan`, and generated handoff docs are first-class agent UX, not afterthought docs.**
+11. **Every meaningful step has a local smoke test.**
 
 The essential implementation move is: **replace public AppIR with SpecV04, but reuse the generator backend through a private compiler target.** This gets the clean v0.4 ergonomics without discarding the strongest working code.

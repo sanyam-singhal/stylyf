@@ -5,6 +5,7 @@ import { loadAssemblyRegistry, loadThemeGrammar } from "../manifests/index.js";
 export type IntroTopic =
   | "overview"
   | "spec"
+  | "generic"
   | "internal-tool"
   | "cms-site"
   | "free-saas-tool"
@@ -13,7 +14,22 @@ export type IntroTopic =
   | "generated-output"
   | "full";
 
-export type IntroKind = "internal-tool" | "cms-site" | "free-saas-tool";
+export type IntroKind = "generic" | "internal-tool" | "cms-site" | "free-saas-tool";
+
+export const introTopics = [
+  "overview",
+  "spec",
+  "generic",
+  "internal-tool",
+  "cms-site",
+  "free-saas-tool",
+  "backend",
+  "media",
+  "generated-output",
+  "full",
+] as const satisfies readonly IntroTopic[];
+
+export const introKinds = ["generic", "internal-tool", "cms-site", "free-saas-tool"] as const satisfies readonly IntroKind[];
 
 type IntroOptions = {
   projectPath?: string;
@@ -47,6 +63,33 @@ function specExample(kind: IntroKind) {
       mode: kind === "free-saas-tool" ? "basic" : "rich",
     },
   };
+
+  if (kind === "generic") {
+    return {
+      ...base,
+      app: {
+        name: "Atlas",
+        kind,
+      },
+      objects: [
+        {
+          name: "records",
+          ownership: "user",
+          visibility: "private",
+          fields: [
+            { name: "title", type: "short-text", required: true },
+            { name: "status", type: "status", options: ["draft", "active", "archived"] },
+            { name: "notes", type: "long-text" },
+          ],
+        },
+      ],
+      surfaces: [
+        { name: "Home", kind: "dashboard", path: "/", audience: "user" },
+        { name: "Records", kind: "list", object: "records", path: "/records", audience: "user" },
+        { name: "New Record", kind: "create", object: "records", path: "/records/new", audience: "user" },
+      ],
+    };
+  }
 
   if (kind === "cms-site") {
     return {
@@ -105,7 +148,7 @@ function renderOverview() {
     "The public authoring surface is a small `SpecV04`. Stylyf expands that spec into a private app model, builds a generation plan, and emits ordinary source code that has no runtime dependency on this repo or on `@depths/stylyf-cli`.",
     "",
     section("Default Operator Loop", [
-      "1. choose an app kind: `internal-tool`, `cms-site`, or `free-saas-tool`",
+      "1. choose an app kind: `generic`, `internal-tool`, `cms-site`, or `free-saas-tool`",
       "2. create a spec with `stylyf new` or write one directly",
       "3. inspect it with `stylyf plan --spec stylyf.spec.json`",
       "4. generate with `stylyf generate --spec stylyf.spec.json --target ./my-app`",
@@ -115,9 +158,9 @@ function renderOverview() {
       codeBlock(
         [
           "stylyf intro",
-          "stylyf intro --kind internal-tool",
+          "stylyf intro --kind generic",
           "stylyf intro --topic backend",
-          "stylyf new internal-tool --name \"Acme Ops\" --backend portable --media rich --output stylyf.spec.json",
+          "stylyf new generic --name \"Atlas\" --backend portable --media basic --output stylyf.spec.json",
           "stylyf validate --spec stylyf.spec.json",
           "stylyf plan --spec stylyf.spec.json",
           "stylyf generate --spec stylyf.spec.json --target ./my-app",
@@ -137,6 +180,7 @@ function renderOverview() {
       "- `stylyf intro --topic backend` for backend choices",
       "- `stylyf intro --topic media` for object storage and attachments",
       "- `stylyf intro --topic generated-output` for emitted app structure",
+      "- `stylyf intro --kind generic` for a general full-stack recipe",
       "- `stylyf intro --kind internal-tool` for an internal app recipe",
       "- `stylyf intro --kind cms-site` for a publishing recipe",
       "- `stylyf intro --kind free-saas-tool` for a free tool recipe",
@@ -161,6 +205,7 @@ function renderSpecTopic() {
       "- `objects`: intent-level resources",
       "- `flows`: CRUD, approval, publishing, onboarding, or saved-results mechanics",
       "- `surfaces`: optional high-level route hints",
+      "- surface kinds include `dashboard`, `list`, `detail`, `create`, `edit`, `settings`, `landing`, `content-index`, `content-detail`, and `tool`",
     ]),
   ].join("\n");
 }
@@ -168,10 +213,15 @@ function renderSpecTopic() {
 function renderKindTopic(kind: IntroKind) {
   const labels = {
     "internal-tool": "Internal Tool",
+    generic: "Generic Full-Stack App",
     "cms-site": "CMS Site",
     "free-saas-tool": "Free SaaS Tool",
   };
   const notes = {
+    generic: [
+      "Default shape: authenticated app shell, reusable resources, dashboard/list/create/settings surfaces, and portable full-stack primitives.",
+      "Good when the prompt does not cleanly fit the internal-tool, CMS, or free-SaaS-tool presets.",
+    ],
     "internal-tool": [
       "Default shape: authenticated sidebar app, dashboard, resource list/create/edit routes, and settings.",
       "Good for admin panels, back offices, review queues, and operational dashboards.",
@@ -303,8 +353,10 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
   const topic = options.kind ?? options.topic ?? "overview";
   let markdown: string;
 
-  if (topic === "internal-tool" || topic === "cms-site" || topic === "free-saas-tool") {
+  if (topic === "generic" || topic === "internal-tool" || topic === "cms-site" || topic === "free-saas-tool") {
     markdown = renderKindTopic(topic);
+  } else if (topic === "overview") {
+    markdown = renderOverview();
   } else if (topic === "spec") {
     markdown = renderSpecTopic();
   } else if (topic === "backend") {
@@ -316,7 +368,7 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
   } else if (topic === "full") {
     markdown = await renderFullTopic();
   } else {
-    markdown = renderOverview();
+    throw new Error(`Unknown intro topic "${topic}". Use one of: ${introTopics.join(", ")}.`);
   }
 
   return `${markdown}${await renderProjectNote(options.projectPath)}`.trimEnd();

@@ -31,7 +31,7 @@ npx @depths/stylyf-cli --help
 
 ```bash
 stylyf intro
-stylyf new internal-tool --name "Acme Ops" --backend portable --media rich --output stylyf.spec.json
+stylyf new generic --name "Atlas" --backend portable --media basic --output stylyf.spec.json
 stylyf validate --spec stylyf.spec.json
 stylyf plan --spec stylyf.spec.json
 stylyf generate --spec stylyf.spec.json --target ./my-app

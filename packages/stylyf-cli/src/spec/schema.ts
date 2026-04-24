@@ -1,6 +1,6 @@
 import type { AppKind, BackendMode, FieldType, FlowKind, MediaMode, SurfaceKind } from "./types.js";
 
-export const appKinds = ["internal-tool", "cms-site", "free-saas-tool"] as const satisfies readonly AppKind[];
+export const appKinds = ["generic", "internal-tool", "cms-site", "free-saas-tool"] as const satisfies readonly AppKind[];
 export const backendModes = ["portable", "hosted"] as const satisfies readonly BackendMode[];
 export const mediaModes = ["none", "basic", "rich"] as const satisfies readonly MediaMode[];
 export const fieldTypes = [

@@ -298,6 +298,35 @@ function validateNoBillingConcepts(value: unknown, context: ValidationContext) {
   }
 }
 
+function validateObjectReferences(value: Record<string, unknown>, context: ValidationContext) {
+  if (!Array.isArray(value.objects)) {
+    return;
+  }
+
+  const objectNames = new Set(
+    value.objects
+      .filter(isRecord)
+      .map(object => object.name)
+      .filter((name): name is string => typeof name === "string" && name.length > 0),
+  );
+
+  if (Array.isArray(value.flows)) {
+    value.flows.forEach((flow, index) => {
+      if (isRecord(flow) && typeof flow.object === "string" && !objectNames.has(flow.object)) {
+        context.errors.push(`flows[${index}].object references unknown object "${flow.object}".`);
+      }
+    });
+  }
+
+  if (Array.isArray(value.surfaces)) {
+    value.surfaces.forEach((surface, index) => {
+      if (isRecord(surface) && typeof surface.object === "string" && !objectNames.has(surface.object)) {
+        context.errors.push(`surfaces[${index}].object references unknown object "${surface.object}".`);
+      }
+    });
+  }
+}
+
 export function validateSpecV04(value: unknown): StylyfSpecV04 {
   const context: ValidationContext = { errors: [] };
 
@@ -319,6 +348,7 @@ export function validateSpecV04(value: unknown): StylyfSpecV04 {
   validateObjects(value.objects, context);
   validateFlows(value.flows, context);
   validateSurfaces(value.surfaces, context);
+  validateObjectReferences(value, context);
 
   if (isRecord(value.app) && value.app.kind === "free-saas-tool") {
     validateNoBillingConcepts(value, context);
