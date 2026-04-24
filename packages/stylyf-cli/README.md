@@ -153,6 +153,7 @@ database schema additions.
         {
           "id": "records-workspace",
           "layout": "stack",
+          "props": { "gap": "var(--space-6)" },
           "children": [
             { "component": "page-header", "props": { "title": "Records" } },
             { "layout": "grid", "props": { "columns": 2 }, "children": ["filter-toolbar", "bulk-action-bar"] },

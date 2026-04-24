@@ -11,6 +11,9 @@
         {
           "id": "records-workspace",
           "layout": "stack",
+          "props": {
+            "gap": "var(--space-6)"
+          },
           "children": [
             {
               "component": "page-header",

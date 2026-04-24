@@ -178,9 +178,10 @@ function validateSections(value: unknown, path: string, context: ValidationConte
       context.errors.push(`${sectionPath} must be an object.`);
       return;
     }
-    hasOnlyKeys(section, ["id", "layout", "children"], sectionPath, context);
+    hasOnlyKeys(section, ["id", "layout", "props", "children"], sectionPath, context);
     optionalString(section, "id", sectionPath, context);
     enumValue(section.layout, layoutNodes, `${sectionPath}.layout`, context);
+    validateLayoutProps(section.props, `${sectionPath}.props`, context);
     validateCompositionChildren(section.children, `${sectionPath}.children`, context);
   });
 }

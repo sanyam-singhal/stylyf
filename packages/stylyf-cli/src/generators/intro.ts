@@ -344,6 +344,7 @@ function renderCompositionTopic() {
                   {
                     id: "records-workspace",
                     layout: "stack",
+                    props: { gap: "var(--space-6)" },
                     children: [
                       { component: "page-header", props: { title: "Records", description: "Review and organize submitted records." } },
                       {

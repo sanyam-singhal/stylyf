@@ -130,6 +130,7 @@ export type LayoutSpec = {
 export type SectionSpec = {
   id?: string;
   layout: LayoutNodeId;
+  props?: Record<string, string | number | boolean>;
   children: Array<LayoutSpec | ComponentSpec | string>;
 };
 

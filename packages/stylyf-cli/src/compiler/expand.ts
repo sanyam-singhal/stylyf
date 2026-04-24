@@ -96,6 +96,7 @@ function sectionFromSpec(spec: SectionSpec): SectionIR {
   return {
     id: spec.id,
     layout: spec.layout,
+    props: spec.props,
     children: spec.children.map(compositionNodeFromSpec),
   };
 }
