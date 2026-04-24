@@ -1,4 +1,4 @@
-import type { AppIR } from "../ir/types.js";
+import type { AppIR } from "../compiler/generated-app.js";
 import { readBundledSourceFile } from "./assets.js";
 
 function quoteFont(value: string) {

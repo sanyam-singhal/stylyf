@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import type { ApiRouteIR, AppIR } from "../../ir/types.js";
+import type { ApiRouteIR, AppIR } from "../../compiler/generated-app.js";
 import { writeGeneratedFile } from "../assets.js";
 import { renderApiRouteTemplate, type ApiRouteTemplateId } from "../templates.js";
 

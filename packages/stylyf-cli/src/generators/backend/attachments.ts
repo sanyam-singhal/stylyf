@@ -1,4 +1,4 @@
-import type { AppIR, ResourceAccessPreset, ResourceIR } from "../../ir/types.js";
+import type { AppIR, ResourceAccessPreset, ResourceIR } from "../../compiler/generated-app.js";
 import { assetTableNameFor, tableNameFor } from "./resources.js";
 
 function defaultBucketAlias(app: AppIR) {

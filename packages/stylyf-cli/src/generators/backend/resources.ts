@@ -7,7 +7,7 @@ import type {
   ResourceFieldIR,
   ResourceIR,
   ServerModuleIR,
-} from "../../ir/types.js";
+} from "../../compiler/generated-app.js";
 
 function camelCase(value: string) {
   return value

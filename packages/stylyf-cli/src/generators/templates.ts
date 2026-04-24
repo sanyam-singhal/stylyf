@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import type { AppShellId, LayoutNodeId, PageShellId } from "../ir/types.js";
+import type { AppShellId, LayoutNodeId, PageShellId } from "../compiler/generated-app.js";
 
 type TemplateReplacements = Record<string, string>;
 

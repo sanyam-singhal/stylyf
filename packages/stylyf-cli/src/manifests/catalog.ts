@@ -1,4 +1,4 @@
-import type { AppShellId, LayoutNodeId, PageShellId } from "../ir/types.js";
+import type { AppShellId, LayoutNodeId, PageShellId } from "../compiler/generated-app.js";
 
 export type CatalogEntry = {
   id: string;

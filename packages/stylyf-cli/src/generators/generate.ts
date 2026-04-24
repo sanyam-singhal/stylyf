@@ -8,7 +8,7 @@ import type {
   PageShellId,
   RouteIR,
   SectionIR,
-} from "../ir/types.js";
+} from "../compiler/generated-app.js";
 import { composeAppIrFromPaths } from "../ir/compose.js";
 import {
   renderGeneratedAuthClientModule,

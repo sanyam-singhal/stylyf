@@ -1,4 +1,4 @@
-import type { AppIR, DatabaseSchemaIR, ResourceIR, WorkflowIR, WorkflowTransitionIR } from "../../ir/types.js";
+import type { AppIR, DatabaseSchemaIR, ResourceIR, WorkflowIR, WorkflowTransitionIR } from "../../compiler/generated-app.js";
 
 function camelCase(value: string) {
   return value

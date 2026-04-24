@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import type { AppIR, ResourceAccessPreset, ResourceIR, ServerModuleIR } from "../../ir/types.js";
+import type { AppIR, ResourceAccessPreset, ResourceIR, ServerModuleIR } from "../../compiler/generated-app.js";
 import { writeGeneratedFile } from "../assets.js";
 import { renderServerFunctionTemplate, type ServerFunctionTemplateId } from "../templates.js";
 
