@@ -1,4 +1,4 @@
-import type { AppIR, DatabaseColumnType, DatabaseSchemaIR } from "../../ir/types.js";
+import type { AppIR, DatabaseColumnType, DatabaseSchemaIR } from "../../compiler/generated-app.js";
 
 function postgresType(type: DatabaseColumnType) {
   switch (type) {

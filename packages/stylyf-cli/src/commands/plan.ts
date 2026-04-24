@@ -1,7 +1,10 @@
+import { expandSpecToGeneratedApp } from "../compiler/expand.js";
+import { createGenerationPlan, renderGenerationPlan } from "../compiler/plan.js";
 import { readSpecV04 } from "../spec/read.js";
 
-export async function runValidateCommand(args: string[]) {
+export async function runPlanCommand(args: string[]) {
   let specPath: string | undefined;
+  let json = false;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -12,7 +15,12 @@ export async function runValidateCommand(args: string[]) {
       continue;
     }
 
-    if (arg === "--ir" || arg === "--print-resolved" || arg === "--write-resolved") {
+    if (arg === "--json") {
+      json = true;
+      continue;
+    }
+
+    if (arg === "--ir") {
       process.stderr.write(
         "Stylyf v0.4 no longer accepts --ir fragments. Use --spec stylyf.spec.json. Run `stylyf intro --topic spec` for the v0.4 DSL.\n",
       );
@@ -25,20 +33,10 @@ export async function runValidateCommand(args: string[]) {
     return 1;
   }
 
-  const { path, spec } = await readSpecV04(specPath);
+  const { spec } = await readSpecV04(specPath);
+  const app = expandSpecToGeneratedApp(spec);
+  const plan = createGenerationPlan(spec, app);
 
-  process.stdout.write(
-    [
-      `Spec validation passed`,
-      `  path: ${path}`,
-      `  version: ${spec.version}`,
-      `  kind: ${spec.app.kind}`,
-      `  backend: ${spec.backend.mode}`,
-      `  objects: ${spec.objects?.length ?? 0}`,
-      `  flows: ${spec.flows?.length ?? 0}`,
-      `  surfaces: ${spec.surfaces?.length ?? 0}`,
-    ]
-      .join("\n") + "\n",
-  );
+  process.stdout.write(json ? `${JSON.stringify(plan, null, 2)}\n` : `${renderGenerationPlan(plan)}\n`);
   return 0;
 }

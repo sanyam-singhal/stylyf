@@ -1,6 +1,6 @@
 # Stylyf
 
-Stylyf is a monorepo centered on [`@depths/stylyf-cli`](https://www.npmjs.com/package/@depths/stylyf-cli), a JSON-driven CLI for generating standalone full-stack SolidStart apps.
+Stylyf is a monorepo centered on [`@depths/stylyf-cli`](https://www.npmjs.com/package/@depths/stylyf-cli), an agent-operated scaffolding compiler for generating standalone full-stack SolidStart apps.
 
 The repo now has a simple split:
 
@@ -31,9 +31,11 @@ npx @depths/stylyf-cli --help
 
 ```bash
 stylyf intro
+stylyf new generic --name "Atlas" --backend portable --media basic --output stylyf.spec.json
+stylyf validate --spec stylyf.spec.json
+stylyf plan --spec stylyf.spec.json
+stylyf generate --spec stylyf.spec.json --target ./my-app
 stylyf search auth supabase tigris
-stylyf validate --ir app.json
-stylyf generate --ir app.json --target ./my-app
 stylyf serve-search --port 4310
 ```
 

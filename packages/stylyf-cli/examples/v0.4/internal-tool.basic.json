@@ -1,0 +1,36 @@
+{
+  "version": "0.4",
+  "app": {
+    "name": "Acme Ops",
+    "kind": "internal-tool",
+    "description": "A small internal operations workspace."
+  },
+  "backend": {
+    "mode": "portable",
+    "portable": {
+      "database": "sqlite"
+    }
+  },
+  "media": {
+    "mode": "basic"
+  },
+  "objects": [
+    {
+      "name": "tickets",
+      "ownership": "user",
+      "visibility": "private",
+      "fields": [
+        { "name": "title", "type": "short-text", "required": true },
+        { "name": "priority", "type": "status", "options": ["low", "medium", "high"] },
+        { "name": "summary", "type": "long-text" }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "name": "ticketApproval",
+      "object": "tickets",
+      "kind": "approval"
+    }
+  ]
+}

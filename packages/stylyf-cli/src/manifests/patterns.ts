@@ -1,0 +1,40 @@
+import type { SearchableEntry } from "../search/index.js";
+
+export const patternCatalog: SearchableEntry[] = [
+  {
+    id: "pattern-portable-sqlite-smoke",
+    label: "Portable SQLite Smoke Path",
+    kind: "pattern",
+    area: "v0.4 Patterns",
+    description: "Default local backend dogfood path using Better Auth, Drizzle, SQLite/libsql, and optional S3-compatible storage.",
+    summary: "Use this when you want the fastest local full-stack smoke test before moving to hosted services.",
+    keywords: ["portable", "sqlite", "better-auth", "drizzle", "local", "smoke", "database", "auth"],
+    sourcePath: "src/compiler/expand.ts",
+    snippet: "\"backend\": { \"mode\": \"portable\", \"portable\": { \"database\": \"sqlite\" } }",
+    searchText: "portable sqlite better-auth drizzle local smoke database auth",
+  },
+  {
+    id: "pattern-hosted-supabase-tigris",
+    label: "Hosted Supabase + Tigris Path",
+    kind: "pattern",
+    area: "v0.4 Patterns",
+    description: "Managed backend path using Supabase Auth, Supabase SDK data access, and Tigris/S3-compatible object storage.",
+    summary: "Use this when you want the fastest deployment path with managed auth/data and presigned object storage.",
+    keywords: ["hosted", "supabase", "tigris", "s3", "managed", "auth", "data", "storage"],
+    sourcePath: "src/compiler/expand.ts",
+    snippet: "\"backend\": { \"mode\": \"hosted\" }, \"media\": { \"mode\": \"rich\" }",
+    searchText: "hosted supabase tigris s3 managed auth data storage",
+  },
+  {
+    id: "pattern-rich-media-attachments",
+    label: "Rich Media Attachments",
+    kind: "pattern",
+    area: "v0.4 Patterns",
+    description: "Object-level media attachments compiled into metadata tables, presign routes, confirm, replace, and delete flows.",
+    summary: "Use this for apps that need images, documents, or file lifecycle handling without exposing raw bucket credentials.",
+    keywords: ["media", "attachments", "upload", "presign", "metadata", "replace", "delete", "tigris", "s3"],
+    sourcePath: "src/generators/backend/attachments.ts",
+    snippet: "\"media\": { \"mode\": \"rich\" }",
+    searchText: "media attachments upload presign metadata replace delete tigris s3",
+  },
+];

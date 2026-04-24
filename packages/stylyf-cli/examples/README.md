@@ -1,109 +1,56 @@
 # Stylyf CLI Examples
 
-Stylyf now has two example stories:
+Stylyf v0.4 examples are small intent-level specs. They are not private app
+models and they do not expose database schemas, API files, server modules, or
+layout trees as the primary authoring surface.
 
-- **canonical** examples for the cleanest operator starting points
-- **reference** examples for broader coverage and deeper capability reminders
+## Canonical v0.4 Specs
 
-## Canonical Examples
+- `v0.4/internal-tool.basic.json`
+- `v0.4/internal-tool.rich.json`
+- `v0.4/generic.basic.json`
+- `v0.4/cms-site.basic.json`
+- `v0.4/cms-site.rich.json`
+- `v0.4/free-saas-tool.basic.json`
+- `v0.4/internal-tool.hosted.rich.json`
 
-### Portable canonical example
+## Portable Local Path
 
-Monolithic:
+Use this first when dogfooding v0.4:
 
-- `atlas-dashboard-v0.3-local.json`
+```bash
+stylyf validate --spec packages/stylyf-cli/examples/v0.4/internal-tool.rich.json
+stylyf plan --spec packages/stylyf-cli/examples/v0.4/internal-tool.rich.json
+stylyf generate --spec packages/stylyf-cli/examples/v0.4/internal-tool.rich.json --target ./generated-internal
+```
 
-Additive:
-
-- `atlas-dashboard-portable.app.core.json`
-- `atlas-dashboard-portable.backend.json`
-- `atlas-dashboard-portable.resources.json`
-- `atlas-dashboard-portable.routes.json`
-
-This is the clearest starting point for:
+This compiles to:
 
 - Better Auth
 - Drizzle
-- local SQLite development
-- Tigris-friendly S3 storage
-- resource/workflow-driven scaffolding
+- SQLite/libsql
+- Tigris/S3-compatible storage when media is enabled
 
-Validate or generate it additively like this:
+## Hosted Managed Path
 
-```bash
-stylyf validate \
-  --ir packages/stylyf-cli/examples/atlas-dashboard-portable.app.core.json \
-  --ir packages/stylyf-cli/examples/atlas-dashboard-portable.backend.json \
-  --ir packages/stylyf-cli/examples/atlas-dashboard-portable.resources.json \
-  --ir packages/stylyf-cli/examples/atlas-dashboard-portable.routes.json \
-  --print-resolved
-```
-
-### Hosted canonical example
-
-Monolithic:
-
-- `atlas-dashboard-v0.3-supabase.json`
-
-Additive:
-
-- `atlas-dashboard-hosted.app.core.json`
-- `atlas-dashboard-hosted.backend.json`
-- `atlas-dashboard-hosted.resources.json`
-- `atlas-dashboard-hosted.routes.json`
-
-This is the clearest starting point for:
-
-- Supabase auth
-- Supabase data access
-- Tigris-friendly S3 storage
-- resource/workflow-driven hosted scaffolding
-
-Validate or generate it additively like this:
+Use this for Supabase + Tigris validation:
 
 ```bash
-stylyf generate \
-  --ir packages/stylyf-cli/examples/atlas-dashboard-hosted.app.core.json \
-  --ir packages/stylyf-cli/examples/atlas-dashboard-hosted.backend.json \
-  --ir packages/stylyf-cli/examples/atlas-dashboard-hosted.resources.json \
-  --ir packages/stylyf-cli/examples/atlas-dashboard-hosted.routes.json \
-  --target ./atlas-hosted
+stylyf validate --spec packages/stylyf-cli/examples/v0.4/internal-tool.hosted.rich.json
+stylyf plan --spec packages/stylyf-cli/examples/v0.4/internal-tool.hosted.rich.json
+stylyf generate --spec packages/stylyf-cli/examples/v0.4/internal-tool.hosted.rich.json --target ./generated-hosted
 ```
 
-## Reference Examples
-
-These remain useful as broader reminders of the system surface.
-
-### Frontend and pre-v0.3 baselines
-
-- `atlas-dashboard.json`
-- `atlas-dashboard-local.json`
-- `atlas-dashboard-fullstack.json`
-- `atlas-dashboard-supabase.json`
-- `field-manual-docs.json`
-- `field-manual-docs-fullstack.json`
-
-### v0.3 reference contracts
-
-- `atlas-dashboard-v0.3.json`
-- `atlas-dashboard-v0.3-local.json`
-- `atlas-dashboard-v0.3-supabase.json`
-
-## Hosted Example Note
-
-For the hosted Supabase path, generation is only the first half of the setup.
-After generating the app, apply:
+After generation, apply:
 
 - `supabase/schema.sql`
 - `supabase/policies.sql`
 
-and only then treat hosted CRUD/runtime testing as representative of the
-generated scaffold.
+Then run hosted CRUD/runtime checks with real Supabase and Tigris env values.
 
-## Why Keep Both Monolithic And Additive Examples?
+## Generic Path
 
-- monolithic examples are fast to scan
-- additive examples teach the cleaner composition workflow
-- both resolve to the same final `AppIR`
-
-The additive examples are the preferred teaching surface for `v0.3.1`.
+Use `v0.4/generic.basic.json` when the requested app should stay general:
+resource-backed routes, auth/data/storage primitives, and explicit high-level
+surfaces without the assumptions of internal tools, CMS publishing, or free
+utility apps.

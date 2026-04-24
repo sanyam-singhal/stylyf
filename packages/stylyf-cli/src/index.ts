@@ -1,9 +1,11 @@
 export const CLI_NAME = "stylyf";
 
-export const CLI_VERSION = "0.3.1";
+export const CLI_VERSION = "0.4.0";
 
 export type CliCommand =
   | "intro"
+  | "new"
+  | "plan"
   | "generate"
   | "validate"
   | "search"
@@ -14,16 +16,18 @@ export function helpText() {
   return [
     "Stylyf CLI",
     "",
-    "JSON-driven full-stack assembly line for SolidStart apps.",
+    "Agent-operated scaffolding compiler for SolidStart apps.",
     "",
     "Usage:",
     "  stylyf <command> [options]",
     "",
     "Commands:",
-    "  intro         Emit a layered markdown briefing for coding agents",
-    "  generate      Generate an app from one or more explicit IR fragments",
-    "  validate      Validate one or more explicit IR fragments",
-    "  search        Search bundled registry/codeblock manifests",
+    "  intro         Layered briefing for coding agents",
+    "  new           Create a v0.4 spec for an app kind",
+    "  validate      Validate a v0.4 spec",
+    "  plan          Explain what a spec will generate",
+    "  generate      Generate a SolidStart app from a v0.4 spec",
+    "  search        Search bundled capabilities, patterns, and components",
     "  serve-search  Start the local search HTTP endpoint",
     "  build-index   Rebuild the bundled search index",
     "",
@@ -33,13 +37,17 @@ export function helpText() {
     "",
     "Typical flow:",
     "  stylyf intro",
-    "  stylyf validate --ir app.core.json --ir backend.portable.json --ir routes.json --print-resolved",
-    "  stylyf generate --ir app.core.json --ir backend.portable.json --ir routes.json --target ./my-app",
+  "  stylyf new generic --name \"Atlas\" --backend portable --media basic --output stylyf.spec.json",
+    "  stylyf validate --spec stylyf.spec.json",
+    "  stylyf plan --spec stylyf.spec.json",
+    "  stylyf generate --spec stylyf.spec.json --target ./my-app",
   ].join("\n");
 }
 import { runBuildIndexCommand } from "./commands/build-index.js";
 import { runGenerateCommand } from "./commands/generate.js";
 import { runIntroCommand } from "./commands/intro.js";
+import { runNewCommand } from "./commands/new.js";
+import { runPlanCommand } from "./commands/plan.js";
 import { runSearchCommand } from "./commands/search.js";
 import { runServeSearchCommand } from "./commands/serve-search.js";
 import { runValidateCommand } from "./commands/validate.js";
@@ -64,6 +72,14 @@ export async function runCli(argv: string[] = process.argv.slice(2)) {
 
   if (command === "intro") {
     return runIntroCommand(commandArgs(argv));
+  }
+
+  if (command === "new") {
+    return runNewCommand(commandArgs(argv));
+  }
+
+  if (command === "plan") {
+    return runPlanCommand(commandArgs(argv));
   }
 
   if (command === "validate") {

@@ -2,4 +2,9 @@
 
 import { runCli } from "./index.ts";
 
-process.exitCode = await runCli(process.argv.slice(2));
+try {
+  process.exitCode = await runCli(process.argv.slice(2));
+} catch (error) {
+  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+  process.exitCode = 1;
+}

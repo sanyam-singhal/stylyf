@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { readFile } from "node:fs/promises";
 import type {
   AppIR,
   AppShellId,
@@ -8,8 +9,11 @@ import type {
   PageShellId,
   RouteIR,
   SectionIR,
-} from "../ir/types.js";
-import { composeAppIrFromPaths } from "../ir/compose.js";
+} from "../compiler/generated-app.js";
+import { expandSpecToGeneratedApp } from "../compiler/expand.js";
+import { createGenerationPlan } from "../compiler/plan.js";
+import { readSpecV04 } from "../spec/read.js";
+import { renderHandoffMarkdown, renderLocalSmokeMarkdown, renderSecurityNotesMarkdown } from "./handoff.js";
 import {
   renderGeneratedAuthClientModule,
   renderGeneratedAuthGuards,
@@ -442,6 +446,84 @@ function renderRouteSource(route: RouteIR, app: AppIR, assemblyLookup: Map<strin
   };
 }
 
+function renderGeneratedLoginRoute(app: AppIR) {
+  const isHosted = app.auth?.provider === "supabase";
+  const signInEndpoint = isHosted ? "/api/auth/sign-in/password" : "/api/auth/sign-in/email";
+  const signUpEndpoint = isHosted ? "/api/auth/sign-up/password" : "/api/auth/sign-up/email";
+  const signUpPayload = isHosted
+    ? "{ email: email(), password: password() }"
+    : '{ email: email(), password: password(), name: email().split("@")[0] || "Stylyf user" }';
+  const signInPayload = isHosted
+    ? "{ email: email(), password: password() }"
+    : '{ email: email(), password: password(), callbackURL: "/" }';
+
+  return [
+    'import { Title } from "@solidjs/meta";',
+    'import { Show, createSignal } from "solid-js";',
+    'import { AuthPageShell } from "~/components/shells/page/auth";',
+    'import { Button } from "~/components/registry/actions-navigation/button";',
+    'import { TextField } from "~/components/registry/form-inputs/text-field";',
+    "",
+    "export default function LoginRoute() {",
+    '  const [mode, setMode] = createSignal<"sign-in" | "sign-up">("sign-in");',
+    '  const [email, setEmail] = createSignal("");',
+    '  const [password, setPassword] = createSignal("");',
+    '  const [message, setMessage] = createSignal("");',
+    "  const [pending, setPending] = createSignal(false);",
+    "",
+    "  const submit = async (event: SubmitEvent) => {",
+    "    event.preventDefault();",
+    '    setMessage("");',
+    "    setPending(true);",
+    "",
+    "    const response = await fetch(mode() === \"sign-up\" ? " + JSON.stringify(signUpEndpoint) + " : " + JSON.stringify(signInEndpoint) + ", {",
+    '      method: "POST",',
+    '      headers: { "content-type": "application/json" },',
+    `      body: JSON.stringify(mode() === "sign-up" ? ${signUpPayload} : ${signInPayload}),`,
+    "    }).catch(error => ({ ok: false, statusText: error instanceof Error ? error.message : String(error) }));",
+    "",
+    "    setPending(false);",
+    "",
+    '    if (!("ok" in response) || !response.ok) {',
+    '      setMessage(`Authentication failed: ${"statusText" in response ? response.statusText : "unknown error"}`);',
+    "      return;",
+    "    }",
+    "",
+    '    window.location.href = "/";',
+    "  };",
+    "",
+    "  return (",
+    "    <>",
+    "      <Title>Sign in</Title>",
+    "      <AuthPageShell",
+    '        title={mode() === "sign-up" ? "Create your account" : "Sign in"}',
+    `        subtitle="Access ${escapeString(app.name)} with the generated ${isHosted ? "Supabase" : "Better Auth"} email/password flow."`,
+    "      >",
+    "        <form class=\"space-y-4\" onSubmit={submit}>",
+    "          <TextField label=\"Email\" type=\"email\" value={email()} onValueChange={setEmail} required />",
+    "          <TextField label=\"Password\" type=\"password\" value={password()} onValueChange={setPassword} required />",
+    "          <Show when={message()}>",
+    "            <p class=\"rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive\">",
+    "              {message()}",
+    "            </p>",
+    "          </Show>",
+    '          <Button type="submit" fullWidth pending={pending()}>',
+    '            {mode() === "sign-up" ? "Create account" : "Sign in"}',
+    "          </Button>",
+    "        </form>",
+    "        <div class=\"pt-2 text-center text-sm text-muted-foreground\">",
+    '          <button type="button" class="font-semibold text-foreground underline-offset-4 hover:underline" onClick={() => setMode(mode() === "sign-up" ? "sign-in" : "sign-up")}>',
+    '            {mode() === "sign-up" ? "Already have an account? Sign in" : "Need an account? Create one"}',
+    "          </button>",
+    "        </div>",
+    "      </AuthPageShell>",
+    "    </>",
+    "  );",
+    "}",
+    "",
+  ].join("\n");
+}
+
 async function copyBundledDependencyTree(importPath: string, targetRoot: string, seen: Set<string>) {
   if (seen.has(importPath) || importPath.startsWith("~/components/layout/") || importPath.startsWith("~/components/shells/")) {
     return;
@@ -528,6 +610,9 @@ export async function generateFrontendDraftFromApp(appIr: AppIR, targetPath: str
   }
 
   if (app.auth) {
+    usedPageShells.add("auth");
+    await writeGeneratedFile(resolve(targetPath, "src/routes/login.tsx"), renderGeneratedLoginRoute(app));
+
     if (app.auth.provider === "supabase") {
       await writeGeneratedFile(resolve(targetPath, "src/lib/supabase.ts"), renderGeneratedSupabaseServerModule());
       await writeGeneratedFile(resolve(targetPath, "src/lib/supabase-browser.ts"), renderGeneratedSupabaseBrowserModule());
@@ -639,7 +724,21 @@ export async function generateFrontendDraftFromApp(appIr: AppIR, targetPath: str
   };
 }
 
-export async function generateFrontendDraft(irPaths: string[], targetPath: string, options?: { install?: boolean }) {
-  const { app } = await composeAppIrFromPaths(irPaths);
-  return generateFrontendDraftFromApp(app, targetPath, options);
+export async function generateFromSpec(specPath: string, targetPath: string, options?: { install?: boolean }) {
+  const { path, spec } = await readSpecV04(specPath);
+  const app = expandSpecToGeneratedApp(spec);
+  const plan = createGenerationPlan(spec, app);
+  const result = await generateFrontendDraftFromApp(app, targetPath, options);
+
+  await writeGeneratedFile(resolve(targetPath, "stylyf.spec.json"), await readFile(path, "utf8"));
+  await writeGeneratedFile(resolve(targetPath, "stylyf.plan.json"), `${JSON.stringify(plan, null, 2)}\n`);
+  await writeGeneratedFile(resolve(targetPath, "HANDOFF.md"), renderHandoffMarkdown(plan));
+  await writeGeneratedFile(resolve(targetPath, "SECURITY_NOTES.md"), renderSecurityNotesMarkdown(plan));
+  await writeGeneratedFile(resolve(targetPath, "LOCAL_SMOKE.md"), renderLocalSmokeMarkdown(plan));
+
+  return {
+    ...result,
+    spec,
+    plan,
+  };
 }

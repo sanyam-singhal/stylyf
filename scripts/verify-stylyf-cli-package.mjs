@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,344 +10,206 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoDir = resolve(scriptDir, "..");
 const packageDir = resolve(repoDir, "packages/stylyf-cli");
 
-const verifyIr = {
-  name: "Pack Verify",
-  shell: "topbar-app",
-  theme: {
-    preset: "emerald",
-    mode: "light",
-    radius: "trim",
-    density: "comfortable",
-    spacing: "tight",
-    fonts: {
-      fancy: "Fraunces",
-      sans: "Manrope",
-      mono: "IBM Plex Mono",
+const internalRichSpec = {
+  version: "0.4",
+  app: {
+    name: "Pack Verify Internal",
+    kind: "internal-tool",
+  },
+  backend: {
+    mode: "portable",
+    portable: {
+      database: "sqlite",
     },
   },
-  database: {
-    dialect: "sqlite",
-    migrations: "drizzle-kit",
+  media: {
+    mode: "rich",
   },
-  resources: [
+  objects: [
+    {
+      name: "tickets",
+      ownership: "user",
+      visibility: "private",
+      fields: [
+        { name: "title", type: "short-text", required: true },
+        { name: "status", type: "status", options: ["draft", "review", "approved"] },
+        { name: "summary", type: "long-text" },
+      ],
+    },
+  ],
+  flows: [{ name: "ticketApproval", object: "tickets", kind: "approval" }],
+};
+
+const hostedRichSpec = {
+  ...internalRichSpec,
+  app: {
+    name: "Pack Verify Hosted",
+    kind: "internal-tool",
+  },
+  backend: {
+    mode: "hosted",
+  },
+};
+
+const genericSpec = {
+  version: "0.4",
+  app: {
+    name: "Pack Verify Generic",
+    kind: "generic",
+  },
+  backend: {
+    mode: "portable",
+    portable: {
+      database: "sqlite",
+    },
+  },
+  media: {
+    mode: "basic",
+  },
+  objects: [
     {
       name: "records",
-      visibility: "mixed",
+      ownership: "user",
+      visibility: "private",
       fields: [
-        { name: "title", type: "varchar", required: true },
-        { name: "status", type: "enum", enumValues: ["draft", "review", "published"] },
-        { name: "summary", type: "longtext" },
-      ],
-      ownership: {
-        model: "user",
-        ownerField: "owner_id",
-      },
-      access: {
-        list: "owner-or-public",
-        read: "owner-or-public",
-        create: "user",
-        update: "owner",
-        delete: "owner",
-      },
-      attachments: [
-        { name: "coverImage", kind: "image" },
-        { name: "sourceFiles", kind: "document", multiple: true },
-      ],
-      workflow: "recordLifecycle",
-    },
-  ],
-  workflows: [
-    {
-      name: "recordLifecycle",
-      resource: "records",
-      field: "status",
-      initial: "draft",
-      states: ["draft", "review", "published"],
-      transitions: [
-        {
-          name: "submitForReview",
-          from: "draft",
-          to: "review",
-          actor: "owner",
-          emits: ["record.submitted"],
-          notifies: ["owner", "admins"],
-        },
+        { name: "title", type: "short-text", required: true },
+        { name: "status", type: "status", options: ["draft", "active", "archived"] },
       ],
     },
   ],
-  auth: {
-    provider: "better-auth",
-    mode: "session",
-    features: {
-      emailPassword: true,
-    },
-    protect: [
-      {
-        target: "/",
-        kind: "route",
-        access: "user",
-      },
-    ],
-  },
-  storage: {
-    provider: "s3",
-    mode: "presigned-put",
-    bucketAlias: "uploads",
-  },
-  apis: [
-    {
-      path: "/api/uploads/presign",
-      method: "POST",
-      type: "presign-upload",
-      name: "create-record-upload",
-      auth: "user",
-    },
-  ],
-  server: [
-    {
-      name: "records.list",
-      type: "query",
-      resource: "records",
-      auth: "user",
-    },
-  ],
-  routes: [
-    {
-      path: "/",
-      page: "dashboard",
-      title: "Package Verification",
-      sections: [
-        {
-          layout: "grid",
-          children: [{ component: "stat-card" }, { component: "stat-grid" }],
-        },
-        {
-          layout: "stack",
-          children: [{ component: "activity-feed" }, { component: "notification-list" }],
-        },
-      ],
-    },
-    {
-      path: "/records",
-      page: "resource-index",
-      title: "Records",
-      sections: [
-        {
-          layout: "stack",
-          children: [{ component: "filter-toolbar" }, { component: "data-table-shell" }, { component: "detail-panel" }],
-        },
-      ],
-    },
-    {
-      path: "/records/new",
-      page: "resource-create",
-      resource: "records",
-      title: "Create record",
-      sections: [],
-    },
-    {
-      path: "/records/:id/edit",
-      page: "resource-edit",
-      resource: "records",
-      title: "Edit record",
-      sections: [],
-    },
+  surfaces: [
+    { name: "Records Inbox", kind: "list", object: "records", path: "/inbox", audience: "user" },
+    { name: "Record Detail", kind: "detail", object: "records", path: "/inbox/:id", audience: "user" },
   ],
 };
 
-const verifySupabaseIr = {
-  name: "Pack Verify Hosted",
-  shell: "sidebar-app",
-  theme: {
-    preset: "opal",
-    mode: "light",
-    radius: "trim",
-    density: "comfortable",
-    spacing: "tight",
-    fonts: {
-      fancy: "Fraunces",
-      sans: "Manrope",
-      mono: "IBM Plex Mono",
+const freeToolSpec = {
+  version: "0.4",
+  app: {
+    name: "Pack Verify Free Tool",
+    kind: "free-saas-tool",
+  },
+  backend: {
+    mode: "portable",
+    portable: {
+      database: "sqlite",
     },
   },
-  database: {
-    provider: "supabase",
+  media: {
+    mode: "basic",
   },
-  resources: [
-    {
-      name: "profiles",
-      visibility: "private",
-      fields: [
-        { name: "displayName", type: "varchar", required: true },
-        { name: "slug", type: "varchar", required: true, unique: true },
-      ],
-      ownership: {
-        model: "user",
-        ownerField: "user_id",
-      },
-      access: {
-        list: "owner",
-        read: "owner",
-        create: "user",
-        update: "owner",
-        delete: "owner",
-      },
-    },
-    {
-      name: "records",
-      visibility: "mixed",
-      fields: [
-        { name: "title", type: "varchar", required: true },
-        { name: "status", type: "enum", enumValues: ["draft", "review", "published"] },
-        { name: "summary", type: "longtext" },
-      ],
-      ownership: {
-        model: "user",
-        ownerField: "owner_id",
-      },
-      access: {
-        list: "owner-or-public",
-        read: "owner-or-public",
-        create: "user",
-        update: "owner",
-        delete: "owner",
-      },
-      relations: [{ target: "profiles", kind: "belongs-to", field: "owner_id" }],
-      attachments: [
-        { name: "coverImage", kind: "image" },
-        { name: "sourceFiles", kind: "document", multiple: true },
-      ],
-      workflow: "recordLifecycle",
-    },
-  ],
-  workflows: [
-    {
-      name: "recordLifecycle",
-      resource: "records",
-      field: "status",
-      initial: "draft",
-      states: ["draft", "review", "published"],
-      transitions: [
-        {
-          name: "submitForReview",
-          from: "draft",
-          to: "review",
-          actor: "owner",
-          emits: ["record.submitted"],
-          notifies: ["owner", "admins"],
-        },
-        {
-          name: "publish",
-          from: ["review"],
-          to: "published",
-          actor: "owner",
-          emits: ["record.published"],
-          notifies: ["owner", "watchers"],
-        },
-      ],
-    },
-  ],
-  auth: {
-    provider: "supabase",
-    mode: "session",
-    features: {
-      emailPassword: true,
-      emailOtp: true,
-    },
-    protect: [
-      {
-        target: "/",
-        kind: "route",
-        access: "user",
-      },
-    ],
-  },
-  storage: {
-    provider: "s3",
-    mode: "presigned-put",
-    bucketAlias: "uploads",
-  },
-  apis: [
-    {
-      path: "/api/uploads/presign",
-      method: "POST",
-      type: "presign-upload",
-      name: "create-record-upload",
-      auth: "user",
-    },
-  ],
-  server: [
-    {
-      name: "records.list",
-      type: "query",
-      resource: "records",
-      auth: "user",
-    },
-  ],
-  routes: [
-    {
-      path: "/",
-      page: "dashboard",
-      title: "Hosted Verification",
-      sections: [
-        {
-          layout: "grid",
-          children: [{ component: "stat-card" }, { component: "stat-grid" }],
-        },
-      ],
-    },
-    {
-      path: "/records",
-      page: "resource-index",
-      title: "Records",
-      sections: [
-        {
-          layout: "stack",
-          children: [{ component: "filter-toolbar" }, { component: "data-table-shell" }, { component: "detail-panel" }],
-        },
-      ],
-    },
-    {
-      path: "/records/new",
-      page: "resource-create",
-      resource: "records",
-      title: "Create record",
-      sections: [],
-    },
-    {
-      path: "/records/:id/edit",
-      page: "resource-edit",
-      resource: "records",
-      title: "Edit record",
-      sections: [],
-    },
-  ],
+  flows: [{ name: "savedResults", object: "tool_runs", kind: "saved-results" }],
 };
 
 async function run(cmd, args, cwd) {
   return execFileAsync(cmd, args, {
     cwd,
-    maxBuffer: 1024 * 1024 * 50,
+    maxBuffer: 1024 * 1024 * 60,
   });
 }
 
+
+async function assertFile(path) {
+  try {
+    await readFile(path, "utf8");
+  } catch {
+    throw new Error(`Missing expected file: ${path}`);
+  }
+}
+
+async function assertNoRuntimeStylyfImports(root, label) {
+  const candidatePaths = [
+    "src",
+    "package.json",
+    "vite.config.ts",
+    "app.config.ts",
+    "tsconfig.json",
+    "drizzle.config.ts",
+    "eslint.config.js",
+  ];
+  const existingPaths = [];
+  for (const candidatePath of candidatePaths) {
+    try {
+      await readFile(resolve(root, candidatePath), "utf8");
+      existingPaths.push(candidatePath);
+    } catch {
+      if (candidatePath === "src") {
+        existingPaths.push(candidatePath);
+      }
+    }
+  }
+
+  const { stdout } = await run(
+    "rg",
+    [
+      "-n",
+      "/root/stylyf|@depths/stylyf-cli|@stylyf/cli",
+      ...existingPaths,
+    ],
+    root,
+  ).catch(error => {
+    if (error.code === 1) {
+      return { stdout: "" };
+    }
+    throw error;
+  });
+
+  if (stdout.trim()) {
+    throw new Error(`${label} still references the repo or CLI package:\n${stdout}`);
+  }
+}
+
+
+async function writeJson(path, value) {
+  await writeFile(path, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+async function newestTarballPath(directory) {
+  const entries = await readdir(directory);
+  const tarballs = await Promise.all(
+    entries
+      .filter(entry => entry.endsWith(".tgz"))
+      .map(async entry => {
+        const path = resolve(directory, entry);
+        const stats = await stat(path);
+        return { path, mtimeMs: stats.mtimeMs };
+      }),
+  );
+
+  tarballs.sort((left, right) => right.mtimeMs - left.mtimeMs);
+  return tarballs[0]?.path;
+}
+
+async function packCliTarball(packRoot) {
+  const packDestination = resolve(packRoot, "tarballs");
+  await mkdir(packDestination, { recursive: true });
+
+  const { stdout } = await run("npm", ["pack", "--json", "--pack-destination", packDestination], packageDir);
+  const trimmed = stdout.trim();
+  if (trimmed) {
+    const [packResult] = JSON.parse(trimmed);
+    if (packResult?.filename) {
+      return resolve(packDestination, packResult.filename);
+    }
+  }
+
+  const tarballPath = await newestTarballPath(packDestination);
+  if (!tarballPath) {
+    throw new Error("npm pack did not return JSON and no tarball was found in the pack destination");
+  }
+  return tarballPath;
+}
+
 async function main() {
+  process.stdout.write("Building CLI package assets...\n");
   await run("npm", ["run", "cli:build"], repoDir);
 
   const packRoot = await mkdtemp(join(tmpdir(), "stylyf-pack-"));
   const verifyRoot = resolve(packRoot, "verify-install");
-
   await mkdir(verifyRoot, { recursive: true });
 
-  const { stdout: packStdout } = await run("npm", ["pack", "--json"], packageDir);
-  const [packResult] = JSON.parse(packStdout);
-  const tarballName = packResult?.filename;
-
-  if (!tarballName) {
-    throw new Error("npm pack did not return a tarball filename");
-  }
-
-  const tarballPath = resolve(packageDir, tarballName);
+  process.stdout.write("Packing CLI tarball...\n");
+  const tarballPath = await packCliTarball(packRoot);
   const { stdout: tarList } = await run("tar", ["-tf", tarballPath], packageDir);
   const tarEntries = tarList.split("\n").filter(Boolean);
   const requiredEntries = [
@@ -367,252 +229,134 @@ async function main() {
       throw new Error(`Packed tarball is missing required entry: ${entry}`);
     }
   }
+  if (tarEntries.some(entry => entry.startsWith("package/dist/ir/"))) {
+    throw new Error("Packed tarball still contains the removed public v0.3 IR layer");
+  }
 
-  await writeFile(
-    resolve(verifyRoot, "package.json"),
-    JSON.stringify(
-      {
-        name: "stylyf-pack-verify",
-        private: true,
-        type: "module",
-      },
-      null,
-      2,
-    ) + "\n",
-  );
+  process.stdout.write("Installing packed CLI outside the repo...\n");
+  await writeJson(resolve(verifyRoot, "package.json"), {
+    name: "stylyf-pack-verify",
+    private: true,
+    type: "module",
+  });
 
   await run("npm", ["install", tarballPath], verifyRoot);
 
   const stylyfBin = resolve(verifyRoot, "node_modules/.bin/stylyf");
-  const { stdout: helpStdout } = await run(stylyfBin, ["--help"], verifyRoot);
-  if (!helpStdout.includes("Stylyf CLI")) {
-    throw new Error("Installed stylyf binary did not return expected help output");
-  }
+  process.stdout.write("Smoke testing installed CLI commands...\n");
+  await run(stylyfBin, ["--help"], verifyRoot);
 
-  await run(stylyfBin, ["intro", "--topic", "overview", "--output", "STYLYF_INTRO.md"], verifyRoot);
-  await run(stylyfBin, ["intro", "--topic", "dsl", "--output", "STYLYF_DSL.md"], verifyRoot);
+  await run(stylyfBin, ["intro", "--output", "STYLYF_INTRO.md"], verifyRoot);
+  await run(stylyfBin, ["intro", "--topic", "spec", "--output", "STYLYF_SPEC.md"], verifyRoot);
+  await run(stylyfBin, ["intro", "--kind", "internal-tool", "--output", "STYLYF_INTERNAL.md"], verifyRoot);
+
   const intro = await readFile(resolve(verifyRoot, "STYLYF_INTRO.md"), "utf8");
-  const dsl = await readFile(resolve(verifyRoot, "STYLYF_DSL.md"), "utf8");
-  if (!intro.includes("Better Auth") || !intro.includes("Supabase") || !intro.includes("Tigris")) {
-    throw new Error("Generated intro overview does not mention the backend path surface");
+  const specIntro = await readFile(resolve(verifyRoot, "STYLYF_SPEC.md"), "utf8");
+  if (!intro.includes("generic") || !intro.includes("internal-tool") || !intro.includes("Supabase") || !intro.includes("Tigris/S3-compatible")) {
+    throw new Error("Generated intro overview does not mention v0.4 app kinds and backend paths");
   }
-  if (!dsl.includes("resources") || !dsl.includes("workflows") || !dsl.includes("attachments")) {
-    throw new Error("Generated DSL intro topic does not mention the v0.3 mechanics surface");
-  }
-
-  const portableFragments = {
-    "verify-portable.app.core.json": {
-      name: verifyIr.name,
-      shell: verifyIr.shell,
-      theme: verifyIr.theme,
-    },
-    "verify-portable.backend.json": {
-      database: verifyIr.database,
-      auth: verifyIr.auth,
-      storage: verifyIr.storage,
-      apis: verifyIr.apis,
-      server: verifyIr.server,
-    },
-    "verify-portable.resources.json": {
-      resources: verifyIr.resources,
-      workflows: verifyIr.workflows,
-    },
-    "verify-portable.routes.json": {
-      routes: verifyIr.routes,
-    },
-  };
-
-  for (const [filename, value] of Object.entries(portableFragments)) {
-    await writeFile(resolve(verifyRoot, filename), `${JSON.stringify(value, null, 2)}\n`);
+  if (!specIntro.includes("SpecV04") || !specIntro.includes("objects") || !specIntro.includes("flows") || !specIntro.includes("surfaces")) {
+    throw new Error("Generated spec intro topic does not explain the v0.4 DSL");
   }
 
-  await run(
-    stylyfBin,
-    [
-      "generate",
-      "--ir",
-      "verify-portable.app.core.json",
-      "--ir",
-      "verify-portable.backend.json",
-      "--ir",
-      "verify-portable.resources.json",
-      "--ir",
-      "verify-portable.routes.json",
-      "--target",
-      "./generated-app",
-      "--write-resolved",
-      "./generated-app.resolved.json",
-    ],
-    verifyRoot,
-  );
-  await run("npm", ["run", "check"], resolve(verifyRoot, "generated-app"));
-  await run("npm", ["run", "build"], resolve(verifyRoot, "generated-app"));
-  const portableResolved = JSON.parse(await readFile(resolve(verifyRoot, "generated-app.resolved.json"), "utf8"));
-  if (!portableResolved.resources?.length || portableResolved.resources[0].name !== "records") {
-    throw new Error("Resolved portable IR did not contain the expected resource");
+  for (const kind of ["generic", "internal-tool", "cms-site", "free-saas-tool"]) {
+    const output = `new-command-${kind}.spec.json`;
+    await run(
+      stylyfBin,
+      ["new", kind, "--name", `New Command Verify ${kind}`, "--backend", "portable", "--media", "rich", "--output", output],
+      verifyRoot,
+    );
+    await run(stylyfBin, ["validate", "--spec", output], verifyRoot);
+    await run(stylyfBin, ["plan", "--spec", output, "--json"], verifyRoot);
   }
 
-  const requiredGeneratedFiles = [
-    "generated-app/drizzle.config.ts",
-    "generated-app/src/routes/api/auth/[...auth].ts",
-    "generated-app/src/routes/api/uploads/presign.ts",
-    "generated-app/src/routes/api/attachments/intent.ts",
-    "generated-app/src/routes/api/attachments/confirm.ts",
-    "generated-app/src/routes/api/attachments/delete.ts",
-    "generated-app/src/lib/storage.ts",
-    "generated-app/src/lib/resources.ts",
-    "generated-app/src/lib/attachments.ts",
-    "generated-app/src/lib/forms.ts",
-    "generated-app/src/lib/workflows.ts",
-    "generated-app/src/lib/server/resource-policy.ts",
-    "generated-app/src/lib/server/forms/records.ts",
-    "generated-app/src/lib/server/workflows.ts",
-    "generated-app/src/lib/server/queries/records-list.ts",
-    "generated-app/src/routes/records/new.tsx",
-    "generated-app/src/routes/records/[id]/edit.tsx",
-    "generated-app/src/middleware.ts",
-  ];
+  await writeJson(resolve(verifyRoot, "generic.spec.json"), genericSpec);
+  await writeJson(resolve(verifyRoot, "internal-rich.spec.json"), internalRichSpec);
+  await writeJson(resolve(verifyRoot, "hosted-rich.spec.json"), hostedRichSpec);
+  await writeJson(resolve(verifyRoot, "free-tool.spec.json"), freeToolSpec);
 
-  for (const relativePath of requiredGeneratedFiles) {
-    const absolutePath = resolve(verifyRoot, relativePath);
-    try {
-      await readFile(absolutePath, "utf8");
-    } catch {
-      throw new Error(`Generated packaged app is missing required file: ${relativePath}`);
-    }
+  process.stdout.write("Generating/checking v0.4 archetypes in parallel...\n");
+  await Promise.all([
+    ["generic.spec.json", "./generated-generic"],
+    ["internal-rich.spec.json", "./generated-internal"],
+    ["free-tool.spec.json", "./generated-free-tool"],
+    ["hosted-rich.spec.json", "./generated-hosted"],
+  ].map(async ([specPath, targetPath]) => {
+    await run(stylyfBin, ["validate", "--spec", specPath], verifyRoot);
+    await run(stylyfBin, ["plan", "--spec", specPath], verifyRoot);
+    await run(stylyfBin, ["generate", "--spec", specPath, "--target", targetPath, "--no-install"], verifyRoot);
+  }));
+
+  const genericRoot = resolve(verifyRoot, "generated-generic");
+  for (const relativePath of [
+    "src/routes/inbox/index.tsx",
+    "src/routes/inbox/[id].tsx",
+    "src/routes/records/index.tsx",
+    "src/routes/records/new.tsx",
+    "src/routes/login.tsx",
+    "stylyf.spec.json",
+    "stylyf.plan.json",
+  ]) {
+    await assertFile(resolve(genericRoot, relativePath));
   }
+  await assertNoRuntimeStylyfImports(genericRoot, "Generated generic app");
 
-  const { stdout: importScan } = await run(
+  const internalRoot = resolve(verifyRoot, "generated-internal");
+
+  for (const relativePath of [
+    "src/lib/db/schema.ts",
+    "src/lib/auth.ts",
+    "src/lib/storage.ts",
+    "src/lib/attachments.ts",
+    "src/lib/workflows.ts",
+    "src/routes/api/auth/[...auth].ts",
+    "src/routes/login.tsx",
+    "src/routes/api/attachments/intent.ts",
+    "src/routes/tickets/new.tsx",
+    "src/routes/tickets/[id]/edit.tsx",
+    "HANDOFF.md",
+    "LOCAL_SMOKE.md",
+    "SECURITY_NOTES.md",
+    "stylyf.spec.json",
+    "stylyf.plan.json",
+  ]) {
+    await assertFile(resolve(internalRoot, relativePath));
+  }
+  await assertNoRuntimeStylyfImports(internalRoot, "Generated portable app");
+
+  const freeRoot = resolve(verifyRoot, "generated-free-tool");
+  const { stdout: billingScan } = await run(
     "rg",
-    ["-n", "/root/stylyf|@depths/stylyf-cli|@stylyf/cli", "generated-app"],
-    verifyRoot,
+    ["-n", "\\b(stripe|billing|checkout|payment)\\b", "src", "package.json", "stylyf.spec.json", "stylyf.plan.json"],
+    freeRoot,
   ).catch(error => {
     if (error.code === 1) {
       return { stdout: "" };
     }
     throw error;
   });
-
-  if (importScan.trim()) {
-    throw new Error(`Generated packaged app still references the repo or CLI package:\n${importScan}`);
+  if (billingScan.trim()) {
+    throw new Error(`Generated free tool contains billing/payment language:\n${billingScan}`);
   }
 
-  const hostedFragments = {
-    "verify-hosted.app.core.json": {
-      name: verifySupabaseIr.name,
-      shell: verifySupabaseIr.shell,
-      theme: verifySupabaseIr.theme,
-    },
-    "verify-hosted.backend.json": {
-      database: verifySupabaseIr.database,
-      auth: verifySupabaseIr.auth,
-      storage: verifySupabaseIr.storage,
-      apis: verifySupabaseIr.apis,
-      server: verifySupabaseIr.server,
-    },
-    "verify-hosted.resources.json": {
-      resources: verifySupabaseIr.resources,
-      workflows: verifySupabaseIr.workflows,
-    },
-    "verify-hosted.routes.json": {
-      routes: verifySupabaseIr.routes,
-    },
-  };
+  const hostedRoot = resolve(verifyRoot, "generated-hosted");
 
-  for (const [filename, value] of Object.entries(hostedFragments)) {
-    await writeFile(resolve(verifyRoot, filename), `${JSON.stringify(value, null, 2)}\n`);
+  for (const relativePath of [
+    "src/lib/supabase.ts",
+    "src/lib/supabase-browser.ts",
+    "src/lib/storage.ts",
+    "src/lib/attachments.ts",
+    "src/routes/api/auth/sign-up/password.ts",
+    "src/routes/api/auth/sign-in/password.ts",
+    "src/routes/login.tsx",
+    "src/routes/auth/callback.ts",
+    "src/routes/api/attachments/intent.ts",
+    "supabase/schema.sql",
+    "supabase/policies.sql",
+  ]) {
+    await assertFile(resolve(hostedRoot, relativePath));
   }
-
-  await run(
-    stylyfBin,
-    [
-      "generate",
-      "--ir",
-      "verify-hosted.app.core.json",
-      "--ir",
-      "verify-hosted.backend.json",
-      "--ir",
-      "verify-hosted.resources.json",
-      "--ir",
-      "verify-hosted.routes.json",
-      "--target",
-      "./generated-hosted-app",
-      "--write-resolved",
-      "./generated-hosted-app.resolved.json",
-    ],
-    verifyRoot,
-  );
-  await writeFile(
-    resolve(verifyRoot, "generated-hosted-app/.env"),
-    [
-      "APP_BASE_URL=http://127.0.0.1:3000",
-      "NODE_ENV=development",
-      "SUPABASE_URL=https://example.supabase.co",
-      "SUPABASE_PUBLISHABLE_KEY=sb_publishable_example",
-      "SUPABASE_SECRET_KEY=sb_secret_example",
-      "VITE_SUPABASE_URL=https://example.supabase.co",
-      "VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_example",
-      "S3_BUCKET=verify-bucket",
-      "AWS_REGION=auto",
-      "AWS_ACCESS_KEY_ID=test-access-key",
-      "AWS_SECRET_ACCESS_KEY=test-secret-key",
-      "AWS_ENDPOINT_URL_S3=https://t3.storage.dev",
-      "",
-    ].join("\n"),
-  );
-  await run("npm", ["run", "check"], resolve(verifyRoot, "generated-hosted-app"));
-  await run("npm", ["run", "build"], resolve(verifyRoot, "generated-hosted-app"));
-  const hostedResolved = JSON.parse(await readFile(resolve(verifyRoot, "generated-hosted-app.resolved.json"), "utf8"));
-  if (!hostedResolved.resources?.length || !hostedResolved.resources.some(resource => resource.name === "profiles")) {
-    throw new Error("Resolved hosted IR did not contain the expected resources");
-  }
-
-  const requiredHostedFiles = [
-    "generated-hosted-app/src/lib/supabase.ts",
-    "generated-hosted-app/src/lib/supabase-browser.ts",
-    "generated-hosted-app/src/lib/resources.ts",
-    "generated-hosted-app/src/lib/attachments.ts",
-    "generated-hosted-app/src/lib/forms.ts",
-    "generated-hosted-app/src/lib/workflows.ts",
-    "generated-hosted-app/src/lib/server/resource-policy.ts",
-    "generated-hosted-app/src/lib/server/forms/records.ts",
-    "generated-hosted-app/src/lib/server/workflows.ts",
-    "generated-hosted-app/src/routes/api/auth/sign-up/password.ts",
-    "generated-hosted-app/src/routes/api/auth/sign-in/password.ts",
-    "generated-hosted-app/src/routes/api/auth/sign-in/otp.ts",
-    "generated-hosted-app/src/routes/api/attachments/intent.ts",
-    "generated-hosted-app/src/routes/api/attachments/confirm.ts",
-    "generated-hosted-app/src/routes/api/attachments/delete.ts",
-    "generated-hosted-app/src/routes/auth/callback.ts",
-    "generated-hosted-app/supabase/schema.sql",
-    "generated-hosted-app/supabase/policies.sql",
-    "generated-hosted-app/src/routes/records/new.tsx",
-    "generated-hosted-app/src/routes/records/[id]/edit.tsx",
-  ];
-
-  for (const relativePath of requiredHostedFiles) {
-    const absolutePath = resolve(verifyRoot, relativePath);
-    try {
-      await readFile(absolutePath, "utf8");
-    } catch {
-      throw new Error(`Generated hosted packaged app is missing required file: ${relativePath}`);
-    }
-  }
-
-  const { stdout: hostedImportScan } = await run(
-    "rg",
-    ["-n", "/root/stylyf|@depths/stylyf-cli|@stylyf/cli", "generated-hosted-app"],
-    verifyRoot,
-  ).catch(error => {
-    if (error.code === 1) {
-      return { stdout: "" };
-    }
-    throw error;
-  });
-
-  if (hostedImportScan.trim()) {
-    throw new Error(`Generated hosted packaged app still references the repo or CLI package:\n${hostedImportScan}`);
-  }
+  await assertNoRuntimeStylyfImports(hostedRoot, "Generated hosted app");
 
   process.stdout.write(
     [
@@ -621,14 +365,12 @@ async function main() {
       "Verified:",
       "  - tarball bundles dist manifests, templates, and source assets",
       "  - installed stylyf binary runs outside the repo",
-      "  - packaged intro command reflects backend capabilities",
-      "  - packaged generate command works in a clean temp directory",
-      "  - generated v0.3 portable files are present",
-      "  - generated v0.3 hosted Supabase/Tigris files are present",
-      "  - generated app does not import the repo or CLI package",
-      "  - generated hosted app does not import the repo or CLI package",
-      "  - generated app checks and builds successfully",
-      "  - generated hosted app checks and builds successfully",
+      "  - intro/new/validate/plan/generate v0.4 commands work",
+      "  - generic app source honors explicit surface route hints",
+      "  - portable internal rich app source is generated with auth/data/media files",
+      "  - free SaaS tool app generates and has no billing/payment surface",
+      "  - hosted Supabase/Tigris app generates expected auth/data/storage files",
+      "  - generated apps do not import the repo or CLI package",
     ].join("\n") + "\n",
   );
 

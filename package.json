@@ -18,12 +18,16 @@
     "cli:build": "npm run cli:build-manifests && npm run cli:sync-assets && npm --prefix packages/stylyf-cli run build",
     "cli:help": "npm run cli:build && node packages/stylyf-cli/dist/bin.js --help",
     "cli:dev": "node --experimental-strip-types packages/stylyf-cli/src/bin.ts",
-    "cli:verify-pack": "node scripts/verify-stylyf-cli-package.mjs"
+    "cli:verify-pack": "node scripts/verify-stylyf-cli-package.mjs",
+    "cli:smoke-usage": "bash scripts/smoke-stylyf-generated-app.sh"
   },
   "engines": {
     "node": ">=22"
   },
   "overrides": {
     "h3": "1.15.11"
+  },
+  "devDependencies": {
+    "playwright": "^1.59.1"
   }
 }

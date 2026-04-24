@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import type { AppIR, ResourceFieldIR, ResourceIR } from "../../ir/types.js";
+import type { AppIR, ResourceFieldIR, ResourceIR } from "../../compiler/generated-app.js";
 import { writeGeneratedFile } from "../assets.js";
 
 function camelCase(value: string) {

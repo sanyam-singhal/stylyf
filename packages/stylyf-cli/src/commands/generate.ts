@@ -1,24 +1,17 @@
 import { resolve } from "node:path";
-import { generateFrontendDraft } from "../generators/generate.js";
-import { mkdir, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
-import { composeAppIrFromPaths } from "../ir/compose.js";
+import { generateFromSpec } from "../generators/generate.js";
 
 export async function runGenerateCommand(args: string[]) {
-  const irPaths: string[] = [];
+  let specPath: string | undefined;
   let targetPath: string | undefined;
-  let resolvedOutputPath: string | undefined;
   let install = true;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
 
-    if (arg === "--ir") {
-      const value = args[index + 1];
-      if (value) {
-        irPaths.push(value);
-        index += 1;
-      }
+    if (arg === "--spec") {
+      specPath = args[index + 1];
+      index += 1;
       continue;
     }
 
@@ -28,19 +21,21 @@ export async function runGenerateCommand(args: string[]) {
       continue;
     }
 
-    if (arg === "--write-resolved") {
-      resolvedOutputPath = args[index + 1];
-      index += 1;
+    if (arg === "--no-install") {
+      install = false;
       continue;
     }
 
-    if (arg === "--no-install") {
-      install = false;
+    if (arg === "--ir" || arg === "--print-resolved" || arg === "--write-resolved") {
+      process.stderr.write(
+        "Stylyf v0.4 no longer accepts --ir fragments. Use --spec stylyf.spec.json. Run `stylyf intro --topic spec` for the v0.4 DSL.\n",
+      );
+      return 1;
     }
   }
 
-  if (irPaths.length === 0) {
-    process.stderr.write("Missing required option: --ir <path> (repeatable)\n");
+  if (!specPath) {
+    process.stderr.write("Missing required option: --spec <path>\n");
     return 1;
   }
 
@@ -50,19 +45,13 @@ export async function runGenerateCommand(args: string[]) {
   }
 
   const resolvedTargetPath = resolve(process.cwd(), targetPath);
-  const result = await generateFrontendDraft(irPaths, resolvedTargetPath, { install });
-
-  if (resolvedOutputPath) {
-    const { app } = await composeAppIrFromPaths(irPaths);
-    const resolvedPath = resolve(process.cwd(), resolvedOutputPath);
-    await mkdir(dirname(resolvedPath), { recursive: true });
-    await writeFile(resolvedPath, `${JSON.stringify(app, null, 2)}\n`);
-  }
+  const result = await generateFromSpec(specPath, resolvedTargetPath, { install });
 
   process.stdout.write(
     [
-      `Generated frontend draft in ${resolvedTargetPath}`,
-      `  ir fragments: ${irPaths.length}`,
+      `Generated SolidStart app in ${resolvedTargetPath}`,
+      `  spec: ${resolve(process.cwd(), specPath)}`,
+      `  kind: ${result.spec.app.kind}`,
       `  routes: ${result.routes}`,
       `  app shells: ${result.appShells}`,
       `  page shells: ${result.pageShells}`,
@@ -74,9 +63,8 @@ export async function runGenerateCommand(args: string[]) {
         result.postGenerateSteps.length > 0 ? result.postGenerateSteps.join(", ") : install ? "none" : "skipped"
       }`,
       `  npm install: ${result.installed ? "completed" : "skipped"}`,
-      resolvedOutputPath ? `  resolved ir: ${resolve(process.cwd(), resolvedOutputPath)}` : undefined,
+      `  plan: ${resolve(resolvedTargetPath, "stylyf.plan.json")}`,
     ]
-      .filter(Boolean)
       .join("\n") + "\n",
   );
 

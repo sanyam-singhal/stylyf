@@ -1,0 +1,28 @@
+{
+  "version": "0.4",
+  "app": {
+    "name": "Resize Kit",
+    "kind": "free-saas-tool",
+    "description": "A free utility with saved results."
+  },
+  "backend": {
+    "mode": "portable",
+    "portable": {
+      "database": "sqlite"
+    }
+  },
+  "media": {
+    "mode": "basic"
+  },
+  "flows": [
+    {
+      "name": "savedResults",
+      "object": "tool_runs",
+      "kind": "saved-results"
+    }
+  ],
+  "surfaces": [
+    { "name": "Landing", "kind": "landing", "path": "/", "audience": "public" },
+    { "name": "Tool", "kind": "tool", "path": "/tool", "audience": "public" }
+  ]
+}

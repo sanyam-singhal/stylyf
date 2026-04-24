@@ -1,10 +1,10 @@
 # @depths/stylyf-cli
 
-Stylyf is a JSON-driven full-stack assembly line for SolidStart.
+Stylyf is an agent-operated scaffolding compiler for SolidStart.
 
-Its job is to let a coding agent describe the intended app in a small,
-explicit IR, generate a real source tree, and then keep iterating inside that
-emitted app without redoing repetitive setup work by hand.
+Its job is to let a coding agent describe the intended app in a small v0.4
+spec, inspect the generation plan, generate a real source tree, and then keep
+iterating inside that emitted app without redoing repetitive setup work by hand.
 
 The generated app is a separate destination project. It does not import from
 this repo and does not depend on `@depths/stylyf-cli` at runtime.
@@ -15,7 +15,14 @@ this repo and does not depend on `@depths/stylyf-cli` at runtime.
 - theme system, global styling, and emitted app-owned CSS
 - backend capability files for either supported backend path
 - explicit source files for auth, data, storage, API routes, and server modules
-- resource-driven app mechanics when `resources` and `workflows` are used
+- resource-driven app mechanics when `objects`, `flows`, and `surfaces` are used
+
+## App Paths
+
+- `generic`: general full-stack app scaffolding without niche assumptions
+- `internal-tool`: authenticated operational apps, dashboards, approval queues, and admin-style CRUD
+- `cms-site`: public publishing surfaces plus authenticated editorial management
+- `free-saas-tool`: public/free utility surfaces with optional saved results and no billing gateway
 
 ## Two Backend Paths
 
@@ -53,10 +60,12 @@ Use the layered intro:
 
 ```bash
 stylyf intro
-stylyf intro --topic dsl
-stylyf intro --topic portable
-stylyf intro --topic hosted
-stylyf intro --topic examples
+stylyf intro --kind generic
+stylyf intro --kind internal-tool
+stylyf intro --topic spec
+stylyf intro --topic backend
+stylyf intro --topic media
+stylyf intro --topic generated-output
 stylyf intro --topic full
 ```
 
@@ -71,150 +80,127 @@ stylyf search auth session route protection
 
 ## Canonical Starting Points
 
-- portable: `packages/stylyf-cli/examples/atlas-dashboard-v0.3-local.json`
-- hosted: `packages/stylyf-cli/examples/atlas-dashboard-v0.3-supabase.json`
+Use `stylyf new` to create a small v0.4 spec:
 
-These are the two clearest examples to start from.
+```bash
+stylyf new generic --name "Atlas" --backend portable --media basic --output stylyf.spec.json
+stylyf validate --spec stylyf.spec.json
+stylyf plan --spec stylyf.spec.json
+stylyf generate --spec stylyf.spec.json --target ./my-app
+```
 
 ## Minimal Composition Flow
 
 1. choose the backend path
-2. define the app frame: `name`, `shell`, `theme`
-3. define routes and page composition
-4. add `resources` and `workflows` when you want resource-driven mechanics
-5. validate the IR
+2. choose an app kind: `generic`, `internal-tool`, `cms-site`, or `free-saas-tool`
+3. define `objects`, `flows`, and optional `surfaces`
+4. let Stylyf expand surfaces into routes, shells, forms, backend modules, and handoff docs
+5. validate the spec
 6. generate into a clean target directory
 7. move into the emitted app and keep developing there
 
-## Additive IR Composition
-
-Stylyf does not require one large JSON file. You can compose the final app from
-explicit fragments in CLI argument order.
-
-```bash
-stylyf validate \
-  --ir app.core.json \
-  --ir backend.portable.json \
-  --ir resources.json \
-  --ir routes.json \
-  --print-resolved
-```
-
-```bash
-stylyf generate \
-  --ir app.core.json \
-  --ir backend.portable.json \
-  --ir resources.json \
-  --ir routes.json \
-  --target ./my-app \
-  --write-resolved ./resolved.app.json
-```
-
-Later fragments override or merge earlier fragments according to Stylyf’s
-semantic merge rules. The generator still operates on one final resolved
-`AppIR`.
-
-## Minimal Root Shape
+## Minimal Spec Shape
 
 ```json
 {
-  "name": "Atlas",
-  "shell": "sidebar-app",
-  "theme": {
-    "preset": "opal",
-    "mode": "light",
-    "radius": "trim",
-    "density": "comfortable",
-    "spacing": "tight",
-    "fonts": {
-      "fancy": "Fraunces",
-      "sans": "Manrope",
-      "mono": "IBM Plex Mono"
+  "version": "0.4",
+  "app": {
+    "name": "Atlas",
+    "kind": "generic"
+  },
+  "backend": {
+    "mode": "portable",
+    "portable": {
+      "database": "sqlite"
     }
   },
-  "routes": [
+  "media": {
+    "mode": "rich"
+  },
+  "objects": [
     {
-      "path": "/",
-      "page": "dashboard",
-      "title": "Overview",
-      "sections": [
-        {
-          "layout": "stack",
-          "children": ["stat-card"]
-        }
+      "name": "records",
+      "ownership": "user",
+      "fields": [
+        { "name": "title", "type": "short-text", "required": true },
+        { "name": "status", "type": "status", "options": ["draft", "review", "published"] }
       ]
     }
   ]
 }
 ```
 
-Add these only when the app needs them:
+## Surface-Driven Routes
 
-- `database`
-- `auth`
-- `storage`
-- `resources`
-- `workflows`
-- `apis`
-- `server`
-- `env`
-
-## Portable Quick Sketch
+`surfaces` are high-level route hints. They intentionally do not expose layout
+trees or route files, but they do drive generated routes.
 
 ```json
 {
-  "database": {
-    "dialect": "sqlite",
-    "migrations": "drizzle-kit"
-  },
-  "auth": {
-    "provider": "better-auth",
-    "mode": "session",
-    "features": {
-      "emailPassword": true
+  "surfaces": [
+    { "name": "Home", "kind": "dashboard", "path": "/", "audience": "user" },
+    { "name": "Records", "kind": "list", "object": "records", "path": "/records", "audience": "user" },
+    { "name": "New Record", "kind": "create", "object": "records", "path": "/records/new", "audience": "user" }
+  ]
+}
+```
+
+Supported surface kinds are `dashboard`, `list`, `detail`, `create`, `edit`,
+`settings`, `landing`, `content-index`, `content-detail`, and `tool`.
+
+## Backend DSL Examples
+
+Portable mode is authored in the public spec as `backend.mode: "portable"`.
+Use SQLite for the fastest local smoke path, or Postgres when the generated app
+should target a production database from the start.
+
+```json
+{
+  "backend": {
+    "mode": "portable",
+    "portable": {
+      "database": "sqlite"
     }
   },
-  "storage": {
-    "provider": "s3",
-    "mode": "presigned-put",
-    "bucketAlias": "uploads"
+  "media": {
+    "mode": "rich"
   }
 }
 ```
 
-## Hosted Quick Sketch
+This compiles to Better Auth, Drizzle, SQLite/libsql, generated auth/database
+modules, and Tigris/S3-compatible presigned storage when media is enabled.
+
+Hosted mode is authored as `backend.mode: "hosted"`. Supabase owns auth and
+data access; Tigris/S3-compatible storage remains the object substrate.
 
 ```json
 {
-  "database": {
-    "provider": "supabase"
+  "backend": {
+    "mode": "hosted"
   },
-  "auth": {
-    "provider": "supabase",
-    "mode": "session",
-    "features": {
-      "emailPassword": true,
-      "emailOtp": true
-    }
-  },
-  "storage": {
-    "provider": "s3",
-    "mode": "presigned-put",
-    "bucketAlias": "uploads"
+  "media": {
+    "mode": "rich"
   }
 }
 ```
 
-## v0.3 App Mechanics Layer
+This compiles to Supabase Auth, Supabase SDK data helpers, generated Supabase
+SQL/policy files, and Tigris/S3-compatible presigned storage when media is
+enabled. The generated compiler model is intentionally private; do not author
+`database`, `auth`, or `storage` blocks directly in the public spec.
+
+## App Mechanics Layer
 
 When you want more than just raw backend primitives, Stylyf supports:
 
-- `resources`
+- `objects`
 - `ownership`
 - `access`
 - `relations`
 - `attachments`
-- `workflows`
+- `flows`
+- `surfaces`
 
 That generalized layer drives:
 
@@ -244,11 +230,13 @@ For the hosted Supabase path:
 
 ## Where To Drill Deeper
 
-- `stylyf intro --topic dsl`
-- `stylyf intro --topic portable`
-- `stylyf intro --topic hosted`
-- `stylyf intro --topic components`
-- `stylyf intro --topic examples`
+- `stylyf intro --topic spec`
+- `stylyf intro --kind generic`
+- `stylyf intro --kind internal-tool`
+- `stylyf intro --kind cms-site`
+- `stylyf intro --kind free-saas-tool`
+- `stylyf intro --topic backend`
+- `stylyf intro --topic media`
 - `stylyf intro --topic generated-output`
 - `stylyf intro --topic full`
 

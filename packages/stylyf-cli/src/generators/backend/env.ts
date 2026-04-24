@@ -1,4 +1,4 @@
-import type { AppIR, EnvVarIR } from "../../ir/types.js";
+import type { AppIR, EnvVarIR } from "../../compiler/generated-app.js";
 
 type EnvEntry = {
   name: string;

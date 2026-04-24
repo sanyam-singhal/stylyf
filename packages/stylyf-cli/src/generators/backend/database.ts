@@ -1,4 +1,4 @@
-import type { AppIR, DatabaseColumnType, DatabaseDialect, DatabaseSchemaIR } from "../../ir/types.js";
+import type { AppIR, DatabaseColumnType, DatabaseDialect, DatabaseSchemaIR } from "../../compiler/generated-app.js";
 
 function camelCase(value: string) {
   return value

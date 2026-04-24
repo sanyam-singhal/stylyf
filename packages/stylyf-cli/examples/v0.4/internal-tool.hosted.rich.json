@@ -1,0 +1,33 @@
+{
+  "version": "0.4",
+  "app": {
+    "name": "Hosted Ops Rich",
+    "kind": "internal-tool",
+    "description": "A hosted Supabase internal workspace with rich media."
+  },
+  "backend": {
+    "mode": "hosted"
+  },
+  "media": {
+    "mode": "rich"
+  },
+  "objects": [
+    {
+      "name": "tickets",
+      "ownership": "user",
+      "visibility": "private",
+      "fields": [
+        { "name": "title", "type": "short-text", "required": true },
+        { "name": "status", "type": "status", "options": ["draft", "review", "approved"] },
+        { "name": "summary", "type": "long-text" }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "name": "ticketApproval",
+      "object": "tickets",
+      "kind": "approval"
+    }
+  ]
+}
