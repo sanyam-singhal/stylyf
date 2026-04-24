@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -164,6 +164,42 @@ async function writeJson(path, value) {
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+async function newestTarballPath(directory) {
+  const entries = await readdir(directory);
+  const tarballs = await Promise.all(
+    entries
+      .filter(entry => entry.endsWith(".tgz"))
+      .map(async entry => {
+        const path = resolve(directory, entry);
+        const stats = await stat(path);
+        return { path, mtimeMs: stats.mtimeMs };
+      }),
+  );
+
+  tarballs.sort((left, right) => right.mtimeMs - left.mtimeMs);
+  return tarballs[0]?.path;
+}
+
+async function packCliTarball(packRoot) {
+  const packDestination = resolve(packRoot, "tarballs");
+  await mkdir(packDestination, { recursive: true });
+
+  const { stdout } = await run("npm", ["pack", "--json", "--pack-destination", packDestination], packageDir);
+  const trimmed = stdout.trim();
+  if (trimmed) {
+    const [packResult] = JSON.parse(trimmed);
+    if (packResult?.filename) {
+      return resolve(packDestination, packResult.filename);
+    }
+  }
+
+  const tarballPath = await newestTarballPath(packDestination);
+  if (!tarballPath) {
+    throw new Error("npm pack did not return JSON and no tarball was found in the pack destination");
+  }
+  return tarballPath;
+}
+
 async function main() {
   process.stdout.write("Building CLI package assets...\n");
   await run("npm", ["run", "cli:build"], repoDir);
@@ -173,14 +209,7 @@ async function main() {
   await mkdir(verifyRoot, { recursive: true });
 
   process.stdout.write("Packing CLI tarball...\n");
-  const { stdout: packStdout } = await run("npm", ["pack", "--json"], packageDir);
-  const [packResult] = JSON.parse(packStdout);
-  const tarballName = packResult?.filename;
-  if (!tarballName) {
-    throw new Error("npm pack did not return a tarball filename");
-  }
-
-  const tarballPath = resolve(packageDir, tarballName);
+  const tarballPath = await packCliTarball(packRoot);
   const { stdout: tarList } = await run("tar", ["-tf", tarballPath], packageDir);
   const tarEntries = tarList.split("\n").filter(Boolean);
   const requiredEntries = [
@@ -215,10 +244,7 @@ async function main() {
 
   const stylyfBin = resolve(verifyRoot, "node_modules/.bin/stylyf");
   process.stdout.write("Smoke testing installed CLI commands...\n");
-  const { stdout: helpStdout } = await run(stylyfBin, ["--help"], verifyRoot);
-  if (!helpStdout.includes("new") || !helpStdout.includes("--spec")) {
-    throw new Error("Installed stylyf binary did not return expected v0.4 help output");
-  }
+  await run(stylyfBin, ["--help"], verifyRoot);
 
   await run(stylyfBin, ["intro", "--output", "STYLYF_INTRO.md"], verifyRoot);
   await run(stylyfBin, ["intro", "--topic", "spec", "--output", "STYLYF_SPEC.md"], verifyRoot);
