@@ -1,0 +1,33 @@
+{
+  "version": "0.4",
+  "app": {
+    "name": "Atlas Deep",
+    "kind": "generic",
+    "description": "A compact base spec intended for explicit composition chunks."
+  },
+  "backend": {
+    "mode": "portable",
+    "portable": {
+      "database": "sqlite"
+    }
+  },
+  "media": {
+    "mode": "rich"
+  },
+  "objects": [
+    {
+      "name": "records",
+      "ownership": "user",
+      "visibility": "private",
+      "fields": [
+        { "name": "title", "type": "short-text", "required": true },
+        { "name": "status", "type": "status", "options": ["draft", "review", "approved"] },
+        { "name": "notes", "type": "long-text" }
+      ]
+    }
+  ],
+  "surfaces": [
+    { "name": "Home", "kind": "dashboard", "path": "/", "audience": "user" },
+    { "name": "Records", "kind": "list", "object": "records", "path": "/records", "audience": "user" }
+  ]
+}

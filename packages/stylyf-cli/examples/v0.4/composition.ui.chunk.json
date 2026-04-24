@@ -1,0 +1,62 @@
+{
+  "surfaces": [
+    {
+      "name": "Records",
+      "kind": "list",
+      "object": "records",
+      "path": "/records",
+      "audience": "user",
+      "page": "resource-index",
+      "sections": [
+        {
+          "id": "records-workspace",
+          "layout": "stack",
+          "props": {
+            "gap": "var(--space-6)"
+          },
+          "children": [
+            {
+              "component": "page-header",
+              "props": {
+                "title": "Records",
+                "description": "Review and organize submitted records."
+              }
+            },
+            {
+              "layout": "grid",
+              "props": {
+                "columns": 2
+              },
+              "children": [
+                "filter-toolbar",
+                "bulk-action-bar"
+              ]
+            },
+            "data-table-shell"
+          ]
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "path": "/about",
+      "shell": "marketing-shell",
+      "page": "blank",
+      "sections": [
+        {
+          "layout": "stack",
+          "children": [
+            {
+              "component": "page-header",
+              "props": {
+                "title": "About Atlas Deep"
+              }
+            },
+            "empty-state"
+          ]
+        }
+      ]
+    }
+  ]
+}

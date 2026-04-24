@@ -53,6 +53,7 @@ export type LayoutNodeIR = {
 export type SectionIR = {
   id?: string;
   layout: LayoutNodeId;
+  props?: Record<string, string | number | boolean>;
   children: Array<LayoutNodeIR | ComponentRefIR | string>;
 };
 

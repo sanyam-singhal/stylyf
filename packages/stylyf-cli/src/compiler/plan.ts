@@ -26,6 +26,23 @@ function routeFilePath(pathname: string, routes: RouteIR[]) {
   return `src/routes/${segments.join("/")}.tsx`;
 }
 
+function apiRouteFilePath(pathname: string) {
+  const clean = pathname.replace(/^\/+|\/+$/g, "");
+  return `src/routes/${clean}.ts`;
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function serverModuleFilePath(name: string, type: "query" | "action") {
+  const folder = type === "query" ? "queries" : "actions";
+  return `src/lib/server/${folder}/${slugify(name)}.ts`;
+}
+
 function backendSummary(app: AppIR) {
   return {
     mode: app.database?.provider === "supabase" || app.auth?.provider === "supabase" ? "hosted" : "portable",
@@ -121,6 +138,14 @@ export function createGenerationPlan(spec: StylyfSpecV04, app: AppIR): Generatio
 
   for (const route of app.routes) {
     files.add(routeFilePath(route.path, app.routes));
+  }
+
+  for (const api of app.apis ?? []) {
+    files.add(apiRouteFilePath(api.path));
+  }
+
+  for (const module of app.server ?? []) {
+    files.add(serverModuleFilePath(module.name, module.type));
   }
 
   return {

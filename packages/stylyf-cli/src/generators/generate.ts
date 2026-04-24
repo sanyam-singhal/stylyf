@@ -318,7 +318,10 @@ function renderSection(
 ) {
   const node: LayoutNodeIR = {
     layout: section.layout,
-    props: section.id ? { id: section.id } : undefined,
+    props: {
+      ...(section.props ?? {}),
+      ...(section.id ? { id: section.id } : {}),
+    },
     children: section.children,
   };
 

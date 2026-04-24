@@ -2,7 +2,8 @@
 
 Stylyf v0.4 examples are small intent-level specs. They are not private app
 models and they do not expose database schemas, API files, server modules, or
-layout trees as the primary authoring surface.
+layout trees as the first authoring surface. When the defaults are too coarse,
+use explicit additive chunks with `stylyf compose`.
 
 ## Canonical v0.4 Specs
 
@@ -13,6 +14,9 @@ layout trees as the primary authoring surface.
 - `v0.4/cms-site.rich.json`
 - `v0.4/free-saas-tool.basic.json`
 - `v0.4/internal-tool.hosted.rich.json`
+- `v0.4/composition.base.json`
+- `v0.4/composition.ui.chunk.json`
+- `v0.4/composition.backend.chunk.json`
 
 ## Portable Local Path
 
@@ -54,3 +58,19 @@ Use `v0.4/generic.basic.json` when the requested app should stay general:
 resource-backed routes, auth/data/storage primitives, and explicit high-level
 surfaces without the assumptions of internal tools, CMS publishing, or free
 utility apps.
+
+## Layered Composition Path
+
+Use the composition examples when an agent needs a compact base spec plus
+controlled deeper route/layout/backend additions:
+
+```bash
+stylyf compose \
+  --base packages/stylyf-cli/examples/v0.4/composition.base.json \
+  --with packages/stylyf-cli/examples/v0.4/composition.ui.chunk.json \
+  --with packages/stylyf-cli/examples/v0.4/composition.backend.chunk.json \
+  --output ./stylyf.composed.json
+
+stylyf plan --spec ./stylyf.composed.json --resolved
+stylyf generate --spec ./stylyf.composed.json --target ./generated-composed
+```

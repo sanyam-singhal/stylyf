@@ -65,6 +65,7 @@ stylyf intro --kind internal-tool
 stylyf intro --topic spec
 stylyf intro --topic backend
 stylyf intro --topic media
+stylyf intro --topic composition
 stylyf intro --topic generated-output
 stylyf intro --topic full
 ```
@@ -84,8 +85,10 @@ Use `stylyf new` to create a small v0.4 spec:
 
 ```bash
 stylyf new generic --name "Atlas" --backend portable --media basic --output stylyf.spec.json
+stylyf compose --base stylyf.spec.json --with route-chunk.json --output stylyf.composed.json
 stylyf validate --spec stylyf.spec.json
 stylyf plan --spec stylyf.spec.json
+stylyf plan --spec stylyf.spec.json --resolved
 stylyf generate --spec stylyf.spec.json --target ./my-app
 ```
 
@@ -130,23 +133,50 @@ stylyf generate --spec stylyf.spec.json --target ./my-app
 }
 ```
 
-## Surface-Driven Routes
+## Layered Composition
 
-`surfaces` are high-level route hints. They intentionally do not expose layout
-trees or route files, but they do drive generated routes.
+Start with `surfaces` as high-level route hints. When the default output is too
+coarse, add explicit chunks with `stylyf compose`. Chunks can add or replace
+surface sections, explicit routes, API routes, server modules, env vars, and
+database schema additions.
 
 ```json
 {
   "surfaces": [
-    { "name": "Home", "kind": "dashboard", "path": "/", "audience": "user" },
-    { "name": "Records", "kind": "list", "object": "records", "path": "/records", "audience": "user" },
-    { "name": "New Record", "kind": "create", "object": "records", "path": "/records/new", "audience": "user" }
+    {
+      "name": "Records",
+      "kind": "list",
+      "object": "records",
+      "path": "/records",
+      "audience": "user",
+      "sections": [
+        {
+          "id": "records-workspace",
+          "layout": "stack",
+          "props": { "gap": "var(--space-6)" },
+          "children": [
+            { "component": "page-header", "props": { "title": "Records" } },
+            { "layout": "grid", "props": { "columns": 2 }, "children": ["filter-toolbar", "bulk-action-bar"] },
+            "data-table-shell"
+          ]
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "path": "/about",
+      "shell": "marketing-shell",
+      "page": "blank",
+      "sections": [{ "layout": "stack", "children": ["page-header", "empty-state"] }]
+    }
   ]
 }
 ```
 
-Supported surface kinds are `dashboard`, `list`, `detail`, `create`, `edit`,
-`settings`, `landing`, `content-index`, `content-detail`, and `tool`.
+Supported layout nodes are `stack`, `row`, `column`, `grid`, `split`, `panel`,
+`section`, `toolbar`, and `content-frame`. Component references resolve through
+the bundled registry by id, slug, label, export name, or `cluster/slug`.
 
 ## Backend DSL Examples
 
@@ -187,8 +217,9 @@ data access; Tigris/S3-compatible storage remains the object substrate.
 
 This compiles to Supabase Auth, Supabase SDK data helpers, generated Supabase
 SQL/policy files, and Tigris/S3-compatible presigned storage when media is
-enabled. The generated compiler model is intentionally private; do not author
-`database`, `auth`, or `storage` blocks directly in the public spec.
+enabled. The generated compiler model is private, but the public spec can now
+author controlled additions through `database.schema`, `env.extras`, `apis`,
+and `server`.
 
 ## App Mechanics Layer
 
@@ -201,6 +232,11 @@ When you want more than just raw backend primitives, Stylyf supports:
 - `attachments`
 - `flows`
 - `surfaces`
+- `routes`
+- `apis`
+- `server`
+- `database.schema`
+- `env.extras`
 
 That generalized layer drives:
 
@@ -237,6 +273,7 @@ For the hosted Supabase path:
 - `stylyf intro --kind free-saas-tool`
 - `stylyf intro --topic backend`
 - `stylyf intro --topic media`
+- `stylyf intro --topic composition`
 - `stylyf intro --topic generated-output`
 - `stylyf intro --topic full`
 

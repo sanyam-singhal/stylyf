@@ -5,6 +5,7 @@ import { readSpecV04 } from "../spec/read.js";
 export async function runPlanCommand(args: string[]) {
   let specPath: string | undefined;
   let json = false;
+  let resolved = false;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -20,9 +21,14 @@ export async function runPlanCommand(args: string[]) {
       continue;
     }
 
+    if (arg === "--resolved") {
+      resolved = true;
+      continue;
+    }
+
     if (arg === "--ir") {
       process.stderr.write(
-        "Stylyf v0.4 no longer accepts --ir fragments. Use --spec stylyf.spec.json. Run `stylyf intro --topic spec` for the v0.4 DSL.\n",
+        "Stylyf v0.4 no longer accepts raw --ir fragments. Use --spec stylyf.spec.json, `stylyf compose`, or `stylyf plan --resolved`.\n",
       );
       return 1;
     }
@@ -35,6 +41,12 @@ export async function runPlanCommand(args: string[]) {
 
   const { spec } = await readSpecV04(specPath);
   const app = expandSpecToGeneratedApp(spec);
+
+  if (resolved) {
+    process.stdout.write(`${JSON.stringify(app, null, 2)}\n`);
+    return 0;
+  }
+
   const plan = createGenerationPlan(spec, app);
 
   process.stdout.write(json ? `${JSON.stringify(plan, null, 2)}\n` : `${renderGenerationPlan(plan)}\n`);

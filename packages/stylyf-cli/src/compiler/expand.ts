@@ -4,6 +4,7 @@ import type {
   ComponentRefIR,
   DatabaseIR,
   LayoutNodeIR,
+  ResourceAccessPreset,
   ResourceAttachmentIR,
   ResourceFieldIR,
   ResourceIR,
@@ -13,7 +14,18 @@ import type {
   WorkflowIR,
 } from "./generated-app.js";
 import { defaultTheme, humanize, singularize } from "./defaults.js";
-import type { FieldSpec, FlowSpec, MediaAttachmentSpec, ObjectSpec, StylyfSpecV04, SurfaceSpec } from "../spec/types.js";
+import type {
+  ComponentSpec,
+  FieldSpec,
+  FlowSpec,
+  LayoutSpec,
+  MediaAttachmentSpec,
+  ObjectSpec,
+  RouteSpec,
+  SectionSpec,
+  StylyfSpecV04,
+  SurfaceSpec,
+} from "../spec/types.js";
 import { genericExpansion } from "./kinds/generic.js";
 import { internalToolExpansion } from "./kinds/internal-tool.js";
 import { cmsSiteExpansion } from "./kinds/cms-site.js";
@@ -51,6 +63,48 @@ function panel(children: Array<LayoutNodeIR | ComponentRefIR | string>, props?: 
   };
 }
 
+function isComponentSpec(node: LayoutSpec | ComponentSpec): node is ComponentSpec {
+  return "component" in node;
+}
+
+function componentFromSpec(node: ComponentSpec): ComponentRefIR {
+  return {
+    component: node.component,
+    variant: node.variant,
+    props: node.props,
+    items: node.items,
+  };
+}
+
+function compositionNodeFromSpec(node: LayoutSpec | ComponentSpec | string): LayoutNodeIR | ComponentRefIR | string {
+  if (typeof node === "string") {
+    return node;
+  }
+
+  if (isComponentSpec(node)) {
+    return componentFromSpec(node);
+  }
+
+  return {
+    layout: node.layout,
+    props: node.props,
+    children: node.children?.map(compositionNodeFromSpec),
+  };
+}
+
+function sectionFromSpec(spec: SectionSpec): SectionIR {
+  return {
+    id: spec.id,
+    layout: spec.layout,
+    props: spec.props,
+    children: spec.children.map(compositionNodeFromSpec),
+  };
+}
+
+function sectionsFromSpec(sections?: SectionSpec[]) {
+  return sections?.map(sectionFromSpec);
+}
+
 function fieldToResourceField(field: FieldSpec): ResourceFieldIR {
   const base = {
     name: field.name,
@@ -85,6 +139,8 @@ function attachmentFromSpec(attachment: MediaAttachmentSpec): ResourceAttachment
     kind: attachment.kind ?? "file",
     multiple: attachment.multiple,
     required: attachment.required,
+    bucketAlias: attachment.bucketAlias,
+    metadataTable: attachment.metadataTable,
   };
 }
 
@@ -111,9 +167,26 @@ function objectToResource(object: ObjectSpec, spec: StylyfSpecV04): ResourceIR {
     { name: "summary", type: "longtext" },
   ];
   const explicitMedia = object.media?.map(attachmentFromSpec);
+  const defaultAccess =
+    visibility === "public" || visibility === "mixed"
+      ? {
+          list: "owner-or-public" as const,
+          read: "owner-or-public" as const,
+          create: "user" as const,
+          update: "owner" as const,
+          delete: "owner" as const,
+        }
+      : {
+          list: ownership === "none" ? ("user" as const) : ("owner" as const),
+          read: ownership === "none" ? ("user" as const) : ("owner" as const),
+          create: "user" as const,
+          update: ownership === "none" ? ("user" as const) : ("owner" as const),
+          delete: ownership === "none" ? ("user" as const) : ("owner" as const),
+        };
 
   return {
     name: object.name,
+    table: object.table,
     visibility,
     fields,
     ownership:
@@ -122,24 +195,30 @@ function objectToResource(object: ObjectSpec, spec: StylyfSpecV04): ResourceIR {
         : ownership === "workspace"
           ? { model: "workspace", workspaceField: "workspace_id" }
           : { model: "user", ownerField: spec.app.kind === "cms-site" ? "author_id" : "owner_id" },
-    access:
-      visibility === "public" || visibility === "mixed"
-        ? {
-            list: "owner-or-public",
-            read: "owner-or-public",
-            create: "user",
-            update: "owner",
-            delete: "owner",
-          }
-        : {
-            list: ownership === "none" ? "user" : "owner",
-            read: ownership === "none" ? "user" : "owner",
-            create: "user",
-            update: ownership === "none" ? "user" : "owner",
-            delete: ownership === "none" ? "user" : "owner",
-          },
+    access: {
+      ...defaultAccess,
+      ...(object.access ?? {}),
+    },
+    relations: object.relations,
     attachments: explicitMedia ?? defaultMediaAttachments(spec),
   };
+}
+
+function transitionActor(actor?: string): ResourceAccessPreset {
+  switch (actor) {
+    case "public":
+    case "user":
+    case "owner":
+    case "owner-or-public":
+    case "workspace-member":
+    case "admin":
+      return actor;
+    case "member":
+    case "editor":
+      return "workspace-member";
+    default:
+      return actor ? "user" : "owner";
+  }
 }
 
 function flowToWorkflow(flow: FlowSpec): WorkflowIR {
@@ -156,7 +235,7 @@ function flowToWorkflow(flow: FlowSpec): WorkflowIR {
   return {
     name: flow.name,
     resource: flow.object,
-    field: "status",
+    field: flow.field ?? "status",
     initial: states[0] ?? "draft",
     states,
     transitions:
@@ -164,9 +243,9 @@ function flowToWorkflow(flow: FlowSpec): WorkflowIR {
         name: transition.name,
         from: transition.from,
         to: transition.to,
-        actor: "owner",
-        emits: [`${flow.object}.${transition.name}`],
-        notifies: ["owner"],
+        actor: transitionActor(transition.actor),
+        emits: transition.emits ?? [`${flow.object}.${transition.name}`],
+        notifies: transition.notifies ?? ["owner"],
       })) ??
       states.slice(1).map((state, index) => ({
         name: `moveTo${titleFor(state).replace(/\s+/g, "")}`,
@@ -284,113 +363,114 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
   const resource = primaryResourceName(resources, surface);
   const resourceTitle = titleFor(resource);
   const path = surface.path ?? surfaceDefaultPath(surface, resources);
-  const shell = shellForSurface(surface, fallbackShell);
+  const shell = surface.shell ?? shellForSurface(surface, fallbackShell);
+  const explicitSections = sectionsFromSpec(surface.sections);
 
   switch (surface.kind) {
     case "dashboard":
       return {
         path,
         shell,
-        page: "dashboard",
-        title: surface.name || "Dashboard",
+        page: surface.page ?? "dashboard",
+        title: surface.title ?? surface.name ?? "Dashboard",
         access: surface.audience === "public" ? "public" : "user",
-        sections: dashboardSections(),
+        sections: explicitSections ?? dashboardSections(),
       };
     case "landing":
       return {
         path,
-        shell: "marketing-shell",
-        page: "blank",
-        title: surface.name || "Home",
+        shell,
+        page: surface.page ?? "blank",
+        title: surface.title ?? surface.name ?? "Home",
         access: "public",
-        sections: [section("stack", [component("page-header"), component("empty-state")])],
+        sections: explicitSections ?? [section("stack", [component("page-header"), component("empty-state")])],
       };
     case "list":
       return {
         path,
         shell,
-        page: "resource-index",
+        page: surface.page ?? "resource-index",
         resource,
-        title: surface.name || resourceTitle,
+        title: surface.title ?? surface.name ?? resourceTitle,
         access: surface.audience === "public" ? "public" : "user",
-        sections: resourceListSections(resource),
+        sections: explicitSections ?? resourceListSections(resource),
       };
     case "detail":
       return {
         path,
         shell,
-        page: "resource-detail",
+        page: surface.page ?? "resource-detail",
         resource,
-        title: surface.name || `${resourceTitle} detail`,
+        title: surface.title ?? surface.name ?? `${resourceTitle} detail`,
         access: surface.audience === "public" ? "public" : "user",
-        sections: [section("stack", [component("page-header"), component("detail-panel")])],
+        sections: explicitSections ?? [section("stack", [component("page-header"), component("detail-panel")])],
       };
     case "create":
       return {
         path,
         shell,
-        page: "resource-create",
+        page: surface.page ?? "resource-create",
         resource,
-        title: surface.name || `Create ${titleFor(singularize(resource))}`,
+        title: surface.title ?? surface.name ?? `Create ${titleFor(singularize(resource))}`,
         access: surface.audience === "public" ? "public" : "user",
-        sections: [],
+        sections: explicitSections ?? [],
       };
     case "edit":
       return {
         path,
         shell,
-        page: "resource-edit",
+        page: surface.page ?? "resource-edit",
         resource,
-        title: surface.name || `Edit ${titleFor(singularize(resource))}`,
+        title: surface.title ?? surface.name ?? `Edit ${titleFor(singularize(resource))}`,
         access: surface.audience === "public" ? "public" : "user",
-        sections: [],
+        sections: explicitSections ?? [],
       };
     case "settings":
       return {
         path,
         shell,
-        page: "settings",
-        title: surface.name || "Settings",
+        page: surface.page ?? "settings",
+        title: surface.title ?? surface.name ?? "Settings",
         access: surface.audience === "public" ? "public" : "user",
-        sections: [section("stack", [component("settings-panel"), component("settings-row")])],
+        sections: explicitSections ?? [section("stack", [component("settings-panel"), component("settings-row")])],
       };
     case "content-index":
       if (surface.audience === "admin" || surface.audience === "editor") {
         return {
           path,
-          shell: fallbackShell,
-          page: "resource-index",
+          shell,
+          page: surface.page ?? "resource-index",
           resource,
-          title: surface.name || "Content",
+          title: surface.title ?? surface.name ?? "Content",
           access: "user",
-          sections: resourceListSections(resource),
+          sections: explicitSections ?? resourceListSections(resource),
         };
       }
       return {
         path,
-        shell: "marketing-shell",
-        page: "blank",
-        title: surface.name || resourceTitle,
+        shell,
+        page: surface.page ?? "blank",
+        title: surface.title ?? surface.name ?? resourceTitle,
         access: "public",
-        sections: [section("stack", [component("section-header"), component("data-list")])],
+        sections: explicitSections ?? [section("stack", [component("section-header"), component("data-list")])],
       };
     case "content-detail":
       return {
         path,
-        shell: "marketing-shell",
-        page: "blank",
-        title: surface.name || titleFor(singularize(resource)),
+        shell,
+        page: surface.page ?? "blank",
+        title: surface.title ?? surface.name ?? titleFor(singularize(resource)),
         access: "public",
-        sections: [section("stack", [component("page-header"), component("separator")])],
+        sections: explicitSections ?? [section("stack", [component("page-header"), component("separator")])],
       };
     case "tool":
       return {
         path,
-        shell: "topbar-app",
-        page: "blank",
-        title: surface.name || "Tool",
+        shell,
+        page: surface.page ?? "blank",
+        title: surface.title ?? surface.name ?? "Tool",
         access: surface.audience === "user" || surface.audience === "admin" || surface.audience === "editor" ? "user" : "public",
-        sections: [section("stack", [component("form-section"), component("progress"), component("toast")])],
+        sections: explicitSections ?? [section("stack", [component("form-section"), component("progress"), component("toast")])],
       };
   }
 }
@@ -423,8 +503,41 @@ function kindExpansionFor(spec: StylyfSpecV04): KindExpansion {
   }
 }
 
+function routeFromSpec(route: RouteSpec, fallbackShell: RouteIR["shell"]): RouteIR {
+  const shell = route.shell ?? fallbackShell;
+
+  return {
+    path: route.path,
+    shell,
+    page: route.page,
+    resource: route.resource,
+    title: route.title,
+    access: route.access ?? (shell === "marketing-shell" ? "public" : "user"),
+    sections: sectionsFromSpec(route.sections) ?? [],
+  };
+}
+
+function mergeRoutes(defaults: RouteIR[], overrides?: RouteIR[]) {
+  if (!overrides || overrides.length === 0) {
+    return defaults;
+  }
+
+  const merged = new Map<string, RouteIR>();
+  for (const route of defaults) {
+    merged.set(route.path, route);
+  }
+  for (const route of overrides) {
+    merged.set(route.path, route);
+  }
+  return [...merged.values()];
+}
+
 function routesFor(spec: StylyfSpecV04, resources: ResourceIR[], expansion: KindExpansion) {
-  return mergeSurfaces(expansion.defaultSurfaces(spec, resources), spec.surfaces).map(surface => surfaceToRoute(surface, resources, expansion.shell));
+  const surfaceRoutes = mergeSurfaces(expansion.defaultSurfaces(spec, resources), spec.surfaces).map(surface =>
+    surfaceToRoute(surface, resources, expansion.shell),
+  );
+  const explicitRoutes = spec.routes?.map(route => routeFromSpec(route, expansion.shell));
+  return mergeRoutes(surfaceRoutes, explicitRoutes);
 }
 
 export function expandSpecToGeneratedApp(spec: StylyfSpecV04): AppIR {
@@ -433,6 +546,12 @@ export function expandSpecToGeneratedApp(spec: StylyfSpecV04): AppIR {
   const workflows = expansion.defaultFlows(spec, resources).map(flowToWorkflow);
   const routes = routesFor(spec, resources, expansion);
   const backend = backendFor(spec);
+  const database = backend.database
+    ? {
+        ...backend.database,
+        schema: spec.database?.schema,
+      }
+    : undefined;
 
   const auth = backend.auth
     ? {
@@ -446,10 +565,13 @@ export function expandSpecToGeneratedApp(spec: StylyfSpecV04): AppIR {
     shell: expansion.shell,
     theme: defaultTheme(spec),
     routes,
-    database: backend.database,
+    env: spec.env,
+    database,
     auth,
     storage: backend.storage,
     resources,
     workflows,
+    apis: spec.apis,
+    server: spec.server,
   };
 }
