@@ -1,0 +1,68 @@
+{
+  "objects": [
+    {
+      "name": "records",
+      "table": "records",
+      "access": {
+        "list": "owner",
+        "read": "owner",
+        "create": "user",
+        "update": "owner",
+        "delete": "owner"
+      },
+      "media": [
+        {
+          "name": "cover",
+          "kind": "image",
+          "bucketAlias": "uploads",
+          "metadataTable": "record_assets"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "name": "recordReview",
+      "object": "records",
+      "kind": "approval",
+      "field": "status",
+      "transitions": [
+        {
+          "name": "approve",
+          "from": "review",
+          "to": "approved",
+          "actor": "admin",
+          "emits": ["records.approved"],
+          "notifies": ["owner", "admins"]
+        }
+      ]
+    }
+  ],
+  "apis": [
+    {
+      "path": "/api/health",
+      "method": "GET",
+      "type": "json",
+      "name": "health",
+      "auth": "public"
+    }
+  ],
+  "server": [
+    {
+      "name": "records.stats",
+      "type": "query",
+      "resource": "records",
+      "auth": "user"
+    }
+  ],
+  "env": {
+    "extras": [
+      {
+        "name": "PUBLIC_ANALYTICS_ID",
+        "exposure": "public",
+        "required": false,
+        "description": "Optional public analytics key for generated app experiments."
+      }
+    ]
+  }
+}

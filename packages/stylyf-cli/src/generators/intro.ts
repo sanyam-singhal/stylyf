@@ -11,6 +11,7 @@ export type IntroTopic =
   | "free-saas-tool"
   | "backend"
   | "media"
+  | "composition"
   | "generated-output"
   | "full";
 
@@ -25,6 +26,7 @@ export const introTopics = [
   "free-saas-tool",
   "backend",
   "media",
+  "composition",
   "generated-output",
   "full",
 ] as const satisfies readonly IntroTopic[];
@@ -163,6 +165,8 @@ function renderOverview() {
           "stylyf new generic --name \"Atlas\" --backend portable --media basic --output stylyf.spec.json",
           "stylyf validate --spec stylyf.spec.json",
           "stylyf plan --spec stylyf.spec.json",
+          "stylyf plan --spec stylyf.spec.json --resolved",
+          "stylyf compose --base stylyf.spec.json --with route-chunk.json --output stylyf.composed.json",
           "stylyf generate --spec stylyf.spec.json --target ./my-app",
           "stylyf search internal approvals table",
         ].join("\n"),
@@ -179,6 +183,7 @@ function renderOverview() {
       "- `stylyf intro --topic spec` for the v0.4 DSL",
       "- `stylyf intro --topic backend` for backend choices",
       "- `stylyf intro --topic media` for object storage and attachments",
+      "- `stylyf intro --topic composition` for additive chunks, explicit routes, and deeper layout/API control",
       "- `stylyf intro --topic generated-output` for emitted app structure",
       "- `stylyf intro --kind generic` for a general full-stack recipe",
       "- `stylyf intro --kind internal-tool` for an internal app recipe",
@@ -192,7 +197,7 @@ function renderSpecTopic() {
   return [
     "# Stylyf v0.4 Spec",
     "",
-    "The public DSL type is `SpecV04`. It is intentionally smaller than the generated app: do not describe database tables, API files, server modules, or layout trees directly. Describe the app kind, backend mode, `objects`, `flows`, optional `surfaces`, and experience.",
+    "The public DSL type is `SpecV04`. Start with app kind, backend mode, `objects`, `flows`, optional `surfaces`, and experience. Drill down only when needed with explicit `sections`, `routes`, `apis`, `server`, `database.schema`, and `env.extras`.",
     "",
     codeBlock(JSON.stringify(specExample("internal-tool"), null, 2), "json"),
     "",
@@ -205,6 +210,11 @@ function renderSpecTopic() {
       "- `objects`: intent-level resources",
       "- `flows`: CRUD, approval, publishing, onboarding, or saved-results mechanics",
       "- `surfaces`: optional high-level route hints",
+      "- `routes`: explicit route additions or route replacements by path",
+      "- `apis`: explicit API route additions",
+      "- `server`: explicit query/action module additions",
+      "- `database.schema`: extra tables or columns beyond derived resources",
+      "- `env.extras`: extra public/server environment variables",
       "- surface kinds include `dashboard`, `list`, `detail`, `create`, `edit`, `settings`, `landing`, `content-index`, `content-detail`, and `tool`",
     ]),
   ].join("\n");
@@ -301,6 +311,110 @@ function renderMediaTopic() {
   ].join("\n");
 }
 
+function renderCompositionTopic() {
+  return [
+    "# Stylyf v0.4 Composition",
+    "",
+    "Stylyf is layered. Use a small intent spec first, then add explicit chunks only where the generated defaults are too coarse. Composition is explicit: no directory magic, no hidden globbing.",
+    "",
+    section("Chunk Workflow", [
+      codeBlock(
+        [
+          "stylyf new generic --name \"Atlas\" --backend portable --media rich --output stylyf.base.json",
+          "stylyf compose --base stylyf.base.json --with ui.chunk.json --with backend.chunk.json --output stylyf.spec.json",
+          "stylyf validate --spec stylyf.spec.json",
+          "stylyf plan --spec stylyf.spec.json --resolved",
+          "stylyf generate --spec stylyf.spec.json --target ./atlas",
+        ].join("\n"),
+        "bash",
+      ),
+    ]),
+    section("UI Chunk", [
+      codeBlock(
+        JSON.stringify(
+          {
+            surfaces: [
+              {
+                name: "Records",
+                kind: "list",
+                object: "records",
+                path: "/records",
+                page: "resource-index",
+                sections: [
+                  {
+                    id: "records-workspace",
+                    layout: "stack",
+                    children: [
+                      { component: "page-header", props: { title: "Records", description: "Review and organize submitted records." } },
+                      {
+                        layout: "grid",
+                        props: { columns: 2 },
+                        children: [{ component: "filter-toolbar" }, { component: "bulk-action-bar" }],
+                      },
+                      { component: "data-table-shell" },
+                    ],
+                  },
+                ],
+              },
+            ],
+            routes: [
+              {
+                path: "/about",
+                shell: "marketing-shell",
+                page: "blank",
+                sections: [{ layout: "stack", children: [{ component: "page-header", props: { title: "About Atlas" } }, "empty-state"] }],
+              },
+            ],
+          },
+          null,
+          2,
+        ),
+        "json",
+      ),
+    ]),
+    section("Backend Chunk", [
+      codeBlock(
+        JSON.stringify(
+          {
+            objects: [
+              {
+                name: "records",
+                table: "records",
+                access: { list: "owner", read: "owner", create: "user", update: "owner", delete: "owner" },
+                media: [{ name: "cover", kind: "image", bucketAlias: "uploads", metadataTable: "record_assets" }],
+              },
+            ],
+            flows: [
+              {
+                name: "recordReview",
+                object: "records",
+                kind: "approval",
+                field: "status",
+                transitions: [
+                  { name: "approve", from: "review", to: "approved", actor: "admin", emits: ["records.approved"], notifies: ["owner", "admins"] },
+                ],
+              },
+            ],
+            apis: [{ path: "/api/health", method: "GET", type: "json", name: "health", auth: "public" }],
+            server: [{ name: "records.stats", type: "query", resource: "records", auth: "user" }],
+            env: { extras: [{ name: "PUBLIC_ANALYTICS_ID", exposure: "public", required: false }] },
+          },
+          null,
+          2,
+        ),
+        "json",
+      ),
+    ]),
+    section("Merge Rules", [
+      "- arrays merge by stable keys: object/flow/server names, route paths, API method+path, surface path or surface identity",
+      "- object `fields`, `media`, and `relations` merge by name or relation identity",
+      "- flow `transitions` merge by transition name",
+      "- `database.schema` merges by table and column name",
+      "- later chunks override matching earlier chunks",
+    ]),
+  ].join("\n");
+}
+
 function renderGeneratedOutputTopic() {
   return [
     "# Stylyf v0.4 Generated Output",
@@ -324,6 +438,7 @@ async function renderFullTopic() {
     renderSpecTopic(),
     renderBackendTopic(),
     renderMediaTopic(),
+    renderCompositionTopic(),
     renderGeneratedOutputTopic(),
     section("Theme Grammar", [
       `- presets: ${themeGrammar.presets.join(", ")}`,
@@ -363,6 +478,8 @@ export async function renderIntroMarkdown(options: IntroOptions = {}) {
     markdown = renderBackendTopic();
   } else if (topic === "media") {
     markdown = renderMediaTopic();
+  } else if (topic === "composition") {
+    markdown = renderCompositionTopic();
   } else if (topic === "generated-output") {
     markdown = renderGeneratedOutputTopic();
   } else if (topic === "full") {
