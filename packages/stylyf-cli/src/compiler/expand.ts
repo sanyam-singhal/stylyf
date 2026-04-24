@@ -4,6 +4,7 @@ import type {
   ComponentRefIR,
   DatabaseIR,
   LayoutNodeIR,
+  ResourceAccessPreset,
   ResourceAttachmentIR,
   ResourceFieldIR,
   ResourceIR,
@@ -142,6 +143,23 @@ function objectToResource(object: ObjectSpec, spec: StylyfSpecV04): ResourceIR {
   };
 }
 
+function transitionActor(actor?: string): ResourceAccessPreset {
+  switch (actor) {
+    case "public":
+    case "user":
+    case "owner":
+    case "owner-or-public":
+    case "workspace-member":
+    case "admin":
+      return actor;
+    case "member":
+    case "editor":
+      return "workspace-member";
+    default:
+      return actor ? "user" : "owner";
+  }
+}
+
 function flowToWorkflow(flow: FlowSpec): WorkflowIR {
   const states =
     flow.states ??
@@ -164,7 +182,7 @@ function flowToWorkflow(flow: FlowSpec): WorkflowIR {
         name: transition.name,
         from: transition.from,
         to: transition.to,
-        actor: "owner",
+        actor: transitionActor(transition.actor),
         emits: [`${flow.object}.${transition.name}`],
         notifies: ["owner"],
       })) ??

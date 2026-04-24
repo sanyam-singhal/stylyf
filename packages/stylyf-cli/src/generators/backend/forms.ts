@@ -598,7 +598,7 @@ function renderResourceFormComponent(resource: ResourceIR, app: AppIR) {
 }
 
 export function hasGeneratedForms(app: AppIR) {
-  return (app.resources ?? []).some(resource => formableFields(resource).length >= 0);
+  return (app.resources ?? []).some(resource => formableFields(resource).length > 0);
 }
 
 export async function writeGeneratedResourceForms(app: AppIR, targetRoot: string) {
