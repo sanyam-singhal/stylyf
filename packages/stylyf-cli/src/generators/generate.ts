@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { readFile } from "node:fs/promises";
 import type {
   AppIR,
   AppShellId,
@@ -9,7 +10,9 @@ import type {
   RouteIR,
   SectionIR,
 } from "../compiler/generated-app.js";
-import { composeAppIrFromPaths } from "../ir/compose.js";
+import { expandSpecToGeneratedApp } from "../compiler/expand.js";
+import { createGenerationPlan } from "../compiler/plan.js";
+import { readSpecV04 } from "../spec/read.js";
 import {
   renderGeneratedAuthClientModule,
   renderGeneratedAuthGuards,
@@ -639,7 +642,18 @@ export async function generateFrontendDraftFromApp(appIr: AppIR, targetPath: str
   };
 }
 
-export async function generateFrontendDraft(irPaths: string[], targetPath: string, options?: { install?: boolean }) {
-  const { app } = await composeAppIrFromPaths(irPaths);
-  return generateFrontendDraftFromApp(app, targetPath, options);
+export async function generateFromSpec(specPath: string, targetPath: string, options?: { install?: boolean }) {
+  const { path, spec } = await readSpecV04(specPath);
+  const app = expandSpecToGeneratedApp(spec);
+  const plan = createGenerationPlan(spec, app);
+  const result = await generateFrontendDraftFromApp(app, targetPath, options);
+
+  await writeGeneratedFile(resolve(targetPath, "stylyf.spec.json"), await readFile(path, "utf8"));
+  await writeGeneratedFile(resolve(targetPath, "stylyf.plan.json"), `${JSON.stringify(plan, null, 2)}\n`);
+
+  return {
+    ...result,
+    spec,
+    plan,
+  };
 }
