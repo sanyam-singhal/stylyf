@@ -5,6 +5,7 @@ export const CLI_VERSION = "0.4.0";
 export type CliCommand =
   | "intro"
   | "new"
+  | "compose"
   | "plan"
   | "generate"
   | "validate"
@@ -24,6 +25,7 @@ export function helpText() {
     "Commands:",
     "  intro         Layered briefing for coding agents",
     "  new           Create a v0.4 spec for an app kind",
+    "  compose       Merge explicit additive v0.4 spec chunks",
     "  validate      Validate a v0.4 spec",
     "  plan          Explain what a spec will generate",
     "  generate      Generate a SolidStart app from a v0.4 spec",
@@ -38,11 +40,13 @@ export function helpText() {
     "Typical flow:",
     "  stylyf intro",
   "  stylyf new generic --name \"Atlas\" --backend portable --media basic --output stylyf.spec.json",
+    "  stylyf compose --base stylyf.spec.json --with routes.json --output stylyf.composed.json",
     "  stylyf validate --spec stylyf.spec.json",
     "  stylyf plan --spec stylyf.spec.json",
     "  stylyf generate --spec stylyf.spec.json --target ./my-app",
   ].join("\n");
 }
+import { runComposeCommand } from "./commands/compose.js";
 import { runBuildIndexCommand } from "./commands/build-index.js";
 import { runGenerateCommand } from "./commands/generate.js";
 import { runIntroCommand } from "./commands/intro.js";
@@ -68,6 +72,10 @@ export async function runCli(argv: string[] = process.argv.slice(2)) {
 
   if (command === "generate") {
     return runGenerateCommand(commandArgs(argv));
+  }
+
+  if (command === "compose") {
+    return runComposeCommand(commandArgs(argv));
   }
 
   if (command === "intro") {
