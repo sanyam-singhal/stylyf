@@ -25,6 +25,8 @@ Generated apps must:
 - Do not make `apps/landing` the source of truth for CLI assets.
 - Keep generated app contracts explicit and source-owned.
 - Prefer validating with real package builds and generated app builds over source-only assumptions.
+- Never squash merge PRs in this repo. Preserve the branch's intermediate commit history unless the user explicitly requests a squash.
+- Never delete release/work branches after merge unless the user explicitly requests branch deletion.
 
 ## Core Validation
 
