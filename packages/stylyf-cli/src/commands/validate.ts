@@ -1,62 +1,43 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
-import { composeAppIrFromPaths } from "../ir/compose.js";
+import { readSpecV04 } from "../spec/read.js";
 
 export async function runValidateCommand(args: string[]) {
-  const irPaths: string[] = [];
-  let printResolved = false;
-  let resolvedOutputPath: string | undefined;
+  let specPath: string | undefined;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
 
-    if (arg === "--ir") {
-      const value = args[index + 1];
-      if (value) {
-        irPaths.push(value);
-        index += 1;
-      }
-      continue;
-    }
-
-    if (arg === "--print-resolved") {
-      printResolved = true;
-      continue;
-    }
-
-    if (arg === "--write-resolved") {
-      resolvedOutputPath = args[index + 1];
+    if (arg === "--spec") {
+      specPath = args[index + 1];
       index += 1;
+      continue;
+    }
+
+    if (arg === "--ir" || arg === "--print-resolved" || arg === "--write-resolved") {
+      process.stderr.write(
+        "Stylyf v0.4 no longer accepts --ir fragments. Use --spec stylyf.spec.json. Run `stylyf intro --topic spec` for the v0.4 DSL.\n",
+      );
+      return 1;
     }
   }
 
-  if (irPaths.length === 0) {
-    process.stderr.write("Missing required option: --ir <path> (repeatable)\n");
+  if (!specPath) {
+    process.stderr.write("Missing required option: --spec <path>\n");
     return 1;
   }
 
-  const { app } = await composeAppIrFromPaths(irPaths);
-
-  if (printResolved) {
-    process.stdout.write(`${JSON.stringify(app, null, 2)}\n`);
-  }
-
-  if (resolvedOutputPath) {
-    const resolvedPath = resolve(process.cwd(), resolvedOutputPath);
-    await mkdir(dirname(resolvedPath), { recursive: true });
-    await writeFile(resolvedPath, `${JSON.stringify(app, null, 2)}\n`);
-  }
+  const { path, spec } = await readSpecV04(specPath);
 
   process.stdout.write(
     [
-      `IR validation passed`,
-      `  ir fragments: ${irPaths.length}`,
-      `  routes: ${app.routes.length}`,
-      `  resources: ${app.resources?.length ?? 0}`,
-      `  workflows: ${app.workflows?.length ?? 0}`,
-      resolvedOutputPath ? `  resolved ir: ${resolve(process.cwd(), resolvedOutputPath)}` : undefined,
+      `Spec validation passed`,
+      `  path: ${path}`,
+      `  version: ${spec.version}`,
+      `  kind: ${spec.app.kind}`,
+      `  backend: ${spec.backend.mode}`,
+      `  objects: ${spec.objects?.length ?? 0}`,
+      `  flows: ${spec.flows?.length ?? 0}`,
+      `  surfaces: ${spec.surfaces?.length ?? 0}`,
     ]
-      .filter(Boolean)
       .join("\n") + "\n",
   );
   return 0;
