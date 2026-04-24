@@ -7,6 +7,8 @@ import {
   type BackendCatalogEntry,
 } from "../manifests/backend.js";
 import { appShellCatalog, layoutCatalog, pageShellCatalog, type CatalogEntry } from "../manifests/catalog.js";
+import { appKindCatalog } from "../manifests/kinds.js";
+import { patternCatalog } from "../manifests/patterns.js";
 import { loadAssemblyRegistry, type AssemblyItem } from "../manifests/index.js";
 
 export type SearchableEntry = {
@@ -21,7 +23,11 @@ export type SearchableEntry = {
     | "server-function"
     | "api-route"
     | "env-block"
-    | "backend-snippet";
+    | "backend-snippet"
+    | "app-kind"
+    | "pattern"
+    | "capability"
+    | "generated-surface";
   area: string;
   description: string;
   summary: string;
@@ -175,6 +181,16 @@ function scoreEntry(entry: SearchableEntry, query: string) {
     reason.push(`props:${propHits}`);
   }
 
+  if (entry.kind === "app-kind") {
+    score += 18;
+    reason.push("app-kind");
+  }
+
+  if (entry.kind === "pattern") {
+    score += 12;
+    reason.push("pattern");
+  }
+
   return { score, reason };
 }
 
@@ -182,6 +198,8 @@ export async function buildSearchEntries() {
   const registry = await loadAssemblyRegistry();
 
   return [
+    ...appKindCatalog,
+    ...patternCatalog,
     ...registry.map(toSearchableComponent),
     ...appShellCatalog.map(toSearchableCatalog),
     ...pageShellCatalog.map(toSearchableCatalog),
