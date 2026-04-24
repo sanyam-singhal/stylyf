@@ -1,6 +1,6 @@
 export const CLI_NAME = "stylyf";
 
-export const CLI_VERSION = "0.4.0";
+export const CLI_VERSION = "0.5.0";
 
 export type CliCommand =
   | "intro"
