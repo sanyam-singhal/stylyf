@@ -1,0 +1,49 @@
+{
+  "version": "0.4",
+  "app": {
+    "name": "Field Notes Rich",
+    "kind": "cms-site",
+    "description": "A publishing workspace with articles, pages, and rich media."
+  },
+  "backend": {
+    "mode": "portable",
+    "portable": {
+      "database": "sqlite"
+    }
+  },
+  "media": {
+    "mode": "rich"
+  },
+  "objects": [
+    {
+      "name": "articles",
+      "ownership": "user",
+      "visibility": "mixed",
+      "fields": [
+        { "name": "title", "type": "short-text", "required": true },
+        { "name": "slug", "type": "slug", "required": true, "unique": true },
+        { "name": "excerpt", "type": "long-text" },
+        { "name": "body", "type": "rich-text" },
+        { "name": "status", "type": "status", "options": ["draft", "review", "published", "archived"] },
+        { "name": "published_at", "type": "datetime" }
+      ]
+    },
+    {
+      "name": "pages",
+      "ownership": "user",
+      "visibility": "mixed",
+      "fields": [
+        { "name": "title", "type": "short-text", "required": true },
+        { "name": "slug", "type": "slug", "required": true, "unique": true },
+        { "name": "body", "type": "rich-text" }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "name": "contentPublishing",
+      "object": "articles",
+      "kind": "publishing"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "version": "0.4",
+  "app": {
+    "name": "Acme Ops Rich",
+    "kind": "internal-tool",
+    "description": "An internal ticket review workspace with rich media and approvals."
+  },
+  "backend": {
+    "mode": "portable",
+    "portable": {
+      "database": "sqlite"
+    }
+  },
+  "media": {
+    "mode": "rich"
+  },
+  "objects": [
+    {
+      "name": "tickets",
+      "ownership": "user",
+      "visibility": "private",
+      "fields": [
+        { "name": "title", "type": "short-text", "required": true },
+        { "name": "priority", "type": "status", "options": ["low", "medium", "high"] },
+        { "name": "summary", "type": "long-text" },
+        { "name": "status", "type": "status", "options": ["draft", "review", "approved"] }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "name": "ticketApproval",
+      "object": "tickets",
+      "kind": "approval",
+      "states": ["draft", "review", "approved"],
+      "transitions": [
+        { "name": "submit", "from": "draft", "to": "review", "actor": "owner" },
+        { "name": "approve", "from": "review", "to": "approved", "actor": "admin" }
+      ]
+    }
+  ]
+}
