@@ -5,6 +5,7 @@ import type {
   ComponentRefIR,
   DatabaseIR,
   LayoutNodeIR,
+  NavigationIR,
   PolicyIR,
   ResourceAccessPreset,
   ResourceAttachmentIR,
@@ -652,12 +653,31 @@ function routesFor(spec: StylyfSpecV10, resources: ResourceIR[], expansion: Kind
   return mergeRoutes(surfaceRoutes, explicitRoutes);
 }
 
+function navigationFor(spec: StylyfSpecV10, routes: RouteIR[]): NavigationIR {
+  const routeItems = routes
+    .filter(route => !route.path.includes(":") && route.page !== "auth")
+    .map(route => ({
+      label: route.title ?? titleFor(route.path.replace(/^\/$/, "home").replace(/^\/+/, "")),
+      href: route.path,
+      group: route.access === "public" ? "Public" : "App",
+      auth: route.access ?? "user",
+    }));
+
+  return {
+    primary: spec.navigation?.primary ?? routeItems,
+    secondary: spec.navigation?.secondary ?? [],
+    userMenu: spec.navigation?.userMenu ?? [{ label: "Settings", href: "/settings", auth: "user" }],
+    commandMenu: spec.navigation?.commandMenu ?? routeItems.map(item => ({ ...item, command: true })),
+  };
+}
+
 export function expandSpecToGeneratedApp(spec: StylyfSpecV10): AppIR {
   const expansion = kindExpansionFor(spec);
   const policies = policiesFromSpec(spec.policies);
   const resources = expansion.defaultObjects(spec).map(object => objectToResource(object, spec, policies));
   const workflows = expansion.defaultFlows(spec, resources).map(flowToWorkflow);
   const routes = routesFor(spec, resources, expansion);
+  const navigation = navigationFor(spec, routes);
   const backend = backendFor(spec);
   const database = backend.database
     ? {
@@ -681,6 +701,7 @@ export function expandSpecToGeneratedApp(spec: StylyfSpecV10): AppIR {
     env: spec.env,
     database,
     policies,
+    navigation,
     auth,
     storage: backend.storage,
     resources,

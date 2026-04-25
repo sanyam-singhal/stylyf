@@ -298,6 +298,22 @@ export type FixtureSpec = {
   rows: Record<string, unknown>[];
 };
 
+export type NavItemSpec = {
+  label: string;
+  href: string;
+  group?: string;
+  auth?: AuthAccess;
+  role?: string;
+  command?: boolean;
+};
+
+export type NavigationSpec = {
+  primary?: NavItemSpec[];
+  secondary?: NavItemSpec[];
+  userMenu?: NavItemSpec[];
+  commandMenu?: NavItemSpec[];
+};
+
 export type StylyfSpecV10 = {
   version: "1.0";
   app: {
@@ -336,4 +352,5 @@ export type StylyfSpecV10 = {
   apis?: ApiRouteSpec[];
   server?: ServerModuleSpec[];
   fixtures?: FixtureSpec[];
+  navigation?: NavigationSpec;
 };

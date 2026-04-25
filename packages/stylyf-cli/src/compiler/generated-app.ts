@@ -334,6 +334,22 @@ export type FixtureIR = {
   rows: Record<string, unknown>[];
 };
 
+export type NavItemIR = {
+  label: string;
+  href: string;
+  group?: string;
+  auth?: AuthAccess;
+  role?: string;
+  command?: boolean;
+};
+
+export type NavigationIR = {
+  primary: NavItemIR[];
+  secondary: NavItemIR[];
+  userMenu: NavItemIR[];
+  commandMenu: NavItemIR[];
+};
+
 export type AppIR = {
   name: string;
   shell: AppShellId;
@@ -349,4 +365,5 @@ export type AppIR = {
   apis?: ApiRouteIR[];
   server?: ServerModuleIR[];
   fixtures?: FixtureIR[];
+  navigation?: NavigationIR;
 };

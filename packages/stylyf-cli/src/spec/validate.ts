@@ -1053,6 +1053,45 @@ function validateFixtures(value: unknown, context: ValidationContext) {
   });
 }
 
+function validateNavItems(value: unknown, path: string, context: ValidationContext) {
+  if (value === undefined) {
+    return;
+  }
+  if (!Array.isArray(value)) {
+    context.errors.push(`${path} must be an array when provided.`);
+    return;
+  }
+  value.forEach((item, index) => {
+    const itemPath = `${path}[${index}]`;
+    if (!isRecord(item)) {
+      context.errors.push(`${itemPath} must be an object.`);
+      return;
+    }
+    hasOnlyKeys(item, ["label", "href", "group", "auth", "role", "command"], itemPath, context);
+    requireString(item, "label", itemPath, context);
+    requireString(item, "href", itemPath, context);
+    optionalString(item, "group", itemPath, context);
+    optionalEnum(item, "auth", authAccessLevels, itemPath, context);
+    optionalString(item, "role", itemPath, context);
+    optionalBoolean(item, "command", itemPath, context);
+  });
+}
+
+function validateNavigation(value: unknown, context: ValidationContext) {
+  if (value === undefined) {
+    return;
+  }
+  if (!isRecord(value)) {
+    context.errors.push("navigation must be an object when provided.");
+    return;
+  }
+  hasOnlyKeys(value, ["primary", "secondary", "userMenu", "commandMenu"], "navigation", context);
+  validateNavItems(value.primary, "navigation.primary", context);
+  validateNavItems(value.secondary, "navigation.secondary", context);
+  validateNavItems(value.userMenu, "navigation.userMenu", context);
+  validateNavItems(value.commandMenu, "navigation.commandMenu", context);
+}
+
 function validateNoBillingConcepts(value: unknown, context: ValidationContext) {
   const serialized = JSON.stringify(value).toLowerCase();
   for (const token of ["stripe", "billing", "checkout", "payment", "subscription"]) {
@@ -1323,7 +1362,7 @@ export function validateSpecV10(value: unknown): StylyfSpecV10 {
 
   hasOnlyKeys(
     normalized,
-    ["version", "app", "backend", "database", "env", "media", "experience", "actors", "policies", "objects", "flows", "surfaces", "routes", "apis", "server", "fixtures"],
+    ["version", "app", "backend", "database", "env", "media", "experience", "actors", "policies", "objects", "flows", "surfaces", "routes", "apis", "server", "fixtures", "navigation"],
     "spec",
     context,
   );
@@ -1347,6 +1386,7 @@ export function validateSpecV10(value: unknown): StylyfSpecV10 {
   validateApis(normalized.apis, context);
   validateServer(normalized.server, context);
   validateFixtures(normalized.fixtures, context);
+  validateNavigation(normalized.navigation, context);
   validatePolicyReferences(normalized, context);
   validateObjectReferences(normalized, context);
 

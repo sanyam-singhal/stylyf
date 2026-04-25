@@ -71,6 +71,7 @@ import {
 import { loadAssemblyRegistry, type AssemblyItem } from "../manifests/index.js";
 import { bundledSourcePathExists, readBundledSourceFile, writeGeneratedFile } from "./assets.js";
 import { installGeneratedProjectDependencies, runGeneratedProjectScript, writeProjectScaffold } from "./project.js";
+import { renderGeneratedNavigationModule } from "./navigation.js";
 import {
   renderGeneratedAppCss,
   renderGeneratedAppRoot,
@@ -515,6 +516,7 @@ function renderResourceFormRouteSource(route: RouteIR, app: AppIR, assemblyLooku
     'import { Title } from "@solidjs/meta";',
     route.page === "resource-edit" ? 'import { useParams } from "@solidjs/router";' : "",
     `import { ${appShellName} } from "~/components/shells/app/${appShellId}";`,
+    `import { GeneratedNavigation } from "~/components/generated-navigation";`,
     `import { ${pageShellName} } from "~/components/shells/page/${pageShellId}";`,
     `import { ${resourceComponentName} } from "~/components/resource-forms/${resourceComponentBase}-form";`,
     ...[...layoutImports]
@@ -539,7 +541,7 @@ function renderResourceFormRouteSource(route: RouteIR, app: AppIR, assemblyLooku
     "  return (",
     "    <>",
     `      <Title>${title}</Title>`,
-    `      <${appShellName} title=${jsxPropValue(app.name)}>`,
+    `      <${appShellName} title=${jsxPropValue(app.name)} ${appShellId === "topbar-app" ? 'nav={<GeneratedNavigation shell="topbar-app" />}' : appShellId === "sidebar-app" || appShellId === "docs-shell" ? `navigation={<GeneratedNavigation shell=${jsxPropValue(appShellId)} />}` : ""}>`,
     `        <${pageShellName} title=${jsxPropValue(title)} description=${jsxPropValue(description)}>`,
     route.page === "resource-edit"
       ? `          <${resourceComponentName} mode="edit" resourceId={params.id} />`
@@ -585,6 +587,7 @@ function renderRouteSource(route: RouteIR, app: AppIR, assemblyLookup: Map<strin
     dataBoundRoute.solidImports.size > 0 ? `import { ${[...dataBoundRoute.solidImports].sort().join(", ")} } from "solid-js";` : "",
     dataBoundRoute.routerImports.size > 0 ? `import { ${[...dataBoundRoute.routerImports].sort().join(", ")} } from "@solidjs/router";` : "",
     `import { ${appShellName} } from "~/components/shells/app/${appShellId}";`,
+    `import { GeneratedNavigation } from "~/components/generated-navigation";`,
     `import { ${pageShellName} } from "~/components/shells/page/${pageShellId}";`,
     ...[...layoutImports]
       .sort()
@@ -604,7 +607,7 @@ function renderRouteSource(route: RouteIR, app: AppIR, assemblyLookup: Map<strin
     "  return (",
     "    <>",
     `      <Title>${title}</Title>`,
-    `      <${appShellName} title=${jsxPropValue(app.name)}>`,
+    `      <${appShellName} title=${jsxPropValue(app.name)} ${appShellId === "topbar-app" ? 'nav={<GeneratedNavigation shell="topbar-app" />}' : appShellId === "sidebar-app" || appShellId === "docs-shell" ? `navigation={<GeneratedNavigation shell=${jsxPropValue(appShellId)} />}` : ""}>`,
     `        <${pageShellName} title=${jsxPropValue(title)}>`,
     dataBoundRoute.content,
     `        </${pageShellName}>`,
@@ -742,6 +745,7 @@ export async function generateFrontendDraftFromApp(appIr: AppIR, targetPath: str
   await writeGeneratedFile(resolve(targetPath, "src/entry-server.tsx"), renderGeneratedEntryServer());
   await writeGeneratedFile(resolve(targetPath, "src/app.css"), await renderGeneratedAppCss(app));
   await writeGeneratedFile(resolve(targetPath, "src/lib/theme-system.ts"), renderGeneratedThemeSystem(app));
+  await writeGeneratedFile(resolve(targetPath, "src/components/generated-navigation.tsx"), renderGeneratedNavigationModule(app));
   await writeGeneratedFile(resolve(targetPath, ".env.local.example"), renderGeneratedEnvExample(app, "local"));
   await writeGeneratedFile(resolve(targetPath, ".env.production.example"), renderGeneratedEnvExample(app, "production"));
   await writeGeneratedFile(resolve(targetPath, "src/lib/env.ts"), renderGeneratedEnvModule());

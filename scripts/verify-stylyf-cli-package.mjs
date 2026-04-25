@@ -491,6 +491,7 @@ async function main() {
     "tests/smoke/auth.spec.ts",
     "tests/smoke/resource-forms.spec.ts",
     "src/lib/test/factories.ts",
+    "src/components/generated-navigation.tsx",
     ".env.local.example",
     ".env.production.example",
     "src/lib/env.server.ts",
@@ -570,6 +571,14 @@ async function main() {
   const routeSmoke = await readFile(resolve(genericRoot, "tests/smoke/routes.spec.ts"), "utf8");
   if (!routeSmoke.includes("/inbox") || !routeSmoke.includes("toBeLessThan(500)")) {
     throw new Error("Generated route smoke test does not cover generated routes safely.");
+  }
+  const generatedNavigation = await readFile(resolve(genericRoot, "src/components/generated-navigation.tsx"), "utf8");
+  if (!generatedNavigation.includes("navigationConfig") || !generatedNavigation.includes("/inbox")) {
+    throw new Error("Generated navigation config does not derive coherent route navigation.");
+  }
+  const genericIndexRoute = await readFile(resolve(genericRoot, "src/routes/inbox/index.tsx"), "utf8");
+  if (!genericIndexRoute.includes("GeneratedNavigation")) {
+    throw new Error("Generated app routes do not pass generated navigation into app shells.");
   }
   await assertNoRuntimeStylyfImports(genericRoot, "Generated generic app");
 
@@ -713,6 +722,7 @@ async function main() {
       "  - contracted API routes emit validation helpers and machine-readable API summary",
       "  - generated apps include Playwright smoke test harness and package scripts",
       "  - generated apps include split env profiles, thin env re-export, and env preflight",
+      "  - generated apps include route-derived navigation config wired into shells",
       "  - route bindings survive spec expansion into resolved app IR",
       "  - bound list/detail routes import generated queries and route-level loading/empty/error states",
       "  - generic app source honors explicit surface route hints",
