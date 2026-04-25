@@ -364,16 +364,46 @@ async function main() {
   }
 
   await run(stylyfBin, ["intro", "--output", "STYLYF_INTRO.md"], verifyRoot);
+  await run(stylyfBin, ["intro", "--topic", "operator", "--output", "STYLYF_OPERATOR.md"], verifyRoot);
   await run(stylyfBin, ["intro", "--topic", "spec", "--output", "STYLYF_SPEC.md"], verifyRoot);
+  await run(stylyfBin, ["intro", "--topic", "ui", "--output", "STYLYF_UI.md"], verifyRoot);
+  await run(stylyfBin, ["intro", "--topic", "data", "--output", "STYLYF_DATA.md"], verifyRoot);
+  await run(stylyfBin, ["intro", "--topic", "api", "--output", "STYLYF_API.md"], verifyRoot);
+  await run(stylyfBin, ["intro", "--topic", "operations", "--output", "STYLYF_OPERATIONS.md"], verifyRoot);
+  await run(stylyfBin, ["intro", "--topic", "full", "--output", "STYLYF_FULL.md"], verifyRoot);
   await run(stylyfBin, ["intro", "--kind", "internal-tool", "--output", "STYLYF_INTERNAL.md"], verifyRoot);
 
   const intro = await readFile(resolve(verifyRoot, "STYLYF_INTRO.md"), "utf8");
+  const operatorIntro = await readFile(resolve(verifyRoot, "STYLYF_OPERATOR.md"), "utf8");
   const specIntro = await readFile(resolve(verifyRoot, "STYLYF_SPEC.md"), "utf8");
+  const uiIntro = await readFile(resolve(verifyRoot, "STYLYF_UI.md"), "utf8");
+  const dataIntro = await readFile(resolve(verifyRoot, "STYLYF_DATA.md"), "utf8");
+  const apiIntro = await readFile(resolve(verifyRoot, "STYLYF_API.md"), "utf8");
+  const operationsIntro = await readFile(resolve(verifyRoot, "STYLYF_OPERATIONS.md"), "utf8");
+  const fullIntro = await readFile(resolve(verifyRoot, "STYLYF_FULL.md"), "utf8");
   if (!intro.includes("generic") || !intro.includes("internal-tool") || !intro.includes("Supabase") || !intro.includes("Tigris/S3-compatible")) {
     throw new Error("Generated intro overview does not mention v1.0 app kinds and backend paths");
   }
+  if (!operatorIntro.includes("Cold-Start Operator Loop") && !operatorIntro.includes("Decision Order")) {
+    throw new Error("Generated operator intro does not expose the cold-start decision protocol");
+  }
   if (!specIntro.includes("SpecV10") || !specIntro.includes("objects") || !specIntro.includes("flows") || !specIntro.includes("surfaces")) {
     throw new Error("Generated spec intro topic does not explain the v1.0 DSL");
+  }
+  if (!uiIntro.includes("Sections And Layout Nodes") || !uiIntro.includes("Component Discovery") || !uiIntro.includes("Bindings")) {
+    throw new Error("Generated UI intro does not explain layout/component composition");
+  }
+  if (!dataIntro.includes("Ownership And Access") || !dataIntro.includes("Resource Example") || !dataIntro.includes("Database Extras")) {
+    throw new Error("Generated data intro does not explain resource/policy/schema composition");
+  }
+  if (!apiIntro.includes("API Contract Example") || !apiIntro.includes("Webhook Example") || !apiIntro.includes("Server Modules")) {
+    throw new Error("Generated API intro does not explain endpoint/server composition");
+  }
+  if (!operationsIntro.includes("NPM Transparency") || !operationsIntro.includes("Generated App Checks")) {
+    throw new Error("Generated operations intro does not explain install/check handoff");
+  }
+  if (!fullIntro.includes("Component Inventory") || !fullIntro.includes("filter-toolbar") || !fullIntro.includes("Stylyf v1.0 API And Server Composition")) {
+    throw new Error("Generated full intro does not include the full cold-start context surface");
   }
 
   for (const kind of ["generic", "internal-tool", "cms-site", "free-saas-tool"]) {

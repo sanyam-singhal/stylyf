@@ -60,12 +60,17 @@ Use the layered intro:
 
 ```bash
 stylyf intro
+stylyf intro --topic operator
 stylyf intro --kind generic
 stylyf intro --kind internal-tool
 stylyf intro --topic spec
+stylyf intro --topic ui
+stylyf intro --topic data
+stylyf intro --topic api
 stylyf intro --topic backend
 stylyf intro --topic media
 stylyf intro --topic composition
+stylyf intro --topic operations
 stylyf intro --topic generated-output
 stylyf intro --topic full
 ```
@@ -77,7 +82,13 @@ capability reminder:
 stylyf search dashboard filters table
 stylyf search upload attachment presign
 stylyf search auth session route protection
+stylyf inspect component filter-toolbar
 ```
+
+For a cold-start coding agent, `stylyf intro --topic operator` is the real
+playbook. It explains how to move from prompt intent to app kind, resources,
+flows, surfaces, explicit UI sections, backend/API additions, validation, and
+generated-app checks.
 
 ## Canonical Starting Points
 
@@ -94,13 +105,16 @@ stylyf generate --spec stylyf.spec.json --target ./my-app
 
 ## Minimal Composition Flow
 
-1. choose the backend path
-2. choose an app kind: `generic`, `internal-tool`, `cms-site`, or `free-saas-tool`
-3. define `objects`, `flows`, and optional `surfaces`
-4. let Stylyf expand surfaces into routes, shells, forms, backend modules, and handoff docs
-5. validate the spec
-6. generate into a clean target directory
-7. move into the emitted app and keep developing there
+1. choose the app kind: `generic`, `internal-tool`, `cms-site`, or `free-saas-tool`
+2. choose the backend path: `portable` or `hosted`
+3. choose media depth: `none`, `basic`, or `rich`
+4. define `objects`, `flows`, and coarse `surfaces`
+5. run `stylyf plan --resolved` and add explicit chunks only where defaults are too coarse
+6. use `stylyf search` and `stylyf inspect component <id>` before passing component props
+7. validate the spec
+8. generate into a clean target directory
+9. run generated-app `npm run check` and `npm run build`
+10. perform an app-specific design pass inside the emitted app
 
 ## Minimal Spec Shape
 
@@ -155,7 +169,7 @@ database schema additions.
           "layout": "stack",
           "props": { "gap": "var(--space-6)" },
           "children": [
-            { "component": "page-header", "props": { "title": "Records" } },
+            { "component": "page-header", "props": { "title": "Records", "description": "Review and organize records." } },
             { "layout": "grid", "props": { "columns": 2 }, "children": ["filter-toolbar", "bulk-action-bar"] },
             "data-table-shell"
           ]
@@ -229,7 +243,7 @@ When you want more than just raw backend primitives, Stylyf supports:
 - `ownership`
 - `access`
 - `relations`
-- `attachments`
+- `media` and resource attachments
 - `flows`
 - `surfaces`
 - `routes`
@@ -237,6 +251,9 @@ When you want more than just raw backend primitives, Stylyf supports:
 - `server`
 - `database.schema`
 - `env.extras`
+- `fixtures`
+- `navigation`
+- `deployment`
 
 That generalized layer drives:
 
@@ -246,6 +263,9 @@ That generalized layer drives:
 - ownership/policy helpers
 - attachment metadata and presign flows
 - workflow actions, event logs, and notification surfaces
+- explicit API routes and server query/action modules
+- route-derived or custom navigation
+- deployment handoff notes
 
 ## Hosted Apply Checklist
 
@@ -267,6 +287,10 @@ For the hosted Supabase path:
 ## Where To Drill Deeper
 
 - `stylyf intro --topic spec`
+- `stylyf intro --topic operator`
+- `stylyf intro --topic ui`
+- `stylyf intro --topic data`
+- `stylyf intro --topic api`
 - `stylyf intro --kind generic`
 - `stylyf intro --kind internal-tool`
 - `stylyf intro --kind cms-site`
@@ -274,6 +298,7 @@ For the hosted Supabase path:
 - `stylyf intro --topic backend`
 - `stylyf intro --topic media`
 - `stylyf intro --topic composition`
+- `stylyf intro --topic operations`
 - `stylyf intro --topic generated-output`
 - `stylyf intro --topic full`
 

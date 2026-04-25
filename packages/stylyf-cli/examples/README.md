@@ -5,6 +5,16 @@ models and they do not expose database schemas, API files, server modules, or
 layout trees as the first authoring surface. When the defaults are too coarse,
 use explicit additive chunks with `stylyf compose`.
 
+For cold-start usage, pair examples with the operator manual:
+
+```bash
+stylyf intro --topic operator
+stylyf intro --topic ui
+stylyf intro --topic data
+stylyf intro --topic api
+stylyf intro --topic full
+```
+
 ## Canonical v1.0 Specs
 
 - `v1.0/internal-tool.basic.json`
@@ -74,3 +84,10 @@ stylyf compose \
 stylyf plan --spec ./stylyf.composed.json --resolved
 stylyf generate --spec ./stylyf.composed.json --target ./generated-composed
 ```
+
+## Authoring Guidance
+
+- Use `stylyf search <intent>` to discover components, layouts, backend snippets, and capability reminders.
+- Use `stylyf inspect component <id>` before passing props into explicit sections.
+- Use `stylyf validate` after every composed chunk, not only before final generation.
+- Use `stylyf plan --resolved` to confirm the expanded private app model before installing generated-app dependencies.
