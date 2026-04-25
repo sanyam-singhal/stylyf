@@ -491,7 +491,9 @@ async function main() {
     "src/routes/records/index.tsx",
     "src/routes/records/new.tsx",
     "src/routes/api/health.ts",
+    "src/routes/api/readiness.ts",
     "src/api.contracts.json",
+    "src/lib/server/observability.ts",
     "playwright.config.ts",
     "tests/smoke/routes.spec.ts",
     "tests/smoke/auth.spec.ts",
@@ -589,6 +591,11 @@ async function main() {
   if (!genericIndexRoute.includes('name="robots" content="noindex"') || !genericIndexRoute.includes('name="description"')) {
     throw new Error("Generated private app routes are missing route metadata/noindex defaults.");
   }
+  const readinessRoute = await readFile(resolve(genericRoot, "src/routes/api/readiness.ts"), "utf8");
+  const observabilityModule = await readFile(resolve(genericRoot, "src/lib/server/observability.ts"), "utf8");
+  if (!readinessRoute.includes("missingEnv") || !observabilityModule.includes("logInfo") || !observabilityModule.includes("logError")) {
+    throw new Error("Generated app is missing observability/readiness baseline.");
+  }
   await assertNoRuntimeStylyfImports(genericRoot, "Generated generic app");
 
   const internalRoot = resolve(verifyRoot, "generated-internal");
@@ -610,6 +617,7 @@ async function main() {
     "HANDOFF.md",
     "LOCAL_SMOKE.md",
     "SECURITY_NOTES.md",
+    "OPERATIONS.md",
     "stylyf.spec.json",
     "stylyf.plan.json",
   ]) {
@@ -745,6 +753,7 @@ async function main() {
       "  - generated apps include split env profiles, thin env re-export, and env preflight",
       "  - generated apps include route-derived navigation config wired into shells",
       "  - generated routes include metadata tags and private noindex defaults",
+      "  - generated apps include observability module, readiness route, and operations notes",
       "  - route bindings survive spec expansion into resolved app IR",
       "  - bound list/detail routes import generated queries and route-level loading/empty/error states",
       "  - generic app source honors explicit surface route hints",

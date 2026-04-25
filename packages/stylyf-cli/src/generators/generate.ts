@@ -22,6 +22,12 @@ import {
   renderGeneratedAuthMiddleware,
   renderGeneratedAuthModule,
 } from "./backend/auth.js";
+import {
+  renderGeneratedHealthRoute,
+  renderGeneratedObservabilityModule,
+  renderGeneratedOperationsMarkdown,
+  renderGeneratedReadinessRoute,
+} from "./backend/observability.js";
 import { renderGeneratedAuthHandlerRoute, writeGeneratedApiRoutes } from "./backend/api-routes.js";
 import { renderGeneratedAuthSchemaConfig, renderGeneratedAuthSchemaPlaceholder } from "./backend/auth-schema.js";
 import { renderGeneratedDbModule, renderGeneratedDbSchema, renderGeneratedDrizzleConfig } from "./backend/database.js";
@@ -784,6 +790,11 @@ export async function generateFrontendDraftFromApp(appIr: AppIR, targetPath: str
   await writeGeneratedFile(resolve(targetPath, "src/app.css"), await renderGeneratedAppCss(app));
   await writeGeneratedFile(resolve(targetPath, "src/lib/theme-system.ts"), renderGeneratedThemeSystem(app));
   await writeGeneratedFile(resolve(targetPath, "src/components/generated-navigation.tsx"), renderGeneratedNavigationModule(app));
+  await writeGeneratedFile(resolve(targetPath, "src/lib/server/observability.ts"), renderGeneratedObservabilityModule(app));
+  if (!(app.apis ?? []).some(api => api.path === "/api/health")) {
+    await writeGeneratedFile(resolve(targetPath, "src/routes/api/health.ts"), renderGeneratedHealthRoute(app));
+  }
+  await writeGeneratedFile(resolve(targetPath, "src/routes/api/readiness.ts"), renderGeneratedReadinessRoute(app));
   await writeGeneratedFile(resolve(targetPath, ".env.local.example"), renderGeneratedEnvExample(app, "local"));
   await writeGeneratedFile(resolve(targetPath, ".env.production.example"), renderGeneratedEnvExample(app, "production"));
   await writeGeneratedFile(resolve(targetPath, "src/lib/env.ts"), renderGeneratedEnvModule());
@@ -959,6 +970,7 @@ export async function generateFromSpec(specPath: string, targetPath: string, opt
   await writeGeneratedFile(resolve(targetPath, "HANDOFF.md"), renderHandoffMarkdown(plan));
   await writeGeneratedFile(resolve(targetPath, "SECURITY_NOTES.md"), renderSecurityNotesMarkdown(plan));
   await writeGeneratedFile(resolve(targetPath, "LOCAL_SMOKE.md"), renderLocalSmokeMarkdown(plan));
+  await writeGeneratedFile(resolve(targetPath, "OPERATIONS.md"), renderGeneratedOperationsMarkdown(app));
 
   return {
     ...result,
