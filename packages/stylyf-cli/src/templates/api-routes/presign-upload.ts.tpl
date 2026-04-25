@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { APIEvent } from "@solidjs/start/server";
-import { createPresignedUpload } from "~/lib/storage";
+import { createPresignedUpload, storagePolicy } from "~/lib/storage";
 {{AUTH_IMPORT}}
 
 function sanitizeFileName(value: string) {
@@ -14,10 +14,12 @@ export async function {{METHOD}}(event: APIEvent) {
   const contentType =
     typeof body.contentType === "string" && body.contentType ? body.contentType : "application/octet-stream";
   const folder = typeof body.folder === "string" && body.folder ? body.folder : "{{ROUTE_NAME}}";
-  const key = `${folder}/${randomUUID()}-${sanitizeFileName(fileName)}`;
+  const fileSize = typeof body.fileSize === "number" ? body.fileSize : undefined;
+  const key = `${storagePolicy.keyPrefix}/${folder}/${randomUUID()}-${sanitizeFileName(fileName)}`;
   const upload = await createPresignedUpload({
     key,
     contentType,
+    fileSize,
   });
 
   return Response.json({

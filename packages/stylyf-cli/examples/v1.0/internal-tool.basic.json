@@ -1,5 +1,5 @@
 {
-  "version": "0.4",
+  "version": "1.0",
   "app": {
     "name": "Acme Ops",
     "kind": "internal-tool",

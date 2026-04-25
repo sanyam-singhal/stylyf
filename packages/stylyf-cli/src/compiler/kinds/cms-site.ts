@@ -1,9 +1,9 @@
 import type { ResourceIR } from "../generated-app.js";
 import type { KindExpansion } from "./common.js";
 import { singularTitle, slugify, titleFor } from "./common.js";
-import type { FlowSpec, ObjectSpec, StylyfSpecV04, SurfaceSpec } from "../../spec/types.js";
+import type { FlowSpec, ObjectSpec, StylyfSpecV10, SurfaceSpec } from "../../spec/types.js";
 
-function defaultObjects(spec: StylyfSpecV04): ObjectSpec[] {
+function defaultObjects(spec: StylyfSpecV10): ObjectSpec[] {
   if (spec.objects && spec.objects.length > 0) {
     return spec.objects;
   }
@@ -25,7 +25,7 @@ function defaultObjects(spec: StylyfSpecV04): ObjectSpec[] {
   ];
 }
 
-function defaultFlows(spec: StylyfSpecV04, resources: ResourceIR[]): FlowSpec[] {
+function defaultFlows(spec: StylyfSpecV10, resources: ResourceIR[]): FlowSpec[] {
   if (spec.flows && spec.flows.length > 0) {
     return spec.flows;
   }
@@ -34,7 +34,7 @@ function defaultFlows(spec: StylyfSpecV04, resources: ResourceIR[]): FlowSpec[] 
   return primary ? [{ name: "contentPublishing", object: primary, kind: "publishing" }] : [];
 }
 
-function defaultSurfaces(_spec: StylyfSpecV04, resources: ResourceIR[]): SurfaceSpec[] {
+function defaultSurfaces(_spec: StylyfSpecV10, resources: ResourceIR[]): SurfaceSpec[] {
   const article = resources.find(resource => resource.name === "articles") ?? resources[0];
   const articleName = article?.name ?? "articles";
   return [

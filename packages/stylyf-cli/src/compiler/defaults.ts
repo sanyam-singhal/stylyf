@@ -1,7 +1,7 @@
 import type { ThemeIR } from "./generated-app.js";
-import type { StylyfSpecV04 } from "../spec/types.js";
+import type { StylyfSpecV10 } from "../spec/types.js";
 
-export function defaultTheme(spec: StylyfSpecV04): ThemeIR {
+export function defaultTheme(spec: StylyfSpecV10): ThemeIR {
   return {
     preset: spec.experience?.theme ?? "opal",
     mode: spec.experience?.mode ?? "light",

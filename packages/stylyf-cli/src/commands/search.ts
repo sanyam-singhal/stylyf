@@ -51,8 +51,17 @@ export async function runSearchCommand(args: string[]) {
             `  score: ${result.score}`,
             `  reason: ${result.reason.join(", ") || "match"}`,
             result.props?.length ? `  props: ${result.props.join(", ")}` : undefined,
+            result.propContracts?.length
+              ? `  prop contracts: ${result.propContracts.map(prop => `${prop.name}:${prop.type}`).join(", ")}`
+              : undefined,
+            result.slots?.length ? `  slots: ${result.slots.join(", ")}` : undefined,
+            result.events?.length ? `  events: ${result.events.join(", ")}` : undefined,
+            result.controlledState?.length ? `  controlled state: ${result.controlledState.join(", ")}` : undefined,
+            result.recommendedBindings?.length ? `  bindings: ${result.recommendedBindings.join(", ")}` : undefined,
+            result.a11yNotes?.length ? `  a11y: ${result.a11yNotes.join(" ")}` : undefined,
             result.importPath ? `  import: ${result.importPath}` : undefined,
             result.sourcePath ? `  source: ${result.sourcePath}` : undefined,
+            result.composition ? `  composition:\n${JSON.stringify(result.composition, null, 2).split("\n").map(line => `    ${line}`).join("\n")}` : undefined,
             `  summary: ${result.summary}`,
             result.snippet ? `  snippet:\n${result.snippet.split("\n").map(line => `    ${line}`).join("\n")}` : undefined,
           ]

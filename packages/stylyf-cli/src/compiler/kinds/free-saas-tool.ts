@@ -1,12 +1,12 @@
 import type { ResourceIR } from "../generated-app.js";
 import type { KindExpansion } from "./common.js";
-import type { FlowSpec, ObjectSpec, StylyfSpecV04, SurfaceSpec } from "../../spec/types.js";
+import type { FlowSpec, ObjectSpec, StylyfSpecV10, SurfaceSpec } from "../../spec/types.js";
 
-function hasSavedResults(spec: StylyfSpecV04) {
+function hasSavedResults(spec: StylyfSpecV10) {
   return (spec.flows ?? []).some(flow => flow.kind === "saved-results");
 }
 
-function defaultObjects(spec: StylyfSpecV04): ObjectSpec[] {
+function defaultObjects(spec: StylyfSpecV10): ObjectSpec[] {
   if (spec.objects && spec.objects.length > 0) {
     return spec.objects;
   }
@@ -27,11 +27,11 @@ function defaultObjects(spec: StylyfSpecV04): ObjectSpec[] {
     : [];
 }
 
-function defaultFlows(spec: StylyfSpecV04): FlowSpec[] {
+function defaultFlows(spec: StylyfSpecV10): FlowSpec[] {
   return spec.flows ?? [];
 }
 
-function defaultSurfaces(_spec: StylyfSpecV04, resources: ResourceIR[]): SurfaceSpec[] {
+function defaultSurfaces(_spec: StylyfSpecV10, resources: ResourceIR[]): SurfaceSpec[] {
   const hasSavedResultsResource = resources.some(resource => resource.name === "tool_runs");
   return [
     { name: "Home", kind: "landing", path: "/", audience: "public" },

@@ -67,6 +67,7 @@ function renderColumn(column: DatabaseSchemaIR["columns"][number], dialect: Data
   const chained = [
     column.primaryKey ? "primaryKey()" : undefined,
     column.unique ? "unique()" : undefined,
+    column.default !== undefined ? `default(${JSON.stringify(column.default)})` : undefined,
     column.nullable ? undefined : "notNull()",
   ]
     .filter(Boolean)
@@ -78,6 +79,13 @@ function renderColumn(column: DatabaseSchemaIR["columns"][number], dialect: Data
 
 function renderTable(table: DatabaseSchemaIR, dialect: DatabaseDialect) {
   const exportName = camelCase(table.table);
+  const indexLines = table.columns
+    .filter(column => column.indexed && !column.primaryKey && !column.unique)
+    .map(column => `    index(${quote(`${table.table}_${column.name}_idx`)}).on(table.${camelCase(column.name)}),`);
+  const uniqueIndexLines = table.columns
+    .filter(column => column.indexed && column.unique)
+    .map(column => `    uniqueIndex(${quote(`${table.table}_${column.name}_uniq_idx`)}).on(table.${camelCase(column.name)}),`);
+  const tableCallbackLines = [...indexLines, ...uniqueIndexLines];
   const lines = [
     `${dialect === "sqlite" ? `export const ${exportName} = sqliteTable(${quote(table.table)}, {` : `export const ${exportName} = pgTable(${quote(table.table)}, {`}`,
     ...table.columns.map(column => renderColumn(column, dialect)),
@@ -97,7 +105,19 @@ function renderTable(table: DatabaseSchemaIR, dialect: DatabaseDialect) {
     }
   }
 
-  lines.push("});", "");
+  if (table.softDelete) {
+    if (dialect === "sqlite") {
+      lines.push('  deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),');
+    } else {
+      lines.push('  deletedAt: timestamp("deleted_at", { withTimezone: true }),');
+    }
+  }
+
+  if (tableCallbackLines.length > 0) {
+    lines.push("}, table => [", ...tableCallbackLines, "]);", "");
+  } else {
+    lines.push("});", "");
+  }
   return lines.join("\n");
 }
 
@@ -122,9 +142,10 @@ export function renderGeneratedDbSchema(app: AppIR) {
 
   if (dialect === "sqlite") {
     const needsSql = tables.some(table => table.timestamps);
+    const needsIndexes = tables.some(table => table.columns.some(column => column.indexed));
 
     return [
-      `import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";`,
+      `import { integer, ${needsIndexes ? "index, uniqueIndex, " : ""}sqliteTable, text } from "drizzle-orm/sqlite-core";`,
       ...(needsSql ? ['import { sql } from "drizzle-orm";'] : []),
       "",
       ...tables.map(table => renderTable(table, "sqlite")),
@@ -132,7 +153,7 @@ export function renderGeneratedDbSchema(app: AppIR) {
   }
 
   return [
-    'import { boolean, integer, jsonb, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";',
+    `import { boolean, integer, ${tables.some(table => table.columns.some(column => column.indexed)) ? "index, uniqueIndex, " : ""}jsonb, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";`,
     "",
     ...tables.map(table => renderTable(table, "postgres")),
   ].join("\n");

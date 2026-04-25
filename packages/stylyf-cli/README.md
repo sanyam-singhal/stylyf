@@ -2,7 +2,7 @@
 
 Stylyf is an agent-operated scaffolding compiler for SolidStart.
 
-Its job is to let a coding agent describe the intended app in a small v0.4
+Its job is to let a coding agent describe the intended app in a small v1.0
 spec, inspect the generation plan, generate a real source tree, and then keep
 iterating inside that emitted app without redoing repetitive setup work by hand.
 
@@ -81,7 +81,7 @@ stylyf search auth session route protection
 
 ## Canonical Starting Points
 
-Use `stylyf new` to create a small v0.4 spec:
+Use `stylyf new` to create a small v1.0 spec:
 
 ```bash
 stylyf new generic --name "Atlas" --backend portable --media basic --output stylyf.spec.json
@@ -106,7 +106,7 @@ stylyf generate --spec stylyf.spec.json --target ./my-app
 
 ```json
 {
-  "version": "0.4",
+  "version": "1.0",
   "app": {
     "name": "Atlas",
     "kind": "generic"

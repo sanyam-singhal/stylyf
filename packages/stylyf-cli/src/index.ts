@@ -1,6 +1,6 @@
 export const CLI_NAME = "stylyf";
 
-export const CLI_VERSION = "0.5.0";
+export const CLI_VERSION = "1.0.0";
 
 export type CliCommand =
   | "intro"
@@ -9,6 +9,8 @@ export type CliCommand =
   | "plan"
   | "generate"
   | "validate"
+  | "doctor"
+  | "inspect"
   | "search"
   | "serve-search"
   | "build-index";
@@ -24,11 +26,13 @@ export function helpText() {
     "",
     "Commands:",
     "  intro         Layered briefing for coding agents",
-    "  new           Create a v0.4 spec for an app kind",
-    "  compose       Merge explicit additive v0.4 spec chunks",
-    "  validate      Validate a v0.4 spec",
+    "  new           Create a v1.0 spec for an app kind",
+    "  compose       Merge explicit additive v1.0 spec chunks",
+    "  validate      Validate a v1.0 spec",
+    "  doctor        Check local CLI/runtime sanity",
+    "  inspect       Inspect component contracts (`inspect component <id>`)",
     "  plan          Explain what a spec will generate",
-    "  generate      Generate a SolidStart app from a v0.4 spec",
+    "  generate      Generate a SolidStart app from a v1.0 spec",
     "  search        Search bundled capabilities, patterns, and components",
     "  serve-search  Start the local search HTTP endpoint",
     "  build-index   Rebuild the bundled search index",
@@ -49,6 +53,8 @@ export function helpText() {
 import { runComposeCommand } from "./commands/compose.js";
 import { runBuildIndexCommand } from "./commands/build-index.js";
 import { runGenerateCommand } from "./commands/generate.js";
+import { runDoctorCommand } from "./commands/doctor.js";
+import { runInspectCommand } from "./commands/inspect.js";
 import { runIntroCommand } from "./commands/intro.js";
 import { runNewCommand } from "./commands/new.js";
 import { runPlanCommand } from "./commands/plan.js";
@@ -92,6 +98,14 @@ export async function runCli(argv: string[] = process.argv.slice(2)) {
 
   if (command === "validate") {
     return runValidateCommand(commandArgs(argv));
+  }
+
+  if (command === "doctor") {
+    return runDoctorCommand();
+  }
+
+  if (command === "inspect") {
+    return runInspectCommand(commandArgs(argv));
   }
 
   if (command === "search") {

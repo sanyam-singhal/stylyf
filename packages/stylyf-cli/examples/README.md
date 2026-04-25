@@ -1,31 +1,31 @@
 # Stylyf CLI Examples
 
-Stylyf v0.4 examples are small intent-level specs. They are not private app
+Stylyf v1.0 examples are small intent-level specs. They are not private app
 models and they do not expose database schemas, API files, server modules, or
 layout trees as the first authoring surface. When the defaults are too coarse,
 use explicit additive chunks with `stylyf compose`.
 
-## Canonical v0.4 Specs
+## Canonical v1.0 Specs
 
-- `v0.4/internal-tool.basic.json`
-- `v0.4/internal-tool.rich.json`
-- `v0.4/generic.basic.json`
-- `v0.4/cms-site.basic.json`
-- `v0.4/cms-site.rich.json`
-- `v0.4/free-saas-tool.basic.json`
-- `v0.4/internal-tool.hosted.rich.json`
-- `v0.4/composition.base.json`
-- `v0.4/composition.ui.chunk.json`
-- `v0.4/composition.backend.chunk.json`
+- `v1.0/internal-tool.basic.json`
+- `v1.0/internal-tool.rich.json`
+- `v1.0/generic.basic.json`
+- `v1.0/cms-site.basic.json`
+- `v1.0/cms-site.rich.json`
+- `v1.0/free-saas-tool.basic.json`
+- `v1.0/internal-tool.hosted.rich.json`
+- `v1.0/composition.base.json`
+- `v1.0/composition.ui.chunk.json`
+- `v1.0/composition.backend.chunk.json`
 
 ## Portable Local Path
 
-Use this first when dogfooding v0.4:
+Use this first when dogfooding v1.0:
 
 ```bash
-stylyf validate --spec packages/stylyf-cli/examples/v0.4/internal-tool.rich.json
-stylyf plan --spec packages/stylyf-cli/examples/v0.4/internal-tool.rich.json
-stylyf generate --spec packages/stylyf-cli/examples/v0.4/internal-tool.rich.json --target ./generated-internal
+stylyf validate --spec packages/stylyf-cli/examples/v1.0/internal-tool.rich.json
+stylyf plan --spec packages/stylyf-cli/examples/v1.0/internal-tool.rich.json
+stylyf generate --spec packages/stylyf-cli/examples/v1.0/internal-tool.rich.json --target ./generated-internal
 ```
 
 This compiles to:
@@ -40,9 +40,9 @@ This compiles to:
 Use this for Supabase + Tigris validation:
 
 ```bash
-stylyf validate --spec packages/stylyf-cli/examples/v0.4/internal-tool.hosted.rich.json
-stylyf plan --spec packages/stylyf-cli/examples/v0.4/internal-tool.hosted.rich.json
-stylyf generate --spec packages/stylyf-cli/examples/v0.4/internal-tool.hosted.rich.json --target ./generated-hosted
+stylyf validate --spec packages/stylyf-cli/examples/v1.0/internal-tool.hosted.rich.json
+stylyf plan --spec packages/stylyf-cli/examples/v1.0/internal-tool.hosted.rich.json
+stylyf generate --spec packages/stylyf-cli/examples/v1.0/internal-tool.hosted.rich.json --target ./generated-hosted
 ```
 
 After generation, apply:
@@ -54,7 +54,7 @@ Then run hosted CRUD/runtime checks with real Supabase and Tigris env values.
 
 ## Generic Path
 
-Use `v0.4/generic.basic.json` when the requested app should stay general:
+Use `v1.0/generic.basic.json` when the requested app should stay general:
 resource-backed routes, auth/data/storage primitives, and explicit high-level
 surfaces without the assumptions of internal tools, CMS publishing, or free
 utility apps.
@@ -66,9 +66,9 @@ controlled deeper route/layout/backend additions:
 
 ```bash
 stylyf compose \
-  --base packages/stylyf-cli/examples/v0.4/composition.base.json \
-  --with packages/stylyf-cli/examples/v0.4/composition.ui.chunk.json \
-  --with packages/stylyf-cli/examples/v0.4/composition.backend.chunk.json \
+  --base packages/stylyf-cli/examples/v1.0/composition.base.json \
+  --with packages/stylyf-cli/examples/v1.0/composition.ui.chunk.json \
+  --with packages/stylyf-cli/examples/v1.0/composition.backend.chunk.json \
   --output ./stylyf.composed.json
 
 stylyf plan --spec ./stylyf.composed.json --resolved

@@ -37,7 +37,7 @@ npm --prefix "${ROOT_DIR}" run cli:build
 
 echo "Generating portable rich internal-tool app at ${APP_DIR}..."
 node "${ROOT_DIR}/packages/stylyf-cli/dist/bin.js" generate \
-  --spec "${ROOT_DIR}/packages/stylyf-cli/examples/v0.4/internal-tool.rich.json" \
+  --spec "${ROOT_DIR}/packages/stylyf-cli/examples/v1.0/internal-tool.rich.json" \
   --target "${APP_DIR}" \
   --no-install
 

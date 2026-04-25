@@ -58,6 +58,8 @@ function toSchemaColumn(field: ResourceFieldIR): DatabaseSchemaIR["columns"][num
     nullable: field.required === true ? false : true,
     primaryKey: field.primaryKey,
     unique: field.unique,
+    indexed: field.indexed,
+    default: field.default,
   };
 }
 
@@ -203,6 +205,63 @@ function deriveAttachmentSchemaTables(resource: ResourceIR): DatabaseSchemaIR[] 
   ];
 }
 
+function deriveMembershipSchemaTables(app: AppIR): DatabaseSchemaIR[] {
+  const memberships = app.policies?.memberships ?? [];
+  const needsMembershipTables = (app.resources ?? []).some(
+    resource =>
+      resource.ownership?.model === "workspace" ||
+      Object.values(resource.access ?? {}).some(access => access === "workspace-member"),
+  );
+
+  if (!needsMembershipTables) {
+    return [];
+  }
+
+  const membershipTables = memberships.length > 0
+    ? memberships
+    : [
+        {
+          table: "workspace_memberships",
+          userField: "user_id",
+          workspaceField: "workspace_id",
+          roleField: "role",
+        },
+      ];
+
+  const seen = new Set<string>();
+  return membershipTables
+    .filter(membership => {
+      if (seen.has(membership.table)) {
+        return false;
+      }
+      seen.add(membership.table);
+      return true;
+    })
+    .map(membership => ({
+      table: membership.table,
+      columns: [
+        {
+          name: "id",
+          type: "uuid",
+          primaryKey: true,
+        },
+        {
+          name: membership.userField,
+          type: "uuid",
+        },
+        {
+          name: membership.workspaceField,
+          type: "uuid",
+        },
+        {
+          name: membership.roleField,
+          type: "varchar",
+        },
+      ],
+      timestamps: true,
+    }));
+}
+
 function accessToAuth(access?: ResourceAccessPreset): AuthAccess {
   return access === undefined || access === "public" ? "public" : "user";
 }
@@ -250,8 +309,10 @@ export function materializeAppForGeneration(app: AppIR): AppIR {
 
   const existingSchema = app.database?.schema ?? [];
   const existingTables = new Set(existingSchema.map(table => table.table));
-  const derivedSchema = app.resources
-    .flatMap(resource => [deriveSchemaTable(resource), ...deriveAttachmentSchemaTables(resource)])
+  const derivedSchema = [
+    ...app.resources.flatMap(resource => [deriveSchemaTable(resource), ...deriveAttachmentSchemaTables(resource)]),
+    ...deriveMembershipSchemaTables(app),
+  ]
     .filter(table => !existingTables.has(table.table));
 
   const existingServer = app.server ?? [];
@@ -305,9 +366,101 @@ export function renderGeneratedResourcePolicyModule(app: AppIR) {
     ownership: resource.ownership ?? { model: "none" },
     access: resource.access ?? {},
   }));
+  const rolePolicies = app.policies?.roles ?? [];
+  const membershipPolicies = app.policies?.memberships ?? [];
+  const actorPolicies = app.policies?.actors ?? [];
+  const usesPortableDb = app.database?.provider !== "supabase";
+  const needsMembershipTables = (app.resources ?? []).some(
+    resource =>
+      resource.ownership?.model === "workspace" ||
+      Object.values(resource.access ?? {}).some(access => access === "workspace-member"),
+  );
+  const portablePolicyHelpers =
+    usesPortableDb && membershipPolicies.length > 0 && needsMembershipTables
+      ? [
+          'import { and, eq } from "drizzle-orm";',
+          'import { db, schema } from "~/lib/db";',
+          "",
+        ]
+      : [];
+  const portableHelperFunctions =
+    usesPortableDb && membershipPolicies.length > 0 && needsMembershipTables
+      ? [
+          "function camelCase(value: string) {",
+          "  return value",
+          "    .split(/[^a-zA-Z0-9]+/g)",
+          "    .filter(Boolean)",
+          "    .map((segment, index) =>",
+          "      index === 0 ? `${segment[0]?.toLowerCase() ?? \"\"}${segment.slice(1)}` : `${segment[0]?.toUpperCase() ?? \"\"}${segment.slice(1)}`,",
+          "    )",
+          "    .join(\"\");",
+          "}",
+          "",
+          "function resolveSchemaTable(tableName: string) {",
+          "  const table = (schema as Record<string, any>)[camelCase(tableName)];",
+          "  if (!table) throw new Error(`Policy table ${tableName} is not present in the generated database schema.`);",
+          "  return table;",
+          "}",
+          "",
+          "function membershipPolicy(name = \"workspace\") {",
+          "  const policy = membershipPolicies.find(entry => entry.name === name) ?? membershipPolicies[0];",
+          "  if (!policy) throw new Error(\"No membership policy is configured for this app.\");",
+          "  return policy;",
+          "}",
+          "",
+          "export async function requireWorkspaceMember(workspaceId: string, membershipName?: string) {",
+          "  const { userId } = await requireViewerIdentity();",
+          "  const policy = membershipPolicy(membershipName);",
+          "  const table = resolveSchemaTable(policy.table);",
+          "  const rows = await db",
+          "    .select()",
+          "    .from(table)",
+          "    .where(and(eq(table[policy.userField], userId), eq(table[policy.workspaceField], workspaceId)))",
+          "    .limit(1);",
+          "  if (rows.length === 0) throw new Error(\"Workspace membership is required for this action.\");",
+          "  return rows[0];",
+          "}",
+          "",
+          "export async function requireRole(role: string, options?: { workspaceId?: string; membership?: string }) {",
+          "  const { userId } = await requireViewerIdentity();",
+          "  const policy = membershipPolicy(options?.membership);",
+          "  const table = resolveSchemaTable(policy.table);",
+          "  const predicates = [eq(table[policy.userField], userId), eq(table[policy.roleField], role)];",
+          "  if (options?.workspaceId) predicates.push(eq(table[policy.workspaceField], options.workspaceId));",
+          "  const rows = await db.select().from(table).where(and(...predicates)).limit(1);",
+          "  if (rows.length === 0) throw new Error(`Role ${role} is required for this action.`);",
+          "  return rows[0];",
+          "}",
+          "",
+          "export async function requireOwner(ownerId: string | null | undefined) {",
+          "  const { userId } = await requireViewerIdentity();",
+          "  if (!ownerId || ownerId !== userId) throw new Error(\"Resource ownership is required for this action.\");",
+          "  return { userId };",
+          "}",
+          "",
+        ]
+      : [
+          "export async function requireWorkspaceMember(_workspaceId: string, _membershipName?: string) {",
+          "  await requireViewerIdentity();",
+          "  throw new Error(\"Workspace membership helpers require a generated membership policy table.\");",
+          "}",
+          "",
+          "export async function requireRole(role: string, _options?: { workspaceId?: string; membership?: string }) {",
+          "  await requireViewerIdentity();",
+          "  throw new Error(`Role ${role} is not wired to a generated membership policy table.`);",
+          "}",
+          "",
+          "export async function requireOwner(ownerId: string | null | undefined) {",
+          "  const { userId } = await requireViewerIdentity();",
+          "  if (!ownerId || ownerId !== userId) throw new Error(\"Resource ownership is required for this action.\");",
+          "  return { userId };",
+          "}",
+          "",
+        ];
 
   return [
     'import { getSession, requireSession } from "~/lib/server/guards";',
+    ...portablePolicyHelpers,
     "",
     "function extractUserId(session: unknown) {",
     "  if (!session || typeof session !== \"object\") return null;",
@@ -316,6 +469,12 @@ export function renderGeneratedResourcePolicyModule(app: AppIR) {
     "}",
     "",
     "export const resourcePolicies = " + JSON.stringify(policies, null, 2) + " as const;",
+    "",
+    "export const rolePolicies = " + JSON.stringify(rolePolicies, null, 2) + " as const;",
+    "",
+    "export const membershipPolicies = " + JSON.stringify(membershipPolicies, null, 2) + " as const;",
+    "",
+    "export const actorPolicies = " + JSON.stringify(actorPolicies, null, 2) + " as const;",
     "",
     "export async function getViewerIdentity() {",
     "  const session = await getSession();",
@@ -331,6 +490,7 @@ export function renderGeneratedResourcePolicyModule(app: AppIR) {
     "  return { session, userId };",
     "}",
     "",
+    ...portableHelperFunctions,
   ].join("\n");
 }
 
@@ -410,6 +570,10 @@ function sqlQuoted(value: string) {
   return `"${value}"`;
 }
 
+function sqlLiteral(value: string) {
+  return `'${value.replace(/'/g, "''")}'`;
+}
+
 function sqlOwnershipExpression(resource: ResourceIR) {
   const ownerField = resource.ownership?.ownerField ?? "owner_id";
   return `(select auth.uid()) is not null and (select auth.uid()) = ${sqlQuoted(ownerField)}`;
@@ -425,18 +589,47 @@ function sqlWorkspaceMemberExpression(resource: ResourceIR) {
   return `${sqlQuoted(workspaceField)} in (select ${sqlQuoted(workspaceField)} from public.${sqlQuoted(membershipTable)} where ${sqlQuoted("user_id")} = (select auth.uid()))`;
 }
 
-function sqlReservedAdminExpression() {
+function sqlRoleExpression(app: AppIR, resource: ResourceIR, actor: "admin" | "editor") {
+  const actorPolicy = app.policies?.actors.find(entry => entry.actor === actor);
+  const membershipPolicy = app.policies?.memberships.find(entry => entry.name === actorPolicy?.membership) ?? app.policies?.memberships[0];
+
+  if (!actorPolicy?.role || !membershipPolicy) {
+    return "false";
+  }
+
+  const tableName = membershipPolicy.table;
+  const workspaceField = resource.ownership?.workspaceField ?? membershipPolicy.workspaceField;
+  const workspacePredicate =
+    resource.ownership?.model === "workspace"
+      ? ` and membership.${sqlQuoted(membershipPolicy.workspaceField)} = ${sqlQuoted(workspaceField)}`
+      : "";
+
+  return [
+    "exists (",
+    `select 1 from public.${sqlQuoted(tableName)} as membership`,
+    `where membership.${sqlQuoted(membershipPolicy.userField)} = (select auth.uid())`,
+    `and membership.${sqlQuoted(membershipPolicy.roleField)} = ${sqlLiteral(actorPolicy.role)}`,
+    workspacePredicate,
+    ")",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function sqlReservedAdminExpression(app: AppIR, resource: ResourceIR) {
+  const expression = sqlRoleExpression(app, resource, "admin");
+  if (expression !== "false") return expression;
   return "false";
 }
 
-function sqlReadPredicate(resource: ResourceIR, access: ResourceAccessPreset) {
+function sqlReadPredicate(app: AppIR, resource: ResourceIR, access: ResourceAccessPreset) {
   switch (access) {
     case "public":
       return "true";
     case "user":
       return "(select auth.uid()) is not null";
     case "admin":
-      return sqlReservedAdminExpression();
+      return sqlReservedAdminExpression(app, resource);
     case "owner":
       return sqlOwnershipExpression(resource);
     case "owner-or-public":
@@ -447,6 +640,7 @@ function sqlReadPredicate(resource: ResourceIR, access: ResourceAccessPreset) {
 }
 
 function sqlWriteCheck(
+  app: AppIR,
   resource: ResourceIR,
   access: ResourceAccessPreset,
   options?: {
@@ -467,13 +661,49 @@ function sqlWriteCheck(
     case "user":
       return "(select auth.uid()) is not null";
     case "admin":
-      return sqlReservedAdminExpression();
+      return sqlReservedAdminExpression(app, resource);
     case "owner":
     case "owner-or-public":
       return sqlOwnershipExpression(resource);
     case "workspace-member":
       return sqlWorkspaceMemberExpression(resource);
   }
+}
+
+function renderGeneratedSupabaseMembershipPoliciesSql(app: AppIR) {
+  const needsMembershipTables = (app.resources ?? []).some(
+    resource =>
+      resource.ownership?.model === "workspace" ||
+      Object.values(resource.access ?? {}).some(access => access === "workspace-member" || access === "admin"),
+  );
+  const memberships = app.policies?.memberships ?? [];
+
+  if (!needsMembershipTables || memberships.length === 0) {
+    return [];
+  }
+
+  return memberships.flatMap(membership => {
+    const table = sqlQuoted(membership.table);
+    const userField = sqlQuoted(membership.userField);
+    const workspaceField = sqlQuoted(membership.workspaceField);
+    const roleField = sqlQuoted(membership.roleField);
+
+    return [
+      `alter table if exists public.${table} enable row level security;`,
+      `create index if not exists ${sqlQuoted(`${membership.table}_${membership.userField}_idx`)} on public.${table} (${userField});`,
+      `create index if not exists ${sqlQuoted(`${membership.table}_${membership.workspaceField}_idx`)} on public.${table} (${workspaceField});`,
+      `create index if not exists ${sqlQuoted(`${membership.table}_${membership.roleField}_idx`)} on public.${table} (${roleField});`,
+      `drop policy if exists ${sqlQuoted(`${membership.table}_select_own`)} on public.${table};`,
+      `create policy ${sqlQuoted(`${membership.table}_select_own`)} on public.${table} for select to authenticated using (${userField} = (select auth.uid()));`,
+      `drop policy if exists ${sqlQuoted(`${membership.table}_insert_reserved`)} on public.${table};`,
+      `create policy ${sqlQuoted(`${membership.table}_insert_reserved`)} on public.${table} for insert to authenticated with check (false);`,
+      `drop policy if exists ${sqlQuoted(`${membership.table}_update_reserved`)} on public.${table};`,
+      `create policy ${sqlQuoted(`${membership.table}_update_reserved`)} on public.${table} for update to authenticated using (false) with check (false);`,
+      `drop policy if exists ${sqlQuoted(`${membership.table}_delete_reserved`)} on public.${table};`,
+      `create policy ${sqlQuoted(`${membership.table}_delete_reserved`)} on public.${table} for delete to authenticated using (false);`,
+      "",
+    ];
+  });
 }
 
 export function renderGeneratedSupabasePoliciesSql(app: AppIR) {
@@ -497,13 +727,13 @@ export function renderGeneratedSupabasePoliciesSql(app: AppIR) {
     return [
       `alter table if exists public.${sqlQuoted(tableName)} enable row level security;`,
       `drop policy if exists ${sqlQuoted(`${tableName}_select`)} on public.${sqlQuoted(tableName)};`,
-      `create policy ${sqlQuoted(`${tableName}_select`)} on public.${sqlQuoted(tableName)} for select to anon, authenticated using (${sqlReadPredicate(resource, selectAccess)});`,
+      `create policy ${sqlQuoted(`${tableName}_select`)} on public.${sqlQuoted(tableName)} for select to anon, authenticated using (${sqlReadPredicate(app, resource, selectAccess)});`,
       `drop policy if exists ${sqlQuoted(`${tableName}_insert`)} on public.${sqlQuoted(tableName)};`,
-      `create policy ${sqlQuoted(`${tableName}_insert`)} on public.${sqlQuoted(tableName)} for insert to authenticated with check (${sqlWriteCheck(resource, createAccess, { operation: "create" })});`,
+      `create policy ${sqlQuoted(`${tableName}_insert`)} on public.${sqlQuoted(tableName)} for insert to authenticated with check (${sqlWriteCheck(app, resource, createAccess, { operation: "create" })});`,
       `drop policy if exists ${sqlQuoted(`${tableName}_update`)} on public.${sqlQuoted(tableName)};`,
-      `create policy ${sqlQuoted(`${tableName}_update`)} on public.${sqlQuoted(tableName)} for update to authenticated using (${sqlWriteCheck(resource, updateAccess, { operation: "update" })}) with check (${sqlWriteCheck(resource, updateAccess, { operation: "update" })});`,
+      `create policy ${sqlQuoted(`${tableName}_update`)} on public.${sqlQuoted(tableName)} for update to authenticated using (${sqlWriteCheck(app, resource, updateAccess, { operation: "update" })}) with check (${sqlWriteCheck(app, resource, updateAccess, { operation: "update" })});`,
       `drop policy if exists ${sqlQuoted(`${tableName}_delete`)} on public.${sqlQuoted(tableName)};`,
-      `create policy ${sqlQuoted(`${tableName}_delete`)} on public.${sqlQuoted(tableName)} for delete to authenticated using (${sqlWriteCheck(resource, deleteAccess, { operation: "delete" })});`,
+      `create policy ${sqlQuoted(`${tableName}_delete`)} on public.${sqlQuoted(tableName)} for delete to authenticated using (${sqlWriteCheck(app, resource, deleteAccess, { operation: "delete" })});`,
       "",
     ];
   });
@@ -511,8 +741,10 @@ export function renderGeneratedSupabasePoliciesSql(app: AppIR) {
   return [
     "-- Generated by Stylyf CLI",
     "-- Apply this alongside supabase/schema.sql for resource-driven row level security defaults.",
-    "-- These policies are intentionally broad and should be tightened further for production-specific needs.",
+    "-- Membership tables are readable by their own users but write-locked by default.",
+    "-- App-owned admin membership provisioning should happen through trusted server code or Supabase dashboard operations.",
     "",
+    ...renderGeneratedSupabaseMembershipPoliciesSql(app),
     ...statements,
   ].join("\n");
 }

@@ -41,7 +41,7 @@ export function renderSecurityNotesMarkdown(plan: GenerationPlan) {
     "",
     "## Defaults",
     "",
-    "- secrets are read server-side through `src/lib/env.ts`",
+    "- secrets are read server-side through `src/lib/env.server.ts` and re-exported from `src/lib/env.ts`",
     "- browser code only receives public/publishable values",
     "- object storage uses presigned URLs; raw bucket credentials stay server-side",
     "- generated route protection is explicit in middleware when auth-protected routes exist",
@@ -70,7 +70,7 @@ export function renderLocalSmokeMarkdown(plan: GenerationPlan) {
   if (plan.postGenerateSteps.includes("db:generate")) {
     commands.push("npm run db:generate");
   }
-  commands.push("npm run check", "npm run build");
+  commands.push("npm run env:check", "npm run check", "npm run build");
 
   return [
     "# Local Smoke",

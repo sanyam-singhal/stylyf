@@ -19,6 +19,13 @@ export function renderGeneratedPackageJson(app: AppIR) {
     start: "vinxi start",
     preview: "vinxi preview",
     check: "tsc --noEmit",
+    test: "npm run test:types && npm run test:smoke",
+    "test:types": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:smoke": "playwright test tests/smoke",
+    "env:check": "tsx src/lib/env.check.ts",
+    seed: "tsx scripts/seed.ts",
+    preflight: "npm run env:check && npm run check",
   };
 
   const dependencies: Record<string, string> = {
@@ -35,8 +42,10 @@ export function renderGeneratedPackageJson(app: AppIR) {
 
   const devDependencies: Record<string, string> = {
     "@tailwindcss/postcss": "^4.2.2",
+    "@playwright/test": "^1.57.0",
     "@types/node": "^25.6.0",
     tailwindcss: "^4.2.2",
+    tsx: "^4.21.0",
     typescript: "^5.9.3",
   };
 
@@ -148,12 +157,153 @@ export function renderGeneratedGitignore() {
   return [".output", ".vinxi", "dist", "node_modules", "", ".DS_Store", "Thumbs.db", ""].join("\n");
 }
 
+function renderGeneratedPlaywrightConfig() {
+  return [
+    'import { defineConfig, devices } from "@playwright/test";',
+    "",
+    "export default defineConfig({",
+    '  testDir: "./tests",',
+    "  timeout: 30_000,",
+    "  expect: { timeout: 5_000 },",
+    "  fullyParallel: true,",
+    "  reporter: process.env.CI ? \"github\" : \"list\",",
+    "  use: {",
+    '    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000",',
+    "    trace: \"on-first-retry\",",
+    "  },",
+    "  projects: [",
+    '    { name: "chromium", use: { ...devices["Desktop Chrome"] } },',
+    "  ],",
+    "  webServer: {",
+    '    command: "npm run dev -- --host 127.0.0.1",',
+    '    url: "http://127.0.0.1:3000",',
+    "    reuseExistingServer: !process.env.CI,",
+    "    timeout: 120_000,",
+    "  },",
+    "});",
+    "",
+  ].join("\n");
+}
+
+function renderGeneratedRouteSmokeTest(app: AppIR) {
+  const routes = app.routes.map(route => ({
+    path: route.path.replace(/:([A-Za-z0-9_]+)/g, "sample-$1"),
+    access: route.access ?? "user",
+    title: route.title ?? route.path,
+  }));
+
+  return [
+    'import { expect, test } from "@playwright/test";',
+    "",
+    `const routes = ${JSON.stringify(routes, null, 2)} as const;`,
+    "",
+    "for (const route of routes) {",
+    "  test(`route ${route.path} responds without a server error`, async ({ page }) => {",
+    "    const response = await page.goto(route.path);",
+    "    expect(response?.status() ?? 0).toBeLessThan(500);",
+    "    await expect(page.locator(\"body\")).toBeVisible();",
+    "  });",
+    "}",
+    "",
+  ].join("\n");
+}
+
+function renderGeneratedAuthSmokeTest(app: AppIR) {
+  if (!app.auth) {
+    return [
+      'import { test } from "@playwright/test";',
+      "",
+      'test("auth scaffold is not enabled", async () => {',
+      "  test.skip(true, \"This Stylyf spec did not request auth.\");",
+      "});",
+      "",
+    ].join("\n");
+  }
+
+  return [
+    'import { expect, test } from "@playwright/test";',
+    "",
+    'test("login route renders the generated auth form", async ({ page }) => {',
+    '  const response = await page.goto("/login");',
+    "  expect(response?.status() ?? 0).toBeLessThan(500);",
+    '  await expect(page.getByLabel("Email")).toBeVisible();',
+    '  await expect(page.getByLabel("Password")).toBeVisible();',
+    "});",
+    "",
+  ].join("\n");
+}
+
+function renderGeneratedResourceFormsSmokeTest(app: AppIR) {
+  const formRoutes = app.routes
+    .filter(route => route.page === "resource-create" || route.page === "resource-edit")
+    .map(route => ({
+      path: route.path.replace(/:([A-Za-z0-9_]+)/g, "sample-$1"),
+      page: route.page,
+      resource: route.resource ?? "resource",
+    }));
+
+  if (formRoutes.length === 0) {
+    return [
+      'import { test } from "@playwright/test";',
+      "",
+      'test("resource form scaffold is not enabled", async () => {',
+      "  test.skip(true, \"This Stylyf spec did not generate resource form routes.\");",
+      "});",
+      "",
+    ].join("\n");
+  }
+
+  return [
+    'import { expect, test } from "@playwright/test";',
+    "",
+    `const formRoutes = ${JSON.stringify(formRoutes, null, 2)} as const;`,
+    "",
+    "for (const route of formRoutes) {",
+    "  test(`resource form route ${route.path} responds without a server error`, async ({ page }) => {",
+    "    const response = await page.goto(route.path);",
+    "    expect(response?.status() ?? 0).toBeLessThan(500);",
+    "    await expect(page.locator(\"body\")).toBeVisible();",
+    "  });",
+    "}",
+    "",
+  ].join("\n");
+}
+
+function renderGeneratedTestFactories(app: AppIR) {
+  const resources = app.resources?.map(resource => ({
+    name: resource.name,
+    fields: resource.fields ?? [],
+  })) ?? [];
+
+  return [
+    `export const testResources = ${JSON.stringify(resources, null, 2)} as const;`,
+    "",
+    "export function uniqueTestEmail(prefix = \"stylyf\") {",
+    "  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}@example.test`;",
+    "}",
+    "",
+    "export function sampleRecord(overrides: Record<string, unknown> = {}) {",
+    "  return {",
+    '    title: "Generated smoke record",',
+    '    status: "draft",',
+    "    ...overrides,",
+    "  };",
+    "}",
+    "",
+  ].join("\n");
+}
+
 export async function writeProjectScaffold(app: AppIR, targetPath: string) {
   await writeGeneratedFile(`${targetPath}/package.json`, `${renderGeneratedPackageJson(app)}\n`);
   await writeGeneratedFile(`${targetPath}/app.config.ts`, renderGeneratedAppConfig(app));
   await writeGeneratedFile(`${targetPath}/postcss.config.mjs`, renderGeneratedPostcssConfig());
   await writeGeneratedFile(`${targetPath}/tsconfig.json`, `${renderGeneratedTsConfig()}\n`);
   await writeGeneratedFile(`${targetPath}/.gitignore`, renderGeneratedGitignore());
+  await writeGeneratedFile(`${targetPath}/playwright.config.ts`, renderGeneratedPlaywrightConfig());
+  await writeGeneratedFile(`${targetPath}/tests/smoke/routes.spec.ts`, renderGeneratedRouteSmokeTest(app));
+  await writeGeneratedFile(`${targetPath}/tests/smoke/auth.spec.ts`, renderGeneratedAuthSmokeTest(app));
+  await writeGeneratedFile(`${targetPath}/tests/smoke/resource-forms.spec.ts`, renderGeneratedResourceFormsSmokeTest(app));
+  await writeGeneratedFile(`${targetPath}/src/lib/test/factories.ts`, renderGeneratedTestFactories(app));
 }
 
 export async function installGeneratedProjectDependencies(targetPath: string) {

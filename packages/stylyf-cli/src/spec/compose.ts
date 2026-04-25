@@ -1,4 +1,4 @@
-import { validateSpecV04 } from "./validate.js";
+import { validateSpecV10 } from "./validate.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -216,5 +216,5 @@ export function composeSpecFragments(base: unknown, fragments: unknown[]) {
     return mergeRecords(current, fragment);
   }, base);
 
-  return validateSpecV04(composed);
+  return validateSpecV10(composed);
 }

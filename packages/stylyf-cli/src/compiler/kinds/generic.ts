@@ -1,9 +1,9 @@
 import type { ResourceIR } from "../generated-app.js";
 import type { KindExpansion } from "./common.js";
 import { singularTitle, slugify, titleFor } from "./common.js";
-import type { FlowSpec, ObjectSpec, StylyfSpecV04, SurfaceSpec } from "../../spec/types.js";
+import type { FlowSpec, ObjectSpec, StylyfSpecV10, SurfaceSpec } from "../../spec/types.js";
 
-function defaultObjects(spec: StylyfSpecV04): ObjectSpec[] {
+function defaultObjects(spec: StylyfSpecV10): ObjectSpec[] {
   if (spec.objects && spec.objects.length > 0) {
     return spec.objects;
   }
@@ -22,11 +22,11 @@ function defaultObjects(spec: StylyfSpecV04): ObjectSpec[] {
   ];
 }
 
-function defaultFlows(spec: StylyfSpecV04): FlowSpec[] {
+function defaultFlows(spec: StylyfSpecV10): FlowSpec[] {
   return spec.flows ?? [];
 }
 
-function defaultSurfaces(_spec: StylyfSpecV04, resources: ResourceIR[]): SurfaceSpec[] {
+function defaultSurfaces(_spec: StylyfSpecV10, resources: ResourceIR[]): SurfaceSpec[] {
   const resource = resources[0]?.name;
   return [
     { name: "Home", kind: resource ? "dashboard" : "landing", path: "/", audience: resource ? "user" : "public" },

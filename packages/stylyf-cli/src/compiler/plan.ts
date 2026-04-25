@@ -1,5 +1,5 @@
 import type { AppIR, RouteIR } from "./generated-app.js";
-import type { StylyfSpecV04 } from "../spec/types.js";
+import type { StylyfSpecV10 } from "../spec/types.js";
 
 function toRouteFileSegment(segment: string) {
   return segment.startsWith(":") ? `[${segment.slice(1)}]` : segment;
@@ -60,7 +60,7 @@ function backendSummary(app: AppIR) {
 export type GenerationPlan = {
   app: {
     name: string;
-    kind: StylyfSpecV04["app"]["kind"];
+    kind: StylyfSpecV10["app"]["kind"];
   };
   backend: ReturnType<typeof backendSummary>;
   resources: string[];
@@ -69,13 +69,14 @@ export type GenerationPlan = {
     path: string;
     page: string;
     resource?: string;
+    bindings: string[];
     file: string;
   }>;
   files: string[];
   postGenerateSteps: string[];
 };
 
-export function createGenerationPlan(spec: StylyfSpecV04, app: AppIR): GenerationPlan {
+export function createGenerationPlan(spec: StylyfSpecV10, app: AppIR): GenerationPlan {
   const files = new Set<string>([
     "package.json",
     "app.config.ts",
@@ -160,6 +161,17 @@ export function createGenerationPlan(spec: StylyfSpecV04, app: AppIR): Generatio
       path: route.path,
       page: route.page,
       resource: route.resource,
+      bindings: (route.bindings ?? []).map(binding =>
+        [
+          binding.kind,
+          binding.resource ? `resource:${binding.resource}` : undefined,
+          binding.workflow ? `workflow:${binding.workflow}` : undefined,
+          binding.transition ? `transition:${binding.transition}` : undefined,
+          binding.attachment ? `attachment:${binding.attachment}` : undefined,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      ),
       file: routeFilePath(route.path, app.routes),
     })),
     files: [...files].sort(),
@@ -169,7 +181,7 @@ export function createGenerationPlan(spec: StylyfSpecV04, app: AppIR): Generatio
 
 export function renderGenerationPlan(plan: GenerationPlan) {
   return [
-    "Stylyf v0.4 generation plan",
+    "Stylyf v1.0 generation plan",
     "",
     "App:",
     `  name: ${plan.app.name}`,
@@ -188,7 +200,10 @@ export function renderGenerationPlan(plan: GenerationPlan) {
     ...(plan.workflows.length > 0 ? plan.workflows.map(workflow => `  - ${workflow}`) : ["  - none"]),
     "",
     "Generated routes:",
-    ...plan.routes.map(route => `  - ${route.path} ${route.page}${route.resource ? ` (${route.resource})` : ""}`),
+    ...plan.routes.map(route => {
+      const bindingSummary = route.bindings.length > 0 ? ` bindings: ${route.bindings.join("; ")}` : "";
+      return `  - ${route.path} ${route.page}${route.resource ? ` (${route.resource})` : ""}${bindingSummary}`;
+    }),
     "",
     "Generated files:",
     ...plan.files.slice(0, 18).map(file => `  - ${file}`),

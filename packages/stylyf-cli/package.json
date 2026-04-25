@@ -1,6 +1,6 @@
 {
   "name": "@depths/stylyf-cli",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "Agent-operated scaffolding compiler for generating standalone SolidStart apps.",
   "license": "MIT",
   "author": "Depths AI",

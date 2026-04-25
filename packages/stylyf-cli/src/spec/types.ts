@@ -45,11 +45,47 @@ export type ApiRouteType = "json" | "webhook" | "presign-upload";
 export type ServerModuleType = "query" | "action";
 export type EnvExposure = "server" | "public";
 export type DatabaseColumnType = "text" | "varchar" | "integer" | "boolean" | "timestamp" | "jsonb" | "uuid";
+export type ApiSchemaPrimitive = "string" | "number" | "integer" | "boolean" | "json" | "uuid" | "email" | "url";
+export type ApiWebhookProvider = "generic" | "github" | "stripe" | "clerk" | "supabase";
+export type ApiRateLimitWindow = "minute" | "hour" | "day";
+export type BindingKind =
+  | "resource.list"
+  | "resource.detail"
+  | "resource.create"
+  | "resource.update"
+  | "workflow.transition"
+  | "attachment.lifecycle";
 
 export type ActorSpec = {
   name: string;
   kind?: ActorKind;
   description?: string;
+};
+
+export type RolePolicySpec = {
+  name: string;
+  description?: string;
+};
+
+export type MembershipPolicySpec = {
+  name?: string;
+  table?: string;
+  userField?: string;
+  workspaceField?: string;
+  roleField?: string;
+  roles?: string[];
+};
+
+export type ActorPolicySpec = {
+  actor: string;
+  role?: string;
+  membership?: string;
+};
+
+export type PolicySpec = {
+  roles?: RolePolicySpec[];
+  memberships?: MembershipPolicySpec[];
+  actors?: ActorPolicySpec[];
 };
 
 export type FieldSpec = {
@@ -58,6 +94,8 @@ export type FieldSpec = {
   type: FieldType;
   required?: boolean;
   unique?: boolean;
+  indexed?: boolean;
+  default?: string | number | boolean;
   options?: string[];
 };
 
@@ -119,11 +157,13 @@ export type ComponentSpec = {
   variant?: string;
   props?: Record<string, unknown>;
   items?: Record<string, unknown>[];
+  bindings?: BindingSpec[];
 };
 
 export type LayoutSpec = {
   layout: LayoutNodeId;
   props?: Record<string, string | number | boolean>;
+  bindings?: BindingSpec[];
   children?: Array<LayoutSpec | ComponentSpec | string>;
 };
 
@@ -131,7 +171,19 @@ export type SectionSpec = {
   id?: string;
   layout: LayoutNodeId;
   props?: Record<string, string | number | boolean>;
+  bindings?: BindingSpec[];
   children: Array<LayoutSpec | ComponentSpec | string>;
+};
+
+export type BindingSpec = {
+  name?: string;
+  kind: BindingKind;
+  resource?: string;
+  workflow?: string;
+  transition?: string;
+  attachment?: string;
+  section?: string;
+  component?: string;
 };
 
 export type SurfaceSpec = {
@@ -143,6 +195,8 @@ export type SurfaceSpec = {
   shell?: AppShellId;
   page?: PageShellId;
   title?: string;
+  bindings?: BindingSpec[];
+  metadata?: RouteMetadataSpec;
   sections?: SectionSpec[];
 };
 
@@ -153,7 +207,22 @@ export type RouteSpec = {
   resource?: string;
   title?: string;
   access?: AuthAccess;
+  bindings?: BindingSpec[];
+  metadata?: RouteMetadataSpec;
   sections?: SectionSpec[];
+};
+
+export type RouteMetadataSpec = {
+  title?: string;
+  description?: string;
+  canonical?: string;
+  robots?: "index" | "noindex";
+  openGraph?: {
+    title?: string;
+    description?: string;
+    image?: string;
+  };
+  structuredData?: Record<string, unknown>;
 };
 
 export type EnvVarSpec = {
@@ -172,8 +241,50 @@ export type DatabaseSchemaSpec = {
     nullable?: boolean;
     primaryKey?: boolean;
     unique?: boolean;
+    indexed?: boolean;
+    default?: string | number | boolean;
   }>;
   timestamps?: boolean;
+  softDelete?: boolean;
+};
+
+export type ApiSchemaFieldSpec = {
+  type: ApiSchemaPrimitive;
+  required?: boolean;
+  array?: boolean;
+  enum?: string[];
+  min?: number;
+  max?: number;
+};
+
+export type ApiSchemaObjectSpec = Record<string, ApiSchemaFieldSpec>;
+
+export type ApiRequestContractSpec = {
+  body?: ApiSchemaObjectSpec;
+  query?: ApiSchemaObjectSpec;
+  params?: ApiSchemaObjectSpec;
+  headers?: ApiSchemaObjectSpec;
+};
+
+export type ApiResponseContractSpec = {
+  status?: number;
+  body?: ApiSchemaObjectSpec;
+};
+
+export type ApiRateLimitSpec = {
+  window: ApiRateLimitWindow;
+  max: number;
+};
+
+export type ApiIdempotencySpec = {
+  required?: boolean;
+  header?: string;
+};
+
+export type ApiWebhookSpec = {
+  provider?: ApiWebhookProvider;
+  signatureHeader?: string;
+  secretEnv?: string;
 };
 
 export type ApiRouteSpec = {
@@ -182,6 +293,12 @@ export type ApiRouteSpec = {
   type: ApiRouteType;
   name: string;
   auth?: AuthAccess;
+  request?: ApiRequestContractSpec;
+  response?: ApiResponseContractSpec;
+  rateLimit?: ApiRateLimitSpec;
+  idempotency?: ApiIdempotencySpec;
+  webhook?: ApiWebhookSpec;
+  draft?: boolean;
 };
 
 export type ServerModuleSpec = {
@@ -191,8 +308,35 @@ export type ServerModuleSpec = {
   auth?: AuthAccess;
 };
 
-export type StylyfSpecV04 = {
-  version: "0.4";
+export type FixtureSpec = {
+  resource: string;
+  rows: Record<string, unknown>[];
+};
+
+export type NavItemSpec = {
+  label: string;
+  href: string;
+  group?: string;
+  auth?: AuthAccess;
+  role?: string;
+  command?: boolean;
+};
+
+export type NavigationSpec = {
+  primary?: NavItemSpec[];
+  secondary?: NavItemSpec[];
+  userMenu?: NavItemSpec[];
+  commandMenu?: NavItemSpec[];
+};
+
+export type DeploymentSpec = {
+  profile: "none" | "node" | "docker" | "systemd-caddy";
+  domain?: string;
+  serviceName?: string;
+};
+
+export type StylyfSpecV10 = {
+  version: "1.0";
   app: {
     name: string;
     kind: AppKind;
@@ -212,6 +356,12 @@ export type StylyfSpecV04 = {
   };
   media?: {
     mode: MediaMode;
+    maxFileSizeBytes?: number;
+    allowedContentTypes?: string[];
+    keyPrefix?: string;
+    presignExpiresSeconds?: number;
+    objectPolicy?: "private" | "public";
+    deleteMode?: "soft" | "hard";
   };
   experience?: {
     theme?: "amber" | "emerald" | "pearl" | "opal";
@@ -221,10 +371,14 @@ export type StylyfSpecV04 = {
     radius?: "edge" | "trim" | "soft" | "mellow";
   };
   actors?: ActorSpec[];
+  policies?: PolicySpec;
   objects?: ObjectSpec[];
   flows?: FlowSpec[];
   surfaces?: SurfaceSpec[];
   routes?: RouteSpec[];
   apis?: ApiRouteSpec[];
   server?: ServerModuleSpec[];
+  fixtures?: FixtureSpec[];
+  navigation?: NavigationSpec;
+  deployment?: DeploymentSpec;
 };

@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { appKinds, backendModes, mediaModes } from "../spec/schema.js";
 import type { AppKind, BackendMode, MediaMode } from "../spec/types.js";
 import { createSpecPreset } from "../spec/presets.js";
-import { validateSpecV04 } from "../spec/validate.js";
+import { validateSpecV10 } from "../spec/validate.js";
 
 function isOneOf<T extends readonly string[]>(value: string | undefined, allowed: T): value is T[number] {
   return typeof value === "string" && allowed.includes(value);
@@ -63,14 +63,14 @@ export async function runNewCommand(args: string[]) {
     return 1;
   }
 
-  const spec = validateSpecV04(createSpecPreset({ kind: kindArg as AppKind, name, backend, media }));
+  const spec = validateSpecV10(createSpecPreset({ kind: kindArg as AppKind, name, backend, media }));
   const resolvedOutputPath = resolve(process.cwd(), outputPath);
   await mkdir(dirname(resolvedOutputPath), { recursive: true });
   await writeFile(resolvedOutputPath, `${JSON.stringify(spec, null, 2)}\n`);
 
   process.stdout.write(
     [
-      `Created Stylyf v0.4 spec at ${resolvedOutputPath}`,
+      `Created Stylyf v1.0 spec at ${resolvedOutputPath}`,
       `  kind: ${spec.app.kind}`,
       `  backend: ${spec.backend.mode}`,
       `  media: ${spec.media?.mode ?? "none"}`,

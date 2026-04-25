@@ -1,10 +1,14 @@
 import { resolve } from "node:path";
+import { expandSpecToGeneratedApp } from "../compiler/expand.js";
+import { createGenerationPlan } from "../compiler/plan.js";
 import { generateFromSpec } from "../generators/generate.js";
+import { readSpecV10 } from "../spec/read.js";
 
 export async function runGenerateCommand(args: string[]) {
   let specPath: string | undefined;
   let targetPath: string | undefined;
   let install = true;
+  let dryRun = false;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -26,9 +30,15 @@ export async function runGenerateCommand(args: string[]) {
       continue;
     }
 
+    if (arg === "--dry-run") {
+      dryRun = true;
+      install = false;
+      continue;
+    }
+
     if (arg === "--ir" || arg === "--print-resolved" || arg === "--write-resolved") {
       process.stderr.write(
-        "Stylyf v0.4 no longer accepts --ir fragments. Use --spec stylyf.spec.json. Run `stylyf intro --topic spec` for the v0.4 DSL.\n",
+        "Stylyf v1.0 no longer accepts --ir fragments. Use --spec stylyf.spec.json. Run `stylyf intro --topic spec` for the v1.0 DSL.\n",
       );
       return 1;
     }
@@ -45,6 +55,28 @@ export async function runGenerateCommand(args: string[]) {
   }
 
   const resolvedTargetPath = resolve(process.cwd(), targetPath);
+  if (dryRun) {
+    const { spec } = await readSpecV10(specPath);
+    const app = expandSpecToGeneratedApp(spec);
+    const plan = createGenerationPlan(spec, app);
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          dryRun: true,
+          target: resolvedTargetPath,
+          install,
+          routes: plan.routes.map(route => route.file),
+          apiRoutes: app.apis?.map(api => api.path) ?? [],
+          resources: app.resources?.map(resource => resource.name) ?? [],
+          deployment: app.deployment?.profile ?? "none",
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return 0;
+  }
+
   const result = await generateFromSpec(specPath, resolvedTargetPath, { install });
 
   process.stdout.write(

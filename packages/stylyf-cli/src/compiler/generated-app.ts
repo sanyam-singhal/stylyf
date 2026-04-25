@@ -9,8 +9,18 @@ export type AuthProvider = "better-auth" | "supabase";
 export type StorageProvider = "s3";
 export type ApiRouteMethod = "GET" | "POST" | "PATCH" | "DELETE";
 export type ApiRouteType = "json" | "webhook" | "presign-upload";
+export type ApiSchemaPrimitive = "string" | "number" | "integer" | "boolean" | "json" | "uuid" | "email" | "url";
+export type ApiWebhookProvider = "generic" | "github" | "stripe" | "clerk" | "supabase";
+export type ApiRateLimitWindow = "minute" | "hour" | "day";
 export type ServerModuleType = "query" | "action";
 export type AuthAccess = "public" | "user";
+export type BindingKind =
+  | "resource.list"
+  | "resource.detail"
+  | "resource.create"
+  | "resource.update"
+  | "workflow.transition"
+  | "attachment.lifecycle";
 
 export type AppShellId = "sidebar-app" | "topbar-app" | "docs-shell" | "marketing-shell";
 export type PageShellId =
@@ -64,7 +74,35 @@ export type RouteIR = {
   resource?: string;
   title?: string;
   access?: AuthAccess;
+  bindings?: BindingIR[];
+  metadata?: RouteMetadataIR;
   sections: SectionIR[];
+};
+
+export type RouteMetadataIR = {
+  title?: string;
+  description?: string;
+  canonical?: string;
+  robots?: "index" | "noindex";
+  openGraph?: {
+    title?: string;
+    description?: string;
+    image?: string;
+  };
+  structuredData?: Record<string, unknown>;
+};
+
+export type BindingIR = {
+  name?: string;
+  kind: BindingKind;
+  resource?: string;
+  workflow?: string;
+  transition?: string;
+  attachment?: string;
+  source?: {
+    section?: string;
+    component?: string;
+  };
 };
 
 export type EnvVarIR = {
@@ -109,8 +147,11 @@ export type DatabaseSchemaIR = {
     nullable?: boolean;
     primaryKey?: boolean;
     unique?: boolean;
+    indexed?: boolean;
+    default?: string | number | boolean;
   }>;
   timestamps?: boolean;
+  softDelete?: boolean;
 };
 
 export type DatabaseIR = {
@@ -126,6 +167,7 @@ export type ResourceFieldIR = {
   required?: boolean;
   unique?: boolean;
   indexed?: boolean;
+  default?: string | number | boolean;
   primaryKey?: boolean;
   enumValues?: string[];
 };
@@ -174,6 +216,32 @@ export type ResourceIR = {
   workflow?: string;
 };
 
+export type RolePolicyIR = {
+  name: string;
+  description?: string;
+};
+
+export type MembershipPolicyIR = {
+  name: string;
+  table: string;
+  userField: string;
+  workspaceField: string;
+  roleField: string;
+  roles: string[];
+};
+
+export type ActorPolicyIR = {
+  actor: string;
+  role?: string;
+  membership?: string;
+};
+
+export type PolicyIR = {
+  roles: RolePolicyIR[];
+  memberships: MembershipPolicyIR[];
+  actors: ActorPolicyIR[];
+};
+
 export type WorkflowTransitionIR = {
   name: string;
   from: string | string[];
@@ -213,6 +281,12 @@ export type StorageIR = {
   provider: StorageProvider;
   mode?: "presigned-put";
   bucketAlias?: string;
+  maxFileSizeBytes?: number;
+  allowedContentTypes?: string[];
+  keyPrefix?: string;
+  presignExpiresSeconds?: number;
+  objectPolicy?: "private" | "public";
+  deleteMode?: "soft" | "hard";
 };
 
 export type ApiRouteIR = {
@@ -221,6 +295,51 @@ export type ApiRouteIR = {
   type: ApiRouteType;
   name: string;
   auth?: AuthAccess;
+  request?: ApiRequestContractIR;
+  response?: ApiResponseContractIR;
+  rateLimit?: ApiRateLimitIR;
+  idempotency?: ApiIdempotencyIR;
+  webhook?: ApiWebhookIR;
+  draft?: boolean;
+};
+
+export type ApiSchemaFieldIR = {
+  type: ApiSchemaPrimitive;
+  required?: boolean;
+  array?: boolean;
+  enum?: string[];
+  min?: number;
+  max?: number;
+};
+
+export type ApiSchemaObjectIR = Record<string, ApiSchemaFieldIR>;
+
+export type ApiRequestContractIR = {
+  body?: ApiSchemaObjectIR;
+  query?: ApiSchemaObjectIR;
+  params?: ApiSchemaObjectIR;
+  headers?: ApiSchemaObjectIR;
+};
+
+export type ApiResponseContractIR = {
+  status?: number;
+  body?: ApiSchemaObjectIR;
+};
+
+export type ApiRateLimitIR = {
+  window: ApiRateLimitWindow;
+  max: number;
+};
+
+export type ApiIdempotencyIR = {
+  required?: boolean;
+  header?: string;
+};
+
+export type ApiWebhookIR = {
+  provider?: ApiWebhookProvider;
+  signatureHeader?: string;
+  secretEnv?: string;
 };
 
 export type ServerModuleIR = {
@@ -230,6 +349,33 @@ export type ServerModuleIR = {
   auth?: AuthAccess;
 };
 
+export type FixtureIR = {
+  resource: string;
+  rows: Record<string, unknown>[];
+};
+
+export type NavItemIR = {
+  label: string;
+  href: string;
+  group?: string;
+  auth?: AuthAccess;
+  role?: string;
+  command?: boolean;
+};
+
+export type NavigationIR = {
+  primary: NavItemIR[];
+  secondary: NavItemIR[];
+  userMenu: NavItemIR[];
+  commandMenu: NavItemIR[];
+};
+
+export type DeploymentIR = {
+  profile: "none" | "node" | "docker" | "systemd-caddy";
+  domain?: string;
+  serviceName?: string;
+};
+
 export type AppIR = {
   name: string;
   shell: AppShellId;
@@ -237,10 +383,14 @@ export type AppIR = {
   routes: RouteIR[];
   env?: EnvIR;
   database?: DatabaseIR;
+  policies?: PolicyIR;
   resources?: ResourceIR[];
   workflows?: WorkflowIR[];
   auth?: AuthIR;
   storage?: StorageIR;
   apis?: ApiRouteIR[];
   server?: ServerModuleIR[];
+  fixtures?: FixtureIR[];
+  navigation?: NavigationIR;
+  deployment?: DeploymentIR;
 };

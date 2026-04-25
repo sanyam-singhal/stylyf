@@ -1,10 +1,14 @@
 import type {
   ApiRouteMethod,
   ApiRouteType,
+  ApiRateLimitWindow,
+  ApiSchemaPrimitive,
+  ApiWebhookProvider,
   AppKind,
   AppShellId,
   AuthAccess,
   BackendMode,
+  BindingKind,
   DatabaseColumnType,
   EnvExposure,
   FieldType,
@@ -77,6 +81,17 @@ export const relationKinds = ["belongs-to", "has-many", "many-to-many"] as const
 export const workflowNotificationAudiences = ["owner", "workspace", "watchers", "admins"] as const satisfies readonly WorkflowNotificationAudience[];
 export const apiRouteMethods = ["GET", "POST", "PATCH", "DELETE"] as const satisfies readonly ApiRouteMethod[];
 export const apiRouteTypes = ["json", "webhook", "presign-upload"] as const satisfies readonly ApiRouteType[];
+export const apiSchemaPrimitives = ["string", "number", "integer", "boolean", "json", "uuid", "email", "url"] as const satisfies readonly ApiSchemaPrimitive[];
+export const apiWebhookProviders = ["generic", "github", "stripe", "clerk", "supabase"] as const satisfies readonly ApiWebhookProvider[];
+export const apiRateLimitWindows = ["minute", "hour", "day"] as const satisfies readonly ApiRateLimitWindow[];
 export const serverModuleTypes = ["query", "action"] as const satisfies readonly ServerModuleType[];
 export const envExposures = ["server", "public"] as const satisfies readonly EnvExposure[];
 export const databaseColumnTypes = ["text", "varchar", "integer", "boolean", "timestamp", "jsonb", "uuid"] as const satisfies readonly DatabaseColumnType[];
+export const bindingKinds = [
+  "resource.list",
+  "resource.detail",
+  "resource.create",
+  "resource.update",
+  "workflow.transition",
+  "attachment.lifecycle",
+] as const satisfies readonly BindingKind[];

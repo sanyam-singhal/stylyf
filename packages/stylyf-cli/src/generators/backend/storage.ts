@@ -1,4 +1,15 @@
-export function renderGeneratedStorageModule() {
+import type { AppIR } from "../../compiler/generated-app.js";
+
+export function renderGeneratedStorageModule(app: AppIR) {
+  const policy = {
+    maxFileSizeBytes: app.storage?.maxFileSizeBytes ?? 25 * 1024 * 1024,
+    allowedContentTypes: app.storage?.allowedContentTypes ?? [],
+    keyPrefix: app.storage?.keyPrefix ?? "uploads",
+    presignExpiresSeconds: app.storage?.presignExpiresSeconds ?? 900,
+    objectPolicy: app.storage?.objectPolicy ?? "private",
+    deleteMode: app.storage?.deleteMode ?? "hard",
+  };
+
   return [
     'import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";',
     'import { getSignedUrl } from "@aws-sdk/s3-request-presigner";',
@@ -7,8 +18,23 @@ export function renderGeneratedStorageModule() {
     "export type UploadIntent = {",
     "  key: string;",
     "  contentType: string;",
+    "  fileSize?: number;",
     "  expiresIn?: number;",
     "};",
+    "",
+    `export const storagePolicy = ${JSON.stringify(policy, null, 2)} as const;`,
+    "",
+    "function assertUploadAllowed(input: UploadIntent) {",
+    "  if (input.fileSize !== undefined && input.fileSize > storagePolicy.maxFileSizeBytes) {",
+    "    throw new Error(`File exceeds max upload size of ${storagePolicy.maxFileSizeBytes} bytes.`);",
+    "  }",
+    "  if (storagePolicy.allowedContentTypes.length > 0 && !storagePolicy.allowedContentTypes.includes(input.contentType)) {",
+    "    throw new Error(`Content type ${input.contentType} is not allowed by storage policy.`);",
+    "  }",
+    "  if (!input.key.startsWith(`${storagePolicy.keyPrefix}/`)) {",
+    "    throw new Error(`Object key must start with ${storagePolicy.keyPrefix}/.`);",
+    "  }",
+    "}",
     "",
     "function parseForcePathStyle(value?: string) {",
     '  return value === "true" || value === "1";',
@@ -56,8 +82,9 @@ export function renderGeneratedStorageModule() {
     "}",
     "",
     "export async function createPresignedUpload(input: UploadIntent) {",
+    "  assertUploadAllowed(input);",
     "  const client = getStorageClient();",
-    "  const expiresIn = input.expiresIn ?? 900;",
+    "  const expiresIn = input.expiresIn ?? storagePolicy.presignExpiresSeconds;",
     "  const command = new PutObjectCommand({",
     "    Bucket: storageBucket(),",
     "    Key: input.key,",
@@ -70,6 +97,7 @@ export function renderGeneratedStorageModule() {
     "    key: input.key,",
     "    bucket: storageBucket(),",
     "    expiresIn,",
+    "    policy: storagePolicy,",
     "    headers: {",
     '      "content-type": input.contentType,',
     "    },",

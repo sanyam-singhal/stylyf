@@ -9,6 +9,7 @@ async function readJson(path: string) {
 export async function runComposeCommand(args: string[]) {
   let basePath: string | undefined;
   let outputPath: string | undefined;
+  let explain = false;
   const fragmentPaths: string[] = [];
 
   for (let index = 0; index < args.length; index += 1) {
@@ -29,6 +30,11 @@ export async function runComposeCommand(args: string[]) {
     if (arg === "--output") {
       outputPath = args[index + 1];
       index += 1;
+      continue;
+    }
+
+    if (arg === "--explain") {
+      explain = true;
       continue;
     }
   }
@@ -69,6 +75,7 @@ export async function runComposeCommand(args: string[]) {
       `  routes: ${composed.routes?.length ?? 0}`,
       `  apis: ${composed.apis?.length ?? 0}`,
       `  server modules: ${composed.server?.length ?? 0}`,
+      explain ? "  explain: later chunks override arrays by stable keys such as route path, API method+path, object name, and server module name." : undefined,
     ].join("\n") + "\n",
   );
 

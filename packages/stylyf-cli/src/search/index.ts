@@ -10,6 +10,7 @@ import { appShellCatalog, layoutCatalog, pageShellCatalog, type CatalogEntry } f
 import { appKindCatalog } from "../manifests/kinds.js";
 import { patternCatalog } from "../manifests/patterns.js";
 import { loadAssemblyRegistry, type AssemblyItem } from "../manifests/index.js";
+import { layoutPropContracts, type CompositionPropContract } from "../manifests/props.js";
 
 export type SearchableEntry = {
   id: string;
@@ -33,8 +34,17 @@ export type SearchableEntry = {
   summary: string;
   keywords: string[];
   props?: string[];
+  propContracts?: readonly CompositionPropContract[];
+  requiredProps?: string[];
+  slots?: string[];
+  events?: string[];
+  controlledState?: string[];
+  defaultDataShape?: Record<string, unknown>;
+  recommendedBindings?: string[];
+  a11yNotes?: string[];
   sourcePath?: string;
   importPath?: string;
+  composition?: unknown;
   snippet?: string;
   searchText: string;
 };
@@ -47,8 +57,17 @@ export type SearchResult = {
   area: string;
   reason: string[];
   props?: string[];
+  propContracts?: readonly CompositionPropContract[];
+  requiredProps?: string[];
+  slots?: string[];
+  events?: string[];
+  controlledState?: string[];
+  defaultDataShape?: Record<string, unknown>;
+  recommendedBindings?: string[];
+  a11yNotes?: string[];
   importPath?: string;
   sourcePath?: string;
+  composition?: unknown;
   summary: string;
   snippet?: string;
 };
@@ -70,15 +89,29 @@ function toSearchableComponent(item: AssemblyItem): SearchableEntry {
     description: item.description,
     summary: item.notes || item.pattern || item.description,
     keywords: item.keywords,
-    props: [],
+    props: item.props.map(prop => prop.name),
+    propContracts: item.props,
+    requiredProps: item.requiredProps,
+    slots: item.slots,
+    events: item.events,
+    controlledState: item.controlledState,
+    defaultDataShape: item.defaultDataShape,
+    recommendedBindings: item.recommendedBindings,
+    a11yNotes: item.a11yNotes,
     sourcePath: item.sourcePath,
     importPath: item.importPath,
+    composition: {
+      component: item.slug,
+    },
     snippet: item.snippet,
     searchText: item.searchText,
   };
 }
 
 function toSearchableCatalog(item: CatalogEntry): SearchableEntry {
+  const layoutContract = item.kind === "layout" ? layoutPropContracts[item.id as keyof typeof layoutPropContracts] : undefined;
+  const propContracts = (layoutContract?.props ?? []) as readonly CompositionPropContract[];
+
   return {
     id: item.id,
     label: item.label,
@@ -88,6 +121,15 @@ function toSearchableCatalog(item: CatalogEntry): SearchableEntry {
     summary: item.summary,
     keywords: item.keywords,
     props: item.props,
+    propContracts,
+    composition:
+      item.kind === "layout"
+        ? {
+            layout: item.id,
+            props: Object.fromEntries(propContracts.filter(prop => prop.default !== undefined).map(prop => [prop.name, prop.default])),
+            children: [],
+          }
+        : undefined,
     snippet: item.snippet,
     searchText: [item.label, item.description, item.summary, ...item.keywords, ...(item.props ?? [])].join(" ").toLowerCase(),
   };
@@ -241,8 +283,17 @@ export async function querySearchIndex(query: string, options?: { limit?: number
         area: entry.area,
         reason: scored.reason,
         props: entry.props,
+        propContracts: entry.propContracts,
+        requiredProps: entry.requiredProps,
+        slots: entry.slots,
+        events: entry.events,
+        controlledState: entry.controlledState,
+        defaultDataShape: entry.defaultDataShape,
+        recommendedBindings: entry.recommendedBindings,
+        a11yNotes: entry.a11yNotes,
         importPath: entry.importPath,
         sourcePath: entry.sourcePath,
+        composition: entry.composition,
         summary: entry.summary,
         snippet: entry.snippet,
       } satisfies SearchResult;

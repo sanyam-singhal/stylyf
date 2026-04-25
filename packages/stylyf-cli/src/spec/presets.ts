@@ -1,6 +1,6 @@
-import type { AppKind, BackendMode, MediaMode, StylyfSpecV04 } from "./types.js";
+import type { AppKind, BackendMode, MediaMode, StylyfSpecV10 } from "./types.js";
 
-function defaultPortableBackend(mode: BackendMode): StylyfSpecV04["backend"] {
+function defaultPortableBackend(mode: BackendMode): StylyfSpecV10["backend"] {
   if (mode === "hosted") {
     return { mode: "hosted" };
   }
@@ -13,7 +13,7 @@ function defaultPortableBackend(mode: BackendMode): StylyfSpecV04["backend"] {
   };
 }
 
-function defaultExperience(): StylyfSpecV04["experience"] {
+function defaultExperience(): StylyfSpecV10["experience"] {
   return {
     theme: "opal",
     mode: "light",
@@ -28,9 +28,9 @@ export function createSpecPreset(options: {
   name: string;
   backend: BackendMode;
   media: MediaMode;
-}): StylyfSpecV04 {
+}): StylyfSpecV10 {
   const base = {
-    version: "0.4" as const,
+    version: "1.0" as const,
     app: {
       name: options.name,
       kind: options.kind,

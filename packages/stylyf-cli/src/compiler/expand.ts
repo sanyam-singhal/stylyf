@@ -1,9 +1,12 @@
 import type {
   AppIR,
   AuthIR,
+  BindingIR,
   ComponentRefIR,
   DatabaseIR,
   LayoutNodeIR,
+  NavigationIR,
+  PolicyIR,
   ResourceAccessPreset,
   ResourceAttachmentIR,
   ResourceFieldIR,
@@ -16,14 +19,16 @@ import type {
 import { defaultTheme, humanize, singularize } from "./defaults.js";
 import type {
   ComponentSpec,
+  BindingSpec,
   FieldSpec,
   FlowSpec,
   LayoutSpec,
   MediaAttachmentSpec,
   ObjectSpec,
+  PolicySpec,
   RouteSpec,
   SectionSpec,
-  StylyfSpecV04,
+  StylyfSpecV10,
   SurfaceSpec,
 } from "../spec/types.js";
 import { genericExpansion } from "./kinds/generic.js";
@@ -76,6 +81,51 @@ function componentFromSpec(node: ComponentSpec): ComponentRefIR {
   };
 }
 
+function bindingFromSpec(binding: BindingSpec, source?: BindingIR["source"]): BindingIR {
+  return {
+    name: binding.name,
+    kind: binding.kind,
+    resource: binding.resource,
+    workflow: binding.workflow,
+    transition: binding.transition,
+    attachment: binding.attachment,
+    source:
+      source || binding.section || binding.component
+        ? {
+            section: source?.section ?? binding.section,
+            component: source?.component ?? binding.component,
+          }
+        : undefined,
+  };
+}
+
+function collectBindingsFromCompositionNode(node: LayoutSpec | ComponentSpec | string, target: BindingIR[], sectionId?: string) {
+  if (typeof node === "string") {
+    return;
+  }
+
+  if (isComponentSpec(node)) {
+    target.push(...(node.bindings ?? []).map(binding => bindingFromSpec(binding, { section: sectionId, component: node.component })));
+    return;
+  }
+
+  target.push(...(node.bindings ?? []).map(binding => bindingFromSpec(binding, { section: sectionId })));
+  for (const child of node.children ?? []) {
+    collectBindingsFromCompositionNode(child, target, sectionId);
+  }
+}
+
+function collectBindingsFromSections(sections?: SectionSpec[]) {
+  const bindings: BindingIR[] = [];
+  for (const sectionSpec of sections ?? []) {
+    bindings.push(...(sectionSpec.bindings ?? []).map(binding => bindingFromSpec(binding, { section: sectionSpec.id })));
+    for (const child of sectionSpec.children) {
+      collectBindingsFromCompositionNode(child, bindings, sectionSpec.id);
+    }
+  }
+  return bindings;
+}
+
 function compositionNodeFromSpec(node: LayoutSpec | ComponentSpec | string): LayoutNodeIR | ComponentRefIR | string {
   if (typeof node === "string") {
     return node;
@@ -110,6 +160,8 @@ function fieldToResourceField(field: FieldSpec): ResourceFieldIR {
     name: field.name,
     required: field.required,
     unique: field.unique,
+    indexed: field.indexed,
+    default: field.default,
   };
 
   switch (field.type) {
@@ -144,7 +196,7 @@ function attachmentFromSpec(attachment: MediaAttachmentSpec): ResourceAttachment
   };
 }
 
-function defaultMediaAttachments(spec: StylyfSpecV04): ResourceAttachmentIR[] {
+function defaultMediaAttachments(spec: StylyfSpecV10): ResourceAttachmentIR[] {
   const mode = spec.media?.mode ?? "none";
   if (mode === "none") {
     return [];
@@ -158,9 +210,10 @@ function defaultMediaAttachments(spec: StylyfSpecV04): ResourceAttachmentIR[] {
   ];
 }
 
-function objectToResource(object: ObjectSpec, spec: StylyfSpecV04): ResourceIR {
+function objectToResource(object: ObjectSpec, spec: StylyfSpecV10, policies?: PolicyIR): ResourceIR {
   const ownership = object.ownership ?? (spec.app.kind === "cms-site" ? "user" : "user");
   const visibility = object.visibility ?? (spec.app.kind === "cms-site" ? "mixed" : "private");
+  const membership = defaultMembership(policies);
   const fields = object.fields?.map(fieldToResourceField) ?? [
     { name: "title", type: "varchar", required: true },
     { name: "status", type: "enum", enumValues: ["draft", "review", "approved"] },
@@ -177,11 +230,11 @@ function objectToResource(object: ObjectSpec, spec: StylyfSpecV04): ResourceIR {
           delete: "owner" as const,
         }
       : {
-          list: ownership === "none" ? ("user" as const) : ("owner" as const),
-          read: ownership === "none" ? ("user" as const) : ("owner" as const),
-          create: "user" as const,
-          update: ownership === "none" ? ("user" as const) : ("owner" as const),
-          delete: ownership === "none" ? ("user" as const) : ("owner" as const),
+          list: ownership === "workspace" ? ("workspace-member" as const) : ownership === "none" ? ("user" as const) : ("owner" as const),
+          read: ownership === "workspace" ? ("workspace-member" as const) : ownership === "none" ? ("user" as const) : ("owner" as const),
+          create: ownership === "workspace" ? ("workspace-member" as const) : ("user" as const),
+          update: ownership === "workspace" ? ("workspace-member" as const) : ownership === "none" ? ("user" as const) : ("owner" as const),
+          delete: ownership === "workspace" ? ("workspace-member" as const) : ownership === "none" ? ("user" as const) : ("owner" as const),
         };
 
   return {
@@ -193,7 +246,12 @@ function objectToResource(object: ObjectSpec, spec: StylyfSpecV04): ResourceIR {
       ownership === "none"
         ? { model: "none" }
         : ownership === "workspace"
-          ? { model: "workspace", workspaceField: "workspace_id" }
+          ? {
+              model: "workspace",
+              membershipTable: membership?.table ?? "workspace_memberships",
+              workspaceField: membership?.workspaceField ?? "workspace_id",
+              roleField: membership?.roleField ?? "role",
+            }
           : { model: "user", ownerField: spec.app.kind === "cms-site" ? "author_id" : "owner_id" },
     access: {
       ...defaultAccess,
@@ -258,8 +316,21 @@ function flowToWorkflow(flow: FlowSpec): WorkflowIR {
   };
 }
 
-function backendFor(spec: StylyfSpecV04): { database?: DatabaseIR; auth?: AuthIR; storage?: StorageIR } {
-  const storage = (spec.media?.mode ?? "none") === "none" ? undefined : { provider: "s3" as const, mode: "presigned-put" as const, bucketAlias: "uploads" };
+function backendFor(spec: StylyfSpecV10): { database?: DatabaseIR; auth?: AuthIR; storage?: StorageIR } {
+  const storage =
+    (spec.media?.mode ?? "none") === "none"
+      ? undefined
+      : {
+          provider: "s3" as const,
+          mode: "presigned-put" as const,
+          bucketAlias: "uploads",
+          maxFileSizeBytes: spec.media?.maxFileSizeBytes,
+          allowedContentTypes: spec.media?.allowedContentTypes,
+          keyPrefix: spec.media?.keyPrefix,
+          presignExpiresSeconds: spec.media?.presignExpiresSeconds,
+          objectPolicy: spec.media?.objectPolicy,
+          deleteMode: spec.media?.deleteMode,
+        };
 
   if (spec.backend.mode === "hosted") {
     return {
@@ -288,10 +359,48 @@ function backendFor(spec: StylyfSpecV04): { database?: DatabaseIR; auth?: AuthIR
   };
 }
 
+function policiesFromSpec(policy?: PolicySpec): PolicyIR | undefined {
+  const roles = policy?.roles?.map(role => ({ name: role.name, description: role.description })) ?? [
+    { name: "admin", description: "Full privileged operator role. Generated code requires an explicit membership row before this grants access." },
+    { name: "editor", description: "Content/editorial operator role. Generated code requires an explicit membership row before this grants access." },
+    { name: "member", description: "Default workspace member role." },
+  ];
+
+  const memberships =
+    policy?.memberships?.map(membership => ({
+      name: membership.name ?? "workspace",
+      table: membership.table ?? "workspace_memberships",
+      userField: membership.userField ?? "user_id",
+      workspaceField: membership.workspaceField ?? "workspace_id",
+      roleField: membership.roleField ?? "role",
+      roles: membership.roles ?? roles.map(role => role.name),
+    })) ?? [
+      {
+        name: "workspace",
+        table: "workspace_memberships",
+        userField: "user_id",
+        workspaceField: "workspace_id",
+        roleField: "role",
+        roles: roles.map(role => role.name),
+      },
+    ];
+
+  const actors = policy?.actors?.map(actor => ({ actor: actor.actor, role: actor.role, membership: actor.membership })) ?? [
+    { actor: "admin", role: "admin", membership: memberships[0]?.name },
+    { actor: "editor", role: "editor", membership: memberships[0]?.name },
+    { actor: "member", role: "member", membership: memberships[0]?.name },
+  ];
+
+  return { roles, memberships, actors };
+}
+
+function defaultMembership(policy: PolicyIR | undefined) {
+  return policy?.memberships[0];
+}
+
 function protectedRoutes(routes: RouteIR[]) {
   return routes
     .filter(route => route.access !== "public")
-    .filter(route => route.shell !== "marketing-shell")
     .map(route => ({
       target: route.path,
       kind: "route" as const,
@@ -350,6 +459,9 @@ function surfaceDefaultPath(surface: SurfaceSpec, resources: ResourceIR[]) {
 }
 
 function shellForSurface(surface: SurfaceSpec, fallbackShell: RouteIR["shell"]): RouteIR["shell"] {
+  if (surface.audience === "admin" || surface.audience === "editor" || surface.audience === "user") {
+    return fallbackShell;
+  }
   if (surface.audience === "public" || surface.kind === "landing" || surface.kind === "content-index" || surface.kind === "content-detail") {
     return "marketing-shell";
   }
@@ -365,6 +477,7 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
   const path = surface.path ?? surfaceDefaultPath(surface, resources);
   const shell = surface.shell ?? shellForSurface(surface, fallbackShell);
   const explicitSections = sectionsFromSpec(surface.sections);
+  const bindings = [...(surface.bindings ?? []).map(binding => bindingFromSpec(binding)), ...collectBindingsFromSections(surface.sections)];
 
   switch (surface.kind) {
     case "dashboard":
@@ -374,6 +487,8 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         page: surface.page ?? "dashboard",
         title: surface.title ?? surface.name ?? "Dashboard",
         access: surface.audience === "public" ? "public" : "user",
+        bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? dashboardSections(),
       };
     case "landing":
@@ -383,6 +498,8 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         page: surface.page ?? "blank",
         title: surface.title ?? surface.name ?? "Home",
         access: "public",
+        bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [section("stack", [component("page-header"), component("empty-state")])],
       };
     case "list":
@@ -393,6 +510,8 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         resource,
         title: surface.title ?? surface.name ?? resourceTitle,
         access: surface.audience === "public" ? "public" : "user",
+        bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? resourceListSections(resource),
       };
     case "detail":
@@ -403,6 +522,8 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         resource,
         title: surface.title ?? surface.name ?? `${resourceTitle} detail`,
         access: surface.audience === "public" ? "public" : "user",
+        bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [section("stack", [component("page-header"), component("detail-panel")])],
       };
     case "create":
@@ -413,6 +534,8 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         resource,
         title: surface.title ?? surface.name ?? `Create ${titleFor(singularize(resource))}`,
         access: surface.audience === "public" ? "public" : "user",
+        bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [],
       };
     case "edit":
@@ -423,6 +546,8 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         resource,
         title: surface.title ?? surface.name ?? `Edit ${titleFor(singularize(resource))}`,
         access: surface.audience === "public" ? "public" : "user",
+        bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [],
       };
     case "settings":
@@ -432,6 +557,8 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         page: surface.page ?? "settings",
         title: surface.title ?? surface.name ?? "Settings",
         access: surface.audience === "public" ? "public" : "user",
+        bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [section("stack", [component("settings-panel"), component("settings-row")])],
       };
     case "content-index":
@@ -443,6 +570,8 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
           resource,
           title: surface.title ?? surface.name ?? "Content",
           access: "user",
+          bindings,
+          metadata: surface.metadata,
           sections: explicitSections ?? resourceListSections(resource),
         };
       }
@@ -452,6 +581,8 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         page: surface.page ?? "blank",
         title: surface.title ?? surface.name ?? resourceTitle,
         access: "public",
+        bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [section("stack", [component("section-header"), component("data-list")])],
       };
     case "content-detail":
@@ -461,6 +592,8 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         page: surface.page ?? "blank",
         title: surface.title ?? surface.name ?? titleFor(singularize(resource)),
         access: "public",
+        bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [section("stack", [component("page-header"), component("separator")])],
       };
     case "tool":
@@ -470,6 +603,8 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         page: surface.page ?? "blank",
         title: surface.title ?? surface.name ?? "Tool",
         access: surface.audience === "user" || surface.audience === "admin" || surface.audience === "editor" ? "user" : "public",
+        bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [section("stack", [component("form-section"), component("progress"), component("toast")])],
       };
   }
@@ -490,7 +625,7 @@ function mergeSurfaces(defaults: SurfaceSpec[], overrides?: SurfaceSpec[]) {
   return [...merged.values()];
 }
 
-function kindExpansionFor(spec: StylyfSpecV04): KindExpansion {
+function kindExpansionFor(spec: StylyfSpecV10): KindExpansion {
   switch (spec.app.kind) {
     case "generic":
       return genericExpansion;
@@ -505,6 +640,7 @@ function kindExpansionFor(spec: StylyfSpecV04): KindExpansion {
 
 function routeFromSpec(route: RouteSpec, fallbackShell: RouteIR["shell"]): RouteIR {
   const shell = route.shell ?? fallbackShell;
+  const bindings = [...(route.bindings ?? []).map(binding => bindingFromSpec(binding)), ...collectBindingsFromSections(route.sections)];
 
   return {
     path: route.path,
@@ -512,7 +648,9 @@ function routeFromSpec(route: RouteSpec, fallbackShell: RouteIR["shell"]): Route
     page: route.page,
     resource: route.resource,
     title: route.title,
-    access: route.access ?? (shell === "marketing-shell" ? "public" : "user"),
+    access: route.access ?? "user",
+    bindings,
+    metadata: route.metadata,
     sections: sectionsFromSpec(route.sections) ?? [],
   };
 }
@@ -532,7 +670,7 @@ function mergeRoutes(defaults: RouteIR[], overrides?: RouteIR[]) {
   return [...merged.values()];
 }
 
-function routesFor(spec: StylyfSpecV04, resources: ResourceIR[], expansion: KindExpansion) {
+function routesFor(spec: StylyfSpecV10, resources: ResourceIR[], expansion: KindExpansion) {
   const surfaceRoutes = mergeSurfaces(expansion.defaultSurfaces(spec, resources), spec.surfaces).map(surface =>
     surfaceToRoute(surface, resources, expansion.shell),
   );
@@ -540,11 +678,31 @@ function routesFor(spec: StylyfSpecV04, resources: ResourceIR[], expansion: Kind
   return mergeRoutes(surfaceRoutes, explicitRoutes);
 }
 
-export function expandSpecToGeneratedApp(spec: StylyfSpecV04): AppIR {
+function navigationFor(spec: StylyfSpecV10, routes: RouteIR[]): NavigationIR {
+  const routeItems = routes
+    .filter(route => !route.path.includes(":") && route.page !== "auth")
+    .map(route => ({
+      label: route.title ?? titleFor(route.path.replace(/^\/$/, "home").replace(/^\/+/, "")),
+      href: route.path,
+      group: route.access === "public" ? "Public" : "App",
+      auth: route.access ?? "user",
+    }));
+
+  return {
+    primary: spec.navigation?.primary ?? routeItems,
+    secondary: spec.navigation?.secondary ?? [],
+    userMenu: spec.navigation?.userMenu ?? [{ label: "Settings", href: "/settings", auth: "user" }],
+    commandMenu: spec.navigation?.commandMenu ?? routeItems.map(item => ({ ...item, command: true })),
+  };
+}
+
+export function expandSpecToGeneratedApp(spec: StylyfSpecV10): AppIR {
   const expansion = kindExpansionFor(spec);
-  const resources = expansion.defaultObjects(spec).map(object => objectToResource(object, spec));
+  const policies = policiesFromSpec(spec.policies);
+  const resources = expansion.defaultObjects(spec).map(object => objectToResource(object, spec, policies));
   const workflows = expansion.defaultFlows(spec, resources).map(flowToWorkflow);
   const routes = routesFor(spec, resources, expansion);
+  const navigation = navigationFor(spec, routes);
   const backend = backendFor(spec);
   const database = backend.database
     ? {
@@ -567,11 +725,15 @@ export function expandSpecToGeneratedApp(spec: StylyfSpecV04): AppIR {
     routes,
     env: spec.env,
     database,
+    policies,
+    navigation,
     auth,
     storage: backend.storage,
     resources,
     workflows,
     apis: spec.apis,
     server: spec.server,
+    fixtures: spec.fixtures,
+    deployment: spec.deployment,
   };
 }
