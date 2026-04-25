@@ -14,6 +14,10 @@ import {
   backendServerTemplateCatalog,
   backendSnippetCatalog,
 } from "../packages/stylyf-cli/src/manifests/backend.ts";
+import {
+  componentPropContractsFromInventory,
+  type CompositionPropContract,
+} from "../packages/stylyf-cli/src/manifests/props.ts";
 import { defaultThemeState, themePresets } from "../packages/stylyf-source/src/lib/theme-system.ts";
 
 type ThemeGrammar = {
@@ -63,6 +67,9 @@ type AssemblyItem = {
   exportName: string;
   clusterDirectory: string;
   localDependencies: string[];
+  props: CompositionPropContract[];
+  requiredProps: string[];
+  compositionExamples: string[];
   snippet: string;
   keywords: string[];
   searchText: string;
@@ -199,6 +206,13 @@ async function assemblyItemFor(item: RegistryItem): Promise<AssemblyItem> {
     exportName: componentSymbol(item.name),
     clusterDirectory,
     localDependencies: localDependenciesForSource(source),
+    props: componentPropContractsFromInventory(item),
+    requiredProps: [],
+    compositionExamples: [
+      JSON.stringify({
+        component: item.slug,
+      }),
+    ],
     snippet: snippetForSource(source),
     keywords,
     searchText: [

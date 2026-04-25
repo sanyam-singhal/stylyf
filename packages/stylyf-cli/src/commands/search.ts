@@ -51,8 +51,12 @@ export async function runSearchCommand(args: string[]) {
             `  score: ${result.score}`,
             `  reason: ${result.reason.join(", ") || "match"}`,
             result.props?.length ? `  props: ${result.props.join(", ")}` : undefined,
+            result.propContracts?.length
+              ? `  prop contracts: ${result.propContracts.map(prop => `${prop.name}:${prop.type}`).join(", ")}`
+              : undefined,
             result.importPath ? `  import: ${result.importPath}` : undefined,
             result.sourcePath ? `  source: ${result.sourcePath}` : undefined,
+            result.composition ? `  composition:\n${JSON.stringify(result.composition, null, 2).split("\n").map(line => `    ${line}`).join("\n")}` : undefined,
             `  summary: ${result.summary}`,
             result.snippet ? `  snippet:\n${result.snippet.split("\n").map(line => `    ${line}`).join("\n")}` : undefined,
           ]

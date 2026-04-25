@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import type { CompositionPropContract } from "./props.js";
 
 export type ThemeGrammar = {
   presets: string[];
@@ -47,6 +48,9 @@ export type AssemblyItem = {
   exportName: string;
   clusterDirectory: string;
   localDependencies: string[];
+  props: CompositionPropContract[];
+  requiredProps: string[];
+  compositionExamples: string[];
   snippet: string;
   keywords: string[];
   searchText: string;

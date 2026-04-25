@@ -165,7 +165,7 @@ export const layoutCatalog: Array<CatalogEntry & { id: LayoutNodeId }> = [
     description: "Single vertical column wrapper with width and alignment control.",
     summary: "Useful inside split panes and card internals.",
     keywords: ["column", "vertical", "layout", "align", "width"],
-    snippet: `<Column gap="balanced">\n  <FieldRow />\n  <FieldRow />\n</Column>`,
+    snippet: `<Column gap="comfortable">\n  <FieldRow />\n  <FieldRow />\n</Column>`,
     props: ["gap", "align", "width"],
   },
   {
@@ -186,7 +186,7 @@ export const layoutCatalog: Array<CatalogEntry & { id: LayoutNodeId }> = [
     summary: "Use for master-detail and content-sidebar pages.",
     keywords: ["split", "two pane", "detail", "sidebar", "layout"],
     snippet: `<Split ratio="2:1">\n  <DataTableShell />\n  <DetailPanel />\n</Split>`,
-    props: ["ratio", "gap", "collapse"],
+    props: ["ratio", "gap", "side"],
   },
   {
     id: "panel",
@@ -196,7 +196,7 @@ export const layoutCatalog: Array<CatalogEntry & { id: LayoutNodeId }> = [
     summary: "Use to organize sections into elevated surfaces.",
     keywords: ["panel", "surface", "card", "framed", "layout"],
     snippet: `<Panel tone="default">\n  <SectionHeader />\n  <DataList />\n</Panel>`,
-    props: ["tone", "padding", "bordered"],
+    props: ["as", "tone", "padding"],
   },
   {
     id: "section",
@@ -206,7 +206,7 @@ export const layoutCatalog: Array<CatalogEntry & { id: LayoutNodeId }> = [
     summary: "Good for route-level subsections and long-form pages.",
     keywords: ["section", "page section", "semantic", "layout"],
     snippet: `<Section>\n  <SectionHeader />\n  <Grid />\n</Section>`,
-    props: ["id", "gap", "tone"],
+    props: ["heading", "description", "gap"],
   },
   {
     id: "toolbar",
@@ -226,6 +226,6 @@ export const layoutCatalog: Array<CatalogEntry & { id: LayoutNodeId }> = [
     summary: "Use when the shell provides outer chrome and the page needs readable width.",
     keywords: ["content", "frame", "width", "container", "layout"],
     snippet: `<ContentFrame width="wide">\n  <Stack />\n</ContentFrame>`,
-    props: ["width", "padding"],
+    props: ["width"],
   },
 ];
