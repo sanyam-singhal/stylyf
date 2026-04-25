@@ -475,6 +475,11 @@ async function main() {
     "tests/smoke/auth.spec.ts",
     "tests/smoke/resource-forms.spec.ts",
     "src/lib/test/factories.ts",
+    ".env.local.example",
+    ".env.production.example",
+    "src/lib/env.server.ts",
+    "src/lib/env.public.ts",
+    "src/lib/env.check.ts",
     "src/routes/login.tsx",
     "stylyf.spec.json",
     "stylyf.plan.json",
@@ -529,11 +534,22 @@ async function main() {
   for (const expectedText of [
     '"test:smoke": "playwright test tests/smoke"',
     '"test:types": "tsc --noEmit"',
+    '"env:check": "tsx src/lib/env.check.ts"',
+    '"preflight": "npm run env:check && npm run check"',
     '"@playwright/test"',
+    '"tsx"',
   ]) {
     if (!genericPackageJson.includes(expectedText)) {
       throw new Error(`Generated package is missing test harness package wiring: ${expectedText}`);
     }
+  }
+  const envModule = await readFile(resolve(genericRoot, "src/lib/env.ts"), "utf8");
+  if (!envModule.includes('export { env } from "./env.server"') || !envModule.includes('export { publicEnv } from "./env.public"')) {
+    throw new Error("Generated env.ts is not a thin server/public env re-export.");
+  }
+  const envCheck = await readFile(resolve(genericRoot, "src/lib/env.check.ts"), "utf8");
+  if (!envCheck.includes("Stylyf env preflight failed") || !envCheck.includes("APP_BASE_URL")) {
+    throw new Error("Generated env preflight module is missing required env validation.");
   }
   const routeSmoke = await readFile(resolve(genericRoot, "tests/smoke/routes.spec.ts"), "utf8");
   if (!routeSmoke.includes("/inbox") || !routeSmoke.includes("toBeLessThan(500)")) {
@@ -666,6 +682,7 @@ async function main() {
       "  - API contract grammar rejects unsafe method/schema and placeholder defaults",
       "  - contracted API routes emit validation helpers and machine-readable API summary",
       "  - generated apps include Playwright smoke test harness and package scripts",
+      "  - generated apps include split env profiles, thin env re-export, and env preflight",
       "  - route bindings survive spec expansion into resolved app IR",
       "  - bound list/detail routes import generated queries and route-level loading/empty/error states",
       "  - generic app source honors explicit surface route hints",

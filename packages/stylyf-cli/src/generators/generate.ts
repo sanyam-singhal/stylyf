@@ -25,7 +25,13 @@ import {
 import { renderGeneratedAuthHandlerRoute, writeGeneratedApiRoutes } from "./backend/api-routes.js";
 import { renderGeneratedAuthSchemaConfig, renderGeneratedAuthSchemaPlaceholder } from "./backend/auth-schema.js";
 import { renderGeneratedDbModule, renderGeneratedDbSchema, renderGeneratedDrizzleConfig } from "./backend/database.js";
-import { renderGeneratedEnvExample, renderGeneratedEnvModule } from "./backend/env.js";
+import {
+  renderGeneratedEnvCheckModule,
+  renderGeneratedEnvExample,
+  renderGeneratedEnvModule,
+  renderGeneratedEnvPublicModule,
+  renderGeneratedEnvServerModule,
+} from "./backend/env.js";
 import {
   hasGeneratedAttachments,
   renderGeneratedAttachmentApiRoutes,
@@ -735,8 +741,12 @@ export async function generateFrontendDraftFromApp(appIr: AppIR, targetPath: str
   await writeGeneratedFile(resolve(targetPath, "src/entry-server.tsx"), renderGeneratedEntryServer());
   await writeGeneratedFile(resolve(targetPath, "src/app.css"), await renderGeneratedAppCss(app));
   await writeGeneratedFile(resolve(targetPath, "src/lib/theme-system.ts"), renderGeneratedThemeSystem(app));
-  await writeGeneratedFile(resolve(targetPath, ".env.example"), renderGeneratedEnvExample(app));
-  await writeGeneratedFile(resolve(targetPath, "src/lib/env.ts"), renderGeneratedEnvModule(app));
+  await writeGeneratedFile(resolve(targetPath, ".env.local.example"), renderGeneratedEnvExample(app, "local"));
+  await writeGeneratedFile(resolve(targetPath, ".env.production.example"), renderGeneratedEnvExample(app, "production"));
+  await writeGeneratedFile(resolve(targetPath, "src/lib/env.ts"), renderGeneratedEnvModule());
+  await writeGeneratedFile(resolve(targetPath, "src/lib/env.server.ts"), renderGeneratedEnvServerModule(app));
+  await writeGeneratedFile(resolve(targetPath, "src/lib/env.public.ts"), renderGeneratedEnvPublicModule(app));
+  await writeGeneratedFile(resolve(targetPath, "src/lib/env.check.ts"), renderGeneratedEnvCheckModule(app));
   if ((app.resources?.length ?? 0) > 0 || (app.workflows?.length ?? 0) > 0) {
     await writeGeneratedFile(resolve(targetPath, "src/lib/resources.ts"), renderGeneratedResourcesModule(app));
     await writeGeneratedFile(resolve(targetPath, "src/lib/server/resource-policy.ts"), renderGeneratedResourcePolicyModule(app));

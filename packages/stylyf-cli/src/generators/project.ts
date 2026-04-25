@@ -23,6 +23,8 @@ export function renderGeneratedPackageJson(app: AppIR) {
     "test:types": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:smoke": "playwright test tests/smoke",
+    "env:check": "tsx src/lib/env.check.ts",
+    preflight: "npm run env:check && npm run check",
   };
 
   const dependencies: Record<string, string> = {
@@ -42,6 +44,7 @@ export function renderGeneratedPackageJson(app: AppIR) {
     "@playwright/test": "^1.57.0",
     "@types/node": "^25.6.0",
     tailwindcss: "^4.2.2",
+    tsx: "^4.21.0",
     typescript: "^5.9.3",
   };
 
