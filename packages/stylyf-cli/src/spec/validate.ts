@@ -564,6 +564,26 @@ function validateResourceAccess(value: unknown, path: string, context: Validatio
   optionalEnum(value, "delete", resourceAccessPresets, path, context);
 }
 
+function validateAccessOwnershipCompatibility(access: unknown, ownership: unknown, path: string, context: ValidationContext) {
+  if (!isRecord(access)) {
+    return;
+  }
+
+  const model = typeof ownership === "string" ? ownership : "none";
+  for (const [operation, preset] of Object.entries(access)) {
+    if (preset === "owner" || preset === "owner-or-public") {
+      if (model !== "user") {
+        context.errors.push(`${path}.${operation} uses "${preset}", but owner access requires ownership: "user".`);
+      }
+      continue;
+    }
+
+    if (preset === "workspace-member" && model !== "workspace") {
+      context.errors.push(`${path}.${operation} uses "workspace-member", but workspace access requires ownership: "workspace".`);
+    }
+  }
+}
+
 function validateRelations(value: unknown, path: string, context: ValidationContext) {
   if (value === undefined) {
     return;
@@ -676,6 +696,7 @@ function validateObjects(value: unknown, context: ValidationContext) {
     optionalEnum(object, "ownership", ownershipModels, path, context);
     optionalEnum(object, "visibility", visibilityModes, path, context);
     validateResourceAccess(object.access, `${path}.access`, context);
+    validateAccessOwnershipCompatibility(object.access, object.ownership, `${path}.access`, context);
     validateRelations(object.relations, `${path}.relations`, context);
     validateFields(object.fields, `${path}.fields`, context);
     validateObjectMedia(object.media, `${path}.media`, context);
@@ -1311,6 +1332,12 @@ function validateObjectReferences(value: Record<string, unknown>, context: Valid
       .map(object => object.name)
       .filter((name): name is string => typeof name === "string" && name.length > 0),
   );
+  const objectsByName = new Map<string, Record<string, unknown>>();
+  value.objects.forEach(object => {
+    if (isRecord(object) && typeof object.name === "string") {
+      objectsByName.set(object.name, object);
+    }
+  });
   const objectAttachments = new Map<string, Set<string>>();
   value.objects.forEach(object => {
     if (!isRecord(object) || typeof object.name !== "string") {
@@ -1332,6 +1359,22 @@ function validateObjectReferences(value: Record<string, unknown>, context: Valid
     value.flows.forEach((flow, index) => {
       if (isRecord(flow) && typeof flow.object === "string" && !objectNames.has(flow.object)) {
         context.errors.push(`flows[${index}].object references unknown object "${flow.object}".`);
+      }
+      if (isRecord(flow) && typeof flow.object === "string") {
+        const object = objectsByName.get(flow.object);
+        if (object && Array.isArray(flow.transitions)) {
+          flow.transitions.forEach((transition, transitionIndex) => {
+            if (!isRecord(transition) || typeof transition.actor !== "string") {
+              return;
+            }
+            validateAccessOwnershipCompatibility(
+              { actor: transition.actor },
+              object.ownership,
+              `flows[${index}].transitions[${transitionIndex}]`,
+              context,
+            );
+          });
+        }
       }
       if (isRecord(flow) && typeof flow.name === "string") {
         flowTransitions.set(

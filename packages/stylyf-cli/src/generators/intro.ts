@@ -153,8 +153,9 @@ function renderOverview() {
       "1. choose an app kind: `generic`, `internal-tool`, `cms-site`, or `free-saas-tool`",
       "2. create a spec with `stylyf new` or write one directly",
       "3. inspect it with `stylyf plan --spec stylyf.spec.json`",
-      "4. generate with `stylyf generate --spec stylyf.spec.json --target ./my-app`",
+      "4. generate with `stylyf generate --spec stylyf.spec.json --target ./my-app` or `--no-install` when you want to inspect before dependency install",
       "5. run the generated app smoke tests and continue inside the emitted source tree",
+      "6. perform an app-specific design pass: adjust `experience`, route composition, marketing copy, component props, layout density, and visual metaphors so the scaffold matches the product intent rather than the default starter tone",
     ]),
     section("Core Commands", [
       codeBlock(
@@ -178,6 +179,12 @@ function renderOverview() {
       "- `hosted`: Supabase Auth + Supabase data SDK + Tigris/S3-compatible object storage",
       "- portable SQLite is the default local dogfood path",
       "- hosted is the fast managed deployment path",
+    ]),
+    section("Post-Scaffold Design Pass", [
+      "- Treat Stylyf output as a strong first draft, not the final product voice.",
+      "- Re-run `stylyf search` and `stylyf inspect component <id>` to choose product-fit components before editing raw JSX.",
+      "- Tune theme preset, light/dark mode, radius, density, spacing, page copy, route metadata, and section composition from the app brief.",
+      "- For visually opinionated products, add explicit `sections` and component props in the spec before generation; then refine `src/app.css` and route shells inside the generated app.",
     ]),
     section("Drill Down", [
       "- `stylyf intro --topic spec` for the v1.0 DSL",

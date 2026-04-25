@@ -35,6 +35,17 @@ function resourceTableName(resource: ResourceIR) {
   return resource.table ?? resource.name;
 }
 
+function effectiveTransitionActor(actor: WorkflowTransitionIR["actor"] | undefined, resource: ResourceIR) {
+  const requested = actor ?? resource.access?.update ?? "user";
+  if ((requested === "owner" || requested === "owner-or-public") && resource.ownership?.model !== "user") {
+    return "user";
+  }
+  if (requested === "workspace-member" && resource.ownership?.model !== "workspace") {
+    return "user";
+  }
+  return requested;
+}
+
 function workflowFieldName(workflow: WorkflowIR) {
   return workflow.field ?? "status";
 }
@@ -134,10 +145,22 @@ function renderPortableTransitionAction(workflow: WorkflowIR, transition: Workfl
   const ownerField = camelCase(resource.ownership?.ownerField ?? "owner_id");
   const workspaceField = camelCase(resource.ownership?.workspaceField ?? "workspace_id");
   const membershipSymbol = camelCase(resource.ownership?.membershipTable ?? "workspace_memberships");
-  const actor = transition.actor ?? resource.access?.update ?? "user";
+  const actor = effectiveTransitionActor(transition.actor, resource);
   const defaultEventName = `${workflow.name}.${transition.name}`;
   const eventNames = transition.emits && transition.emits.length > 0 ? transition.emits : [defaultEventName];
   const fromStates = Array.isArray(transition.from) ? transition.from : [transition.from];
+
+  if (actor === "admin") {
+    return [
+      `export const ${exportName} = action(async (id: string) => {`,
+      '  "use server";',
+      "  void id;",
+      "  await requireViewerIdentity();",
+      '  throw new Error("Admin workflow transitions require explicit role wiring. Generated defaults fail closed until you customize this policy.");',
+      `}, ${JSON.stringify(`${workflow.name}.${transition.name}`)});`,
+      "",
+    ].join("\n");
+  }
 
   const actorGuard =
     actor === "public"
@@ -168,11 +191,6 @@ function renderPortableTransitionAction(workflow: WorkflowIR, transition: Workfl
               '  if (!record) throw new Error("Resource not found or not accessible.");',
               "  const actorId = userId;",
             ]
-          : actor === "admin"
-            ? [
-                "  await requireViewerIdentity();",
-                '  throw new Error("Admin workflow transitions require explicit role wiring. Generated defaults fail closed until you customize this policy.");',
-              ]
           : [
               `  const resourceTable = resolveSchemaTable(${JSON.stringify(resourceTableNameValue)});`,
               "  const { userId } = await requireViewerIdentity();",
@@ -370,7 +388,7 @@ function renderPortableWorkflowServerModule(app: AppIR) {
 
 function renderHostedTransitionAction(workflow: WorkflowIR, transition: WorkflowTransitionIR, resource: ResourceIR) {
   const exportName = `${transition.name}${pascalCase(resource.name)}Transition`;
-  const actor = transition.actor ?? resource.access?.update ?? "user";
+  const actor = effectiveTransitionActor(transition.actor, resource);
   const workflowField = workflowFieldName(workflow);
   const ownerField = resource.ownership?.ownerField ?? "owner_id";
   const workspaceField = resource.ownership?.workspaceField ?? "workspace_id";
@@ -378,6 +396,18 @@ function renderHostedTransitionAction(workflow: WorkflowIR, transition: Workflow
   const fromStates = Array.isArray(transition.from) ? transition.from : [transition.from];
   const defaultEventName = `${workflow.name}.${transition.name}`;
   const eventNames = transition.emits && transition.emits.length > 0 ? transition.emits : [defaultEventName];
+
+  if (actor === "admin") {
+    return [
+      `export const ${exportName} = action(async (id: string) => {`,
+      '  "use server";',
+      "  void id;",
+      "  await requireSession();",
+      '  throw new Error("Admin workflow transitions require explicit role wiring. Generated defaults fail closed until you customize this policy.");',
+      `}, ${JSON.stringify(`${workflow.name}.${transition.name}`)});`,
+      "",
+    ].join("\n");
+  }
 
   const actorGuard =
     actor === "public"
@@ -409,11 +439,6 @@ function renderHostedTransitionAction(workflow: WorkflowIR, transition: Workflow
               '  if (!record) throw new Error("Resource not found or not accessible.");',
               "  const actorId = session.user.id;",
             ]
-          : actor === "admin"
-            ? [
-                "  await requireSession();",
-                '  throw new Error("Admin workflow transitions require explicit role wiring. Generated defaults fail closed until you customize this policy.");',
-              ]
           : [
               "  const session = await requireSession();",
               `  const { data: resourceRows, error: resourceError } = await (supabase as any).from(${JSON.stringify(resourceTableName(resource))}).select("*").eq("id", id).limit(1);`,

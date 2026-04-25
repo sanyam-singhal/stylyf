@@ -2,7 +2,7 @@ import type { AppIR } from "../../compiler/generated-app.js";
 
 export function renderGeneratedObservabilityModule(app: AppIR) {
   return [
-    `export const serviceInfo = ${JSON.stringify(
+    `export const serviceInfo: { name: string; database: string; auth: string; storage: string } = ${JSON.stringify(
       {
         name: app.name,
         database: app.database?.provider ?? "none",
@@ -11,7 +11,7 @@ export function renderGeneratedObservabilityModule(app: AppIR) {
       },
       null,
       2,
-    )} as const;`,
+    )};`,
     "",
     "export function logInfo(event: string, data: Record<string, unknown> = {}) {",
     "  console.log(JSON.stringify({ level: \"info\", event, service: serviceInfo.name, time: new Date().toISOString(), ...data }));",

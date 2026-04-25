@@ -21,6 +21,12 @@ export type CompositionContract = {
   compositionExamples: readonly string[];
 };
 
+type SourcePropContract = {
+  type: CompositionPropType;
+  required: boolean;
+  values?: Array<string | number | boolean>;
+};
+
 const gapValues = ["tight", "comfortable", "loose"] as const;
 const alignValues = ["start", "center", "stretch"] as const;
 
@@ -315,11 +321,55 @@ function componentParamToPropContract(value: string, source: "style" | "state"):
   };
 }
 
+function literalValuesFromSource(typeSource: string) {
+  const values: Array<string | number | boolean> = [];
+  const normalized = typeSource.trim();
+  for (const match of normalized.matchAll(/"([^"]+)"|'([^']+)'|\b(true|false)\b|\b(-?\d+(?:\.\d+)?)\b/g)) {
+    const raw = match[1] ?? match[2] ?? match[3] ?? match[4];
+    if (raw === undefined) continue;
+    if (raw === "true" || raw === "false") {
+      values.push(raw === "true");
+    } else if (/^-?\d+(?:\.\d+)?$/.test(raw)) {
+      values.push(Number(raw));
+    } else {
+      values.push(raw);
+    }
+  }
+  return values;
+}
+
+function propContractFromSource(typeSource: string, required: boolean): SourcePropContract {
+  const normalized = typeSource.trim();
+  const literalValues = literalValuesFromSource(normalized);
+  const values = literalValues.length > 0 ? [...new Set(literalValues)] : undefined;
+  if (/^(number|[0-9]+(?:\s*\|\s*[0-9]+)*)\b/.test(normalized)) return { type: "number", required, values };
+  if (/^boolean\b/.test(normalized)) return { type: "boolean", required, values };
+  if (/JSX\.Element|ParentProps|children/i.test(normalized)) return { type: "jsx", required };
+  if (/^\{|\[\]|Array<|Record<|ReadonlyArray</.test(normalized)) return { type: "json", required };
+  if (values && values.length > 0 && !normalized.includes("string")) return { type: "enum", required, values };
+  return { type: "string", required };
+}
+
+function sourcePropTypes(source?: string) {
+  const types = new Map<string, SourcePropContract>();
+  if (!source) return types;
+
+  const withoutComments = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+  for (const match of withoutComments.matchAll(/^\s*([A-Za-z][A-Za-z0-9_]*)\s*(\?)?\s*:\s*([^;\n]+);/gm)) {
+    const [, name, optionalMarker, typeSource] = match;
+    if (!name || !typeSource || name === "class") continue;
+    types.set(name, propContractFromSource(typeSource, optionalMarker !== "?"));
+  }
+
+  return types;
+}
+
 export function componentPropContractsFromInventory(item: {
   styleParams: string[];
   stateParams: string[];
-}): CompositionPropContract[] {
+}, source?: string): CompositionPropContract[] {
   const byName = new Map<string, CompositionPropContract>();
+  const exactSourceTypes = sourcePropTypes(source);
 
   for (const param of item.styleParams) {
     const contract = componentParamToPropContract(param, "style");
@@ -335,5 +385,14 @@ export function componentPropContractsFromInventory(item: {
     }
   }
 
-  return [...byName.values()];
+  return [...byName.values()].map(contract => {
+    const sourceContract = exactSourceTypes.get(contract.name);
+    if (!sourceContract) return contract;
+    return {
+      ...contract,
+      type: sourceContract.type,
+      required: (contract.required ?? sourceContract.required) ? true : undefined,
+      values: sourceContract.values ?? contract.values,
+    };
+  });
 }

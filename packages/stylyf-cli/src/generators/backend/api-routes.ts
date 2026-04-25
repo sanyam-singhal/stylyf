@@ -47,8 +47,8 @@ function renderContractHelpers(route: ApiRouteIR) {
   return [
     `const requestContract = ${jsonLiteral(route.request ?? {})} as { body?: SchemaObject; query?: SchemaObject; params?: SchemaObject; headers?: SchemaObject };`,
     `const responseContract = ${jsonLiteral(route.response ?? {})} as { status?: number; body?: SchemaObject };`,
-    `const rateLimitContract = ${jsonLiteral(route.rateLimit ?? null)} as const;`,
-    `const idempotencyContract = ${jsonLiteral(route.idempotency ?? null)} as const;`,
+    `const rateLimitContract: { window: "minute" | "hour" | "day"; max: number } | null = ${jsonLiteral(route.rateLimit ?? null)};`,
+    `const idempotencyContract: { required?: boolean; header?: string } | null = ${jsonLiteral(route.idempotency ?? null)};`,
     "",
     "type SchemaField = {",
     '  type: "string" | "number" | "integer" | "boolean" | "json" | "uuid" | "email" | "url";',

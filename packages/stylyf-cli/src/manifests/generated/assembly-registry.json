@@ -66,7 +66,7 @@
       },
       {
         "name": "destructive",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: destructive."
       },
       {
@@ -320,7 +320,7 @@
       },
       {
         "name": "underline",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: underline."
       },
       {
@@ -776,12 +776,12 @@
       },
       {
         "name": "compact",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: compact/full."
       },
       {
         "name": "showEdges",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: show edges."
       },
       {
@@ -903,12 +903,12 @@
       },
       {
         "name": "prefix",
-        "type": "string",
+        "type": "jsx",
         "description": "Style parameter surfaced by the source-owned registry inventory: prefix/suffix."
       },
       {
         "name": "clearable",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: clearable."
       },
       {
@@ -1042,23 +1042,28 @@
       },
       {
         "name": "minRows",
-        "type": "string",
+        "type": "number",
         "description": "Style parameter surfaced by the source-owned registry inventory: minRows."
       },
       {
         "name": "maxRows",
-        "type": "string",
+        "type": "number",
         "description": "Style parameter surfaced by the source-owned registry inventory: maxRows."
       },
       {
         "name": "autoResize",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: autoResize."
       },
       {
         "name": "resizeHandle",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: resizeHandle."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: resizeHandle.",
+        "values": [
+          "none",
+          "vertical",
+          "both"
+        ]
       },
       {
         "name": "disabled",
@@ -1191,7 +1196,7 @@
       },
       {
         "name": "suffix",
-        "type": "string",
+        "type": "jsx",
         "description": "Style parameter surfaced by the source-owned registry inventory: suffix/prefix."
       },
       {
@@ -1206,7 +1211,7 @@
       },
       {
         "name": "min",
-        "type": "boolean",
+        "type": "number",
         "description": "State parameter surfaced by the source-owned registry inventory: min/max reached."
       },
       {
@@ -1324,17 +1329,22 @@
       },
       {
         "name": "gap",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: gap."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: gap.",
+        "values": [
+          "tight",
+          "normal",
+          "wide"
+        ]
       },
       {
         "name": "masked",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: masked."
       },
       {
         "name": "mono",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: mono."
       },
       {
@@ -2174,7 +2184,7 @@
       },
       {
         "name": "marks",
-        "type": "string",
+        "type": "number",
         "description": "Style parameter surfaced by the source-owned registry inventory: marks."
       },
       {
@@ -2194,7 +2204,7 @@
       },
       {
         "name": "min",
-        "type": "boolean",
+        "type": "number",
         "description": "State parameter surfaced by the source-owned registry inventory: min/max."
       },
       {
@@ -2310,7 +2320,7 @@
       },
       {
         "name": "compact",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: compact."
       },
       {
@@ -2699,8 +2709,12 @@
     "props": [
       {
         "name": "orientation",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: orientation."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: orientation.",
+        "values": [
+          "horizontal",
+          "vertical"
+        ]
       },
       {
         "name": "size",
@@ -3049,8 +3063,13 @@
     "props": [
       {
         "name": "size",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: size."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: size.",
+        "values": [
+          "sm",
+          "md",
+          "lg"
+        ]
       },
       {
         "name": "placement",
@@ -3202,8 +3221,12 @@
       },
       {
         "name": "severity",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: severity."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: severity.",
+        "values": [
+          "danger",
+          "warning"
+        ]
       },
       {
         "name": "open",
@@ -3307,8 +3330,13 @@
     "props": [
       {
         "name": "side",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: side."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: side.",
+        "values": [
+          "bottom",
+          "left",
+          "right"
+        ]
       },
       {
         "name": "width",
@@ -3451,8 +3479,14 @@
       },
       {
         "name": "placement",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: placement."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: placement.",
+        "values": [
+          "bottom-end",
+          "bottom-start",
+          "top-end",
+          "top-start"
+        ]
       },
       {
         "name": "offset",
@@ -3579,12 +3613,18 @@
       },
       {
         "name": "placement",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: placement."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: placement.",
+        "values": [
+          "bottom",
+          "left",
+          "right",
+          "top"
+        ]
       },
       {
         "name": "delay",
-        "type": "string",
+        "type": "number",
         "description": "Style parameter surfaced by the source-owned registry inventory: delay."
       },
       {
@@ -4071,17 +4111,22 @@
       },
       {
         "name": "tone",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: tone."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: tone.",
+        "values": [
+          "accent",
+          "danger",
+          "highlight"
+        ]
       },
       {
         "name": "striped",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: striped."
       },
       {
         "name": "animated",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: animated."
       },
       {
@@ -4184,18 +4229,32 @@
     "props": [
       {
         "name": "tone",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: tone."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: tone.",
+        "values": [
+          "accent",
+          "danger",
+          "neutral",
+          "success"
+        ]
       },
       {
         "name": "emphasis",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: emphasis."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: emphasis.",
+        "values": [
+          "soft",
+          "solid"
+        ]
       },
       {
         "name": "size",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: size."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: size.",
+        "values": [
+          "md",
+          "sm"
+        ]
       },
       {
         "name": "removable",
@@ -4304,13 +4363,22 @@
     "props": [
       {
         "name": "size",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: size."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: size.",
+        "values": [
+          "lg",
+          "md",
+          "sm"
+        ]
       },
       {
         "name": "shape",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: shape."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: shape.",
+        "values": [
+          "circle",
+          "rounded"
+        ]
       },
       {
         "name": "border",
@@ -4329,7 +4397,7 @@
       },
       {
         "name": "fallback",
-        "type": "boolean",
+        "type": "jsx",
         "description": "State parameter surfaced by the source-owned registry inventory: fallback."
       },
       {
@@ -4423,13 +4491,23 @@
     "props": [
       {
         "name": "tone",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: tone."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: tone.",
+        "values": [
+          "danger",
+          "info",
+          "success"
+        ]
       },
       {
         "name": "placement",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: placement."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: placement.",
+        "values": [
+          "bottom-left",
+          "bottom-right",
+          "top-right"
+        ]
       },
       {
         "name": "actionSlot",
@@ -4549,8 +4627,13 @@
     "props": [
       {
         "name": "shape",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: shape."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: shape.",
+        "values": [
+          "circle",
+          "line",
+          "rect"
+        ]
       },
       {
         "name": "width",
@@ -4564,7 +4647,7 @@
       },
       {
         "name": "shimmer",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: shimmer."
       },
       {
@@ -4652,8 +4735,12 @@
     "props": [
       {
         "name": "orientation",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: orientation."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: orientation.",
+        "values": [
+          "horizontal",
+          "vertical"
+        ]
       },
       {
         "name": "inset",
@@ -4662,8 +4749,12 @@
       },
       {
         "name": "tone",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: tone."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: tone.",
+        "values": [
+          "accent",
+          "default"
+        ]
       },
       {
         "name": "spacing",
@@ -4754,8 +4845,13 @@
       },
       {
         "name": "labelWidth",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: label width."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: label width.",
+        "values": [
+          "narrow",
+          "regular",
+          "wide"
+        ]
       },
       {
         "name": "requiredMark",
@@ -4893,8 +4989,13 @@
       },
       {
         "name": "tone",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: tone."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: tone.",
+        "values": [
+          "default",
+          "muted",
+          "accent"
+        ]
       },
       {
         "name": "disabledSubtree",
@@ -5004,8 +5105,12 @@
       },
       {
         "name": "columns",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: columns."
+        "type": "number",
+        "description": "Style parameter surfaced by the source-owned registry inventory: columns.",
+        "values": [
+          1,
+          2
+        ]
       },
       {
         "name": "dividerMode",
@@ -5272,7 +5377,7 @@
       },
       {
         "name": "sticky",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: sticky."
       },
       {
@@ -5287,7 +5392,7 @@
       },
       {
         "name": "selectionCount",
-        "type": "boolean",
+        "type": "number",
         "description": "State parameter surfaced by the source-owned registry inventory: selection count."
       },
       {
@@ -5397,7 +5502,7 @@
       },
       {
         "name": "compact",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: compact/full label."
       },
       {
@@ -5897,7 +6002,7 @@
       },
       {
         "name": "compact",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: compact/full."
       },
       {
@@ -6488,8 +6593,13 @@
     "props": [
       {
         "name": "columns",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: columns."
+        "type": "number",
+        "description": "Style parameter surfaced by the source-owned registry inventory: columns.",
+        "values": [
+          2,
+          3,
+          4
+        ]
       },
       {
         "name": "gap",
@@ -6843,7 +6953,7 @@
       },
       {
         "name": "compact",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: compact/full."
       },
       {
@@ -6950,17 +7060,21 @@
     "props": [
       {
         "name": "density",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: density."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: density.",
+        "values": [
+          "comfortable",
+          "compact"
+        ]
       },
       {
         "name": "zebra",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: zebra."
       },
       {
         "name": "stickyHeader",
-        "type": "string",
+        "type": "boolean",
         "description": "Style parameter surfaced by the source-owned registry inventory: sticky header."
       },
       {
@@ -6975,8 +7089,12 @@
       },
       {
         "name": "sorted",
-        "type": "boolean",
-        "description": "State parameter surfaced by the source-owned registry inventory: sorted."
+        "type": "enum",
+        "description": "State parameter surfaced by the source-owned registry inventory: sorted.",
+        "values": [
+          "asc",
+          "desc"
+        ]
       },
       {
         "name": "hover",
@@ -8135,8 +8253,12 @@
     "props": [
       {
         "name": "orientation",
-        "type": "string",
-        "description": "Style parameter surfaced by the source-owned registry inventory: orientation."
+        "type": "enum",
+        "description": "Style parameter surfaced by the source-owned registry inventory: orientation.",
+        "values": [
+          "horizontal",
+          "vertical"
+        ]
       },
       {
         "name": "size",
@@ -8273,7 +8395,7 @@
       },
       {
         "name": "currentStep",
-        "type": "boolean",
+        "type": "number",
         "description": "State parameter surfaced by the source-owned registry inventory: currentStep."
       },
       {

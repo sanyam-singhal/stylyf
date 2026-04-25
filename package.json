@@ -16,6 +16,7 @@
     "cli:build-manifests": "node --experimental-strip-types scripts/build-stylyf-cli-manifests.ts",
     "cli:sync-assets": "node --experimental-strip-types scripts/sync-stylyf-cli-assets.ts",
     "cli:build": "npm run cli:build-manifests && npm run cli:sync-assets && npm --prefix packages/stylyf-cli run build",
+    "cli:check": "npm --prefix packages/stylyf-cli run check",
     "cli:help": "npm run cli:build && node packages/stylyf-cli/dist/bin.js --help",
     "cli:dev": "node --experimental-strip-types packages/stylyf-cli/src/bin.ts",
     "cli:verify-pack": "node scripts/verify-stylyf-cli-package.mjs",

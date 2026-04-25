@@ -1,9 +1,6 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { spawn } from "node:child_process";
 import type { AppIR } from "../compiler/generated-app.js";
 import { writeGeneratedFile } from "./assets.js";
-
-const execFileAsync = promisify(execFile);
 
 function slugify(value: string) {
   return value
@@ -306,16 +303,36 @@ export async function writeProjectScaffold(app: AppIR, targetPath: string) {
   await writeGeneratedFile(`${targetPath}/src/lib/test/factories.ts`, renderGeneratedTestFactories(app));
 }
 
-export async function installGeneratedProjectDependencies(targetPath: string) {
-  await execFileAsync("npm", ["install"], {
-    cwd: targetPath,
-    maxBuffer: 1024 * 1024 * 20,
+function runVisibleCommand(command: string, args: string[], cwd: string) {
+  return new Promise<void>((resolve, reject) => {
+    const startedAt = Date.now();
+    const printable = [command, ...args].join(" ");
+    process.stdout.write(`\n[stylyf] $ ${printable}\n[stylyf] cwd: ${cwd}\n`);
+
+    const child = spawn(command, args, {
+      cwd,
+      shell: process.platform === "win32",
+      stdio: "inherit",
+    });
+
+    child.on("error", reject);
+    child.on("close", code => {
+      const elapsedSeconds = ((Date.now() - startedAt) / 1000).toFixed(1);
+      if (code === 0) {
+        process.stdout.write(`[stylyf] completed in ${elapsedSeconds}s: ${printable}\n`);
+        resolve();
+        return;
+      }
+
+      reject(new Error(`Command failed with exit code ${code}: ${printable}`));
+    });
   });
 }
 
+export async function installGeneratedProjectDependencies(targetPath: string) {
+  await runVisibleCommand("npm", ["install"], targetPath);
+}
+
 export async function runGeneratedProjectScript(targetPath: string, scriptName: string) {
-  await execFileAsync("npm", ["run", scriptName], {
-    cwd: targetPath,
-    maxBuffer: 1024 * 1024 * 20,
-  });
+  await runVisibleCommand("npm", ["run", scriptName], targetPath);
 }

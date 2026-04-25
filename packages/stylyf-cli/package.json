@@ -1,6 +1,6 @@
 {
   "name": "@depths/stylyf-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Agent-operated scaffolding compiler for generating standalone SolidStart apps.",
   "license": "MIT",
   "author": "Depths AI",
@@ -50,9 +50,10 @@
   },
   "scripts": {
     "build": "node ./scripts/build.mjs",
+    "check": "tsc --noEmit",
     "clean": "rm -rf dist",
     "dev": "node --experimental-strip-types src/bin.ts",
-    "prepublishOnly": "npm run clean && npm run build"
+    "prepublishOnly": "npm run check && npm run clean && npm run build"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

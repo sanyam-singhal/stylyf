@@ -251,7 +251,7 @@ async function assemblyItemFor(item: RegistryItem): Promise<AssemblyItem> {
       ...item.stateParams,
     ].flatMap(splitKeywords),
   ).sort();
-  const props = componentPropContractsFromInventory(item);
+  const props = componentPropContractsFromInventory(item, source);
 
   return {
     id: `${clusterDirectory}/${item.slug}`,

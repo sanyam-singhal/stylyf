@@ -86,15 +86,22 @@ function operationFor(module: ServerModuleIR): "list" | "detail" | "create" | "u
 }
 
 function policyFor(resource: ResourceIR, operation: "list" | "detail" | "create" | "update" | "delete"): ResourceAccessPreset {
-  if (operation === "detail") {
-    return resource.access?.read ?? "public";
+  const requested =
+    operation === "detail"
+      ? resource.access?.read ?? "public"
+      : operation === "list"
+        ? resource.access?.list ?? resource.access?.read ?? "public"
+        : resource.access?.[operation] ?? "public";
+
+  if ((requested === "owner" || requested === "owner-or-public") && resource.ownership?.model !== "user") {
+    return operation === "list" || operation === "detail" ? "public" : "user";
   }
 
-  if (operation === "list") {
-    return resource.access?.list ?? resource.access?.read ?? "public";
+  if (requested === "workspace-member" && resource.ownership?.model !== "workspace") {
+    return "user";
   }
 
-  return resource.access?.[operation] ?? "public";
+  return requested;
 }
 
 function findResourceForModule(module: ServerModuleIR, app: AppIR) {

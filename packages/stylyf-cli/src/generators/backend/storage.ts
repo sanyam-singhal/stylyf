@@ -28,7 +28,7 @@ export function renderGeneratedStorageModule(app: AppIR) {
     "  if (input.fileSize !== undefined && input.fileSize > storagePolicy.maxFileSizeBytes) {",
     "    throw new Error(`File exceeds max upload size of ${storagePolicy.maxFileSizeBytes} bytes.`);",
     "  }",
-    "  if (storagePolicy.allowedContentTypes.length > 0 && !storagePolicy.allowedContentTypes.includes(input.contentType)) {",
+    "  if (storagePolicy.allowedContentTypes.length > 0 && !(storagePolicy.allowedContentTypes as readonly string[]).includes(input.contentType)) {",
     "    throw new Error(`Content type ${input.contentType} is not allowed by storage policy.`);",
     "  }",
     "  if (!input.key.startsWith(`${storagePolicy.keyPrefix}/`)) {",

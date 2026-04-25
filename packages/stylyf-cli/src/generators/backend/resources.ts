@@ -563,7 +563,14 @@ export function renderGeneratedRelationsModule(app: AppIR) {
 }
 
 function readPolicyFor(resource: ResourceIR, operation: "list" | "read" | "create" | "update" | "delete") {
-  return resource.access?.[operation] ?? (operation === "list" ? resource.access?.read : undefined) ?? "public";
+  const requested = resource.access?.[operation] ?? (operation === "list" ? resource.access?.read : undefined) ?? "public";
+  if ((requested === "owner" || requested === "owner-or-public") && resource.ownership?.model !== "user") {
+    return operation === "list" || operation === "read" ? "public" : "user";
+  }
+  if (requested === "workspace-member" && resource.ownership?.model !== "workspace") {
+    return "user";
+  }
+  return requested;
 }
 
 function sqlQuoted(value: string) {

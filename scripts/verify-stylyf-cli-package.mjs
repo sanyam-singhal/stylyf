@@ -310,6 +310,9 @@ async function packCliTarball(packRoot) {
 }
 
 async function main() {
+  process.stdout.write("Type checking CLI package...\n");
+  await run("npm", ["--prefix", packageDir, "run", "check"], repoDir);
+
   process.stdout.write("Building CLI package assets...\n");
   await run("npm", ["run", "cli:build"], repoDir);
 
@@ -393,6 +396,12 @@ async function main() {
   ) {
     throw new Error("Component search JSON is missing enriched machine-operable inventory contracts.");
   }
+  const { stdout: filterToolbarInspectJson } = await run(stylyfBin, ["inspect", "component", "filter-toolbar", "--json"], verifyRoot);
+  const filterToolbarInspectResult = JSON.parse(filterToolbarInspectJson);
+  const selectionCountContract = filterToolbarInspectResult?.props?.find(prop => prop.name === "selectionCount");
+  if (selectionCountContract?.type !== "number") {
+    throw new Error("Component prop contracts must be source-backed: filter-toolbar.selectionCount should be a number.");
+  }
 
   const aliasLayoutSpec = {
     ...genericSpec,
@@ -432,6 +441,51 @@ async function main() {
       },
     ],
   };
+  const invalidComponentPropSpec = {
+    ...genericSpec,
+    surfaces: [
+      {
+        name: "Invalid Component Props",
+        kind: "list",
+        object: "records",
+        path: "/invalid-component-props",
+        audience: "user",
+        sections: [
+          {
+            layout: "toolbar",
+            children: [
+              {
+                component: "filter-toolbar",
+                props: { selectionCount: true },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+  const invalidOwnerAccessSpec = {
+    ...genericSpec,
+    objects: [
+      {
+        name: "catalog_items",
+        ownership: "none",
+        fields: [{ name: "title", type: "short-text", required: true }],
+        access: { update: "owner" },
+      },
+    ],
+  };
+  const invalidWorkspaceAccessSpec = {
+    ...genericSpec,
+    objects: [
+      {
+        name: "catalog_items",
+        ownership: "user",
+        fields: [{ name: "title", type: "short-text", required: true }],
+        access: { read: "workspace-member" },
+      },
+    ],
+  };
   const invalidApiGetBodySpec = {
     ...genericSpec,
     apis: [
@@ -459,6 +513,9 @@ async function main() {
 
   await writeJson(resolve(verifyRoot, "alias-layout.spec.json"), aliasLayoutSpec);
   await writeJson(resolve(verifyRoot, "invalid-layout.spec.json"), invalidLayoutSpec);
+  await writeJson(resolve(verifyRoot, "invalid-component-prop.spec.json"), invalidComponentPropSpec);
+  await writeJson(resolve(verifyRoot, "invalid-owner-access.spec.json"), invalidOwnerAccessSpec);
+  await writeJson(resolve(verifyRoot, "invalid-workspace-access.spec.json"), invalidWorkspaceAccessSpec);
   await writeJson(resolve(verifyRoot, "invalid-api-get-body.spec.json"), invalidApiGetBodySpec);
   await writeJson(resolve(verifyRoot, "invalid-api-draft.spec.json"), invalidApiDraftSpec);
   await run(stylyfBin, ["validate", "--spec", "alias-layout.spec.json"], verifyRoot);
@@ -467,6 +524,9 @@ async function main() {
     throw new Error("Documented grid.columns alias was not normalized to grid.cols in the resolved plan.");
   }
   await assertCommandFails(stylyfBin, ["validate", "--spec", "invalid-layout.spec.json"], verifyRoot, "props.cols must be one of");
+  await assertCommandFails(stylyfBin, ["validate", "--spec", "invalid-component-prop.spec.json"], verifyRoot, "selectionCount must be a number");
+  await assertCommandFails(stylyfBin, ["validate", "--spec", "invalid-owner-access.spec.json"], verifyRoot, 'owner access requires ownership: "user"');
+  await assertCommandFails(stylyfBin, ["validate", "--spec", "invalid-workspace-access.spec.json"], verifyRoot, 'workspace access requires ownership: "workspace"');
   await assertCommandFails(stylyfBin, ["validate", "--spec", "invalid-api-get-body.spec.json"], verifyRoot, "request.body is not supported for GET routes");
   await assertCommandFails(stylyfBin, ["validate", "--spec", "invalid-api-draft.spec.json"], verifyRoot, "must provide request/response contracts or set draft: true");
 
@@ -548,7 +608,7 @@ async function main() {
     'import { createAsync, useParams } from "@solidjs/router";',
     'import { getRecords } from "~/lib/server/queries/records-detail";',
     "const params = useParams();",
-    "const recordData = createAsync(() => getRecords(params.id));",
+    'const recordData = createAsync(() => getRecords(params.id ?? ""));',
     "<LoadingState",
     "<EmptyState",
     "<ErrorState",
@@ -771,7 +831,9 @@ async function main() {
       "  - doctor, inspect, validate --deep, and generate --dry-run operator commands work",
       "  - intro/new/validate/plan/generate v1.0 commands work",
       "  - component inventory search exposes slots/state/data-shape/binding metadata",
+      "  - component prop contracts are source-backed and reject stale manifest type drift",
       "  - layout prop contracts validate values and normalize documented aliases",
+      "  - invalid owner/workspace access semantics are rejected before generation",
       "  - API contract grammar rejects unsafe method/schema and placeholder defaults",
       "  - contracted API routes emit validation helpers and machine-readable API summary",
       "  - generated apps include Playwright smoke test harness and package scripts",

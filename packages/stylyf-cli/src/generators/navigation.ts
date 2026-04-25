@@ -37,7 +37,7 @@ export function renderGeneratedNavigationModule(app: AppIR) {
     "          </a>",
     "        )}",
     "      </For>",
-    "      <Show when={navigationConfig.primary.length === 0}>",
+    "      <Show when={(navigationConfig.primary as readonly unknown[]).length === 0}>",
     "        <span class=\"text-muted-foreground\">No navigation items generated.</span>",
     "      </Show>",
     "    </div>",

@@ -514,7 +514,7 @@ function renderDataBoundRouteContent(
   const setupLines =
     binding.operation === "list"
       ? [`  const ${rowAccessor} = createAsync(() => ${serverFunction.exportName}());`]
-      : ["  const params = useParams();", `  const ${rowAccessor} = createAsync(() => ${serverFunction.exportName}(params.id));`];
+      : ["  const params = useParams();", `  const ${rowAccessor} = createAsync(() => ${serverFunction.exportName}(params.id ?? ""));`];
 
   const indentedSections = indentMultiline(renderedSections, 6);
   const content =
@@ -594,7 +594,7 @@ function renderResourceFormRouteSource(route: RouteIR, app: AppIR, assemblyLooku
     `      <${appShellName} title=${jsxPropValue(app.name)} ${appShellId === "topbar-app" ? 'nav={<GeneratedNavigation shell="topbar-app" />}' : appShellId === "sidebar-app" || appShellId === "docs-shell" ? `navigation={<GeneratedNavigation shell=${jsxPropValue(appShellId)} />}` : ""}>`,
     `        <${pageShellName} title=${jsxPropValue(title)} description=${jsxPropValue(description)}>`,
     route.page === "resource-edit"
-      ? `          <${resourceComponentName} mode="edit" resourceId={params.id} />`
+      ? `          <${resourceComponentName} mode="edit" resourceId={params.id ?? ""} />`
       : `          <${resourceComponentName} mode="create" />`,
     renderedSections,
     `        </${pageShellName}>`,
