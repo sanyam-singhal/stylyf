@@ -368,6 +368,16 @@ async function main() {
     await run(stylyfBin, ["validate", "--spec", output], verifyRoot);
     await run(stylyfBin, ["plan", "--spec", output, "--json"], verifyRoot);
   }
+  const { stdout: componentSearchJson } = await run(stylyfBin, ["search", "data-table-shell", "--json", "--limit", "1"], verifyRoot);
+  const [componentSearchResult] = JSON.parse(componentSearchJson);
+  if (
+    !componentSearchResult?.slots ||
+    !componentSearchResult?.controlledState ||
+    !componentSearchResult?.recommendedBindings?.includes("resource.list") ||
+    !componentSearchResult?.defaultDataShape
+  ) {
+    throw new Error("Component search JSON is missing enriched machine-operable inventory contracts.");
+  }
 
   const aliasLayoutSpec = {
     ...genericSpec,
@@ -697,6 +707,7 @@ async function main() {
       "  - tarball bundles dist manifests, templates, and source assets",
       "  - installed stylyf binary runs outside the repo",
       "  - intro/new/validate/plan/generate v1.0 commands work",
+      "  - component inventory search exposes slots/state/data-shape/binding metadata",
       "  - layout prop contracts validate values and normalize documented aliases",
       "  - API contract grammar rejects unsafe method/schema and placeholder defaults",
       "  - contracted API routes emit validation helpers and machine-readable API summary",

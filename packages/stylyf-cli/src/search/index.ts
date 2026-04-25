@@ -35,6 +35,13 @@ export type SearchableEntry = {
   keywords: string[];
   props?: string[];
   propContracts?: readonly CompositionPropContract[];
+  requiredProps?: string[];
+  slots?: string[];
+  events?: string[];
+  controlledState?: string[];
+  defaultDataShape?: Record<string, unknown>;
+  recommendedBindings?: string[];
+  a11yNotes?: string[];
   sourcePath?: string;
   importPath?: string;
   composition?: unknown;
@@ -51,6 +58,13 @@ export type SearchResult = {
   reason: string[];
   props?: string[];
   propContracts?: readonly CompositionPropContract[];
+  requiredProps?: string[];
+  slots?: string[];
+  events?: string[];
+  controlledState?: string[];
+  defaultDataShape?: Record<string, unknown>;
+  recommendedBindings?: string[];
+  a11yNotes?: string[];
   importPath?: string;
   sourcePath?: string;
   composition?: unknown;
@@ -77,6 +91,13 @@ function toSearchableComponent(item: AssemblyItem): SearchableEntry {
     keywords: item.keywords,
     props: item.props.map(prop => prop.name),
     propContracts: item.props,
+    requiredProps: item.requiredProps,
+    slots: item.slots,
+    events: item.events,
+    controlledState: item.controlledState,
+    defaultDataShape: item.defaultDataShape,
+    recommendedBindings: item.recommendedBindings,
+    a11yNotes: item.a11yNotes,
     sourcePath: item.sourcePath,
     importPath: item.importPath,
     composition: {
@@ -263,6 +284,13 @@ export async function querySearchIndex(query: string, options?: { limit?: number
         reason: scored.reason,
         props: entry.props,
         propContracts: entry.propContracts,
+        requiredProps: entry.requiredProps,
+        slots: entry.slots,
+        events: entry.events,
+        controlledState: entry.controlledState,
+        defaultDataShape: entry.defaultDataShape,
+        recommendedBindings: entry.recommendedBindings,
+        a11yNotes: entry.a11yNotes,
         importPath: entry.importPath,
         sourcePath: entry.sourcePath,
         composition: entry.composition,

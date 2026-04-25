@@ -69,6 +69,12 @@ type AssemblyItem = {
   localDependencies: string[];
   props: CompositionPropContract[];
   requiredProps: string[];
+  slots: string[];
+  events: string[];
+  controlledState: string[];
+  defaultDataShape: Record<string, unknown>;
+  recommendedBindings: string[];
+  a11yNotes: string[];
   compositionExamples: string[];
   snippet: string;
   keywords: string[];
@@ -168,6 +174,66 @@ function localDependenciesForSource(source: string) {
   );
 }
 
+function slotsForSource(source: string) {
+  const slots = new Set<string>();
+  if (source.includes("children")) slots.add("children");
+  for (const slot of ["actions", "icon", "header", "footer", "trigger", "content", "label", "description"]) {
+    if (source.includes(slot)) slots.add(slot);
+  }
+  return [...slots].sort();
+}
+
+function eventsForContracts(props: CompositionPropContract[]) {
+  return props
+    .map(prop => prop.name)
+    .filter(name => /^on[A-Z]/.test(name))
+    .sort();
+}
+
+function controlledStateForItem(item: RegistryItem, props: CompositionPropContract[]) {
+  const propNames = new Set(props.map(prop => prop.name));
+  return unique([
+    ...item.stateParams.filter(state => propNames.has(state) || propNames.has(`default${state[0]?.toUpperCase() ?? ""}${state.slice(1)}`)),
+    ...props.map(prop => prop.name).filter(name => ["value", "open", "checked", "pressed", "selected", "page"].includes(name)),
+  ]).sort();
+}
+
+function defaultDataShapeForItem(item: RegistryItem, props: CompositionPropContract[]) {
+  const shape: Record<string, unknown> = {};
+  if (item.slug.includes("table") || item.slug.includes("list") || item.slug.includes("feed")) {
+    shape.items = [{ id: "sample-id", title: "Sample item", status: "draft" }];
+  }
+  if (item.slug.includes("form") || item.clusterId.includes("form")) {
+    shape.values = Object.fromEntries(props.filter(prop => prop.default !== undefined).map(prop => [prop.name, prop.default]));
+    shape.errors = {};
+  }
+  if (item.slug.includes("chart") || item.slug.includes("stat")) {
+    shape.metrics = [{ label: "Sample", value: 1 }];
+  }
+  return shape;
+}
+
+function recommendedBindingsForItem(item: RegistryItem) {
+  const bindings = new Set<string>();
+  const haystack = `${item.clusterLabel} ${item.name} ${item.description} ${item.pattern}`.toLowerCase();
+  if (/(table|list|feed|pagination|data|metric|stat)/.test(haystack)) bindings.add("resource.list");
+  if (/(detail|profile|preview|card)/.test(haystack)) bindings.add("resource.detail");
+  if (/(form|create|upload|input)/.test(haystack)) bindings.add("resource.create");
+  if (/(edit|settings|toggle|switch)/.test(haystack)) bindings.add("resource.update");
+  if (/(workflow|approval|step|status)/.test(haystack)) bindings.add("workflow.transition");
+  if (/(upload|file|media|image|asset)/.test(haystack)) bindings.add("attachment.lifecycle");
+  return [...bindings].sort();
+}
+
+function a11yNotesForItem(item: RegistryItem, source: string) {
+  const notes = new Set<string>();
+  if (/aria-|role=|label/i.test(source)) notes.add("Includes explicit ARIA/role/label semantics in source.");
+  if (/button|input|select|textarea/i.test(item.name + source)) notes.add("Preserve native keyboard and focus behavior when composing.");
+  if (/dialog|popover|drawer|menu|combobox|tooltip/i.test(item.name)) notes.add("Review focus management and escape/blur interactions in context.");
+  if (item.notes) notes.add(item.notes);
+  return [...notes];
+}
+
 async function assemblyItemFor(item: RegistryItem): Promise<AssemblyItem> {
   const sourcePath = componentFilePath(item);
   const absoluteSourcePath = resolve(sourcePackageDir, sourcePath);
@@ -185,6 +251,7 @@ async function assemblyItemFor(item: RegistryItem): Promise<AssemblyItem> {
       ...item.stateParams,
     ].flatMap(splitKeywords),
   ).sort();
+  const props = componentPropContractsFromInventory(item);
 
   return {
     id: `${clusterDirectory}/${item.slug}`,
@@ -206,11 +273,18 @@ async function assemblyItemFor(item: RegistryItem): Promise<AssemblyItem> {
     exportName: componentSymbol(item.name),
     clusterDirectory,
     localDependencies: localDependenciesForSource(source),
-    props: componentPropContractsFromInventory(item),
-    requiredProps: [],
+    props,
+    requiredProps: props.filter(prop => prop.required).map(prop => prop.name),
+    slots: slotsForSource(source),
+    events: eventsForContracts(props),
+    controlledState: controlledStateForItem(item, props),
+    defaultDataShape: defaultDataShapeForItem(item, props),
+    recommendedBindings: recommendedBindingsForItem(item),
+    a11yNotes: a11yNotesForItem(item, source),
     compositionExamples: [
       JSON.stringify({
         component: item.slug,
+        props: Object.fromEntries(props.filter(prop => prop.default !== undefined).map(prop => [prop.name, prop.default])),
       }),
     ],
     snippet: snippetForSource(source),

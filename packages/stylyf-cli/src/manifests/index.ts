@@ -50,6 +50,12 @@ export type AssemblyItem = {
   localDependencies: string[];
   props: CompositionPropContract[];
   requiredProps: string[];
+  slots: string[];
+  events: string[];
+  controlledState: string[];
+  defaultDataShape: Record<string, unknown>;
+  recommendedBindings: string[];
+  a11yNotes: string[];
   compositionExamples: string[];
   snippet: string;
   keywords: string[];

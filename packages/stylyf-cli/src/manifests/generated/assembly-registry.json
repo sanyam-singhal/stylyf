@@ -86,8 +86,24 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children"
+    ],
+    "events": [],
+    "controlledState": [
+      "disabled",
+      "loading",
+      "pending"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Base primitive for every CTA."
+    ],
     "compositionExamples": [
-      "{\"component\":\"button\"}"
+      "{\"component\":\"button\",\"props\":{}}"
     ],
     "snippet": "import { cva, type VariantProps } from \"class-variance-authority\";\nimport { LoaderCircle } from \"lucide-solid\";\nimport { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport const buttonFrameVariants = cva(\n  [\n    \"inline-flex shrink-0 items-center justify-center whitespace-nowrap border font-semibold tracking-[-0.01em]\",\n    \"select-none transition-[transform,background-color,border-color,color,box-shadow,opacity] duration-200 ease-out\",\n    \"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background\",\n    \"disabled:pointer-events-none disabled:opacity-50\",\n    \"[&_svg]:pointer-events-none [&_svg]:shrink-0\",\n    \"data-[loading=true]:cursor-progress data-[pending=true]:cursor-progress data-[pressed=true]:translate-y-px data-[current=true]:ring-2 data-[current=true]:ring-primary/18\",\n  ].join(\" \"),\n  {\n    variants: {\n      size: {\n        sm: \"h-[calc(var(--control-height)-0.55rem)] gap-1.75 px-[calc(var(--control-padding-x)-0.35rem)] text-[0.84rem] [&_svg]:size-3.5\",\n        md: \"h-[var(--control-height)] gap-2 px-[var(--control-padding-x)] text-[0.92rem] [&_svg]:size-4\",\n        lg: \"h-[calc(var(--control-height)+0.55rem)] gap-2.5 px-[calc(var(--control-padding-x)+0.35rem)] text-[0.98rem] [&_svg]:size-4.5\",\n      },\n      density: {\n        comfortable: \"\",\n        compact: \"gap-1.5 px-[calc(var(--control-padding-x)-0.45rem)] text-[0.79rem] font-bold tracking-[0.08em]\",\n      },\n      radius: {\n        md: \"rounded-[max(calc(var(--radius)-10px),0.45rem)]\",\n        lg: \"rounded-[max(calc(var(--radius)-6px),0.8rem)]\",\n        pill: \"rounded-full\",\n      },\n      fullWidth: {\n        true: \"w-full\",\n        false: \"\",\n      },\n    },",
     "keywords": [
@@ -201,8 +217,26 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "disabled",
+      "loading",
+      "pressed"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Require aria-label when no text."
+    ],
     "compositionExamples": [
-      "{\"component\":\"icon-button\"}"
+      "{\"component\":\"icon-button\",\"props\":{}}"
     ],
     "snippet": "import { LoaderCircle, Plus } from \"lucide-solid\";\nimport { mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\nimport {\n  type ActionDensity,\n  type ActionIntent,\n  type ActionRadius,\n  type ActionSize,\n  type ActionTone,\n  buttonDisabledState,\n  buttonFrameVariants,\n  buttonToneClasses,\n} from \"~/components/registry/actions-navigation/button\";\n\ntype IconButtonShape = \"square\" | \"round\" | \"pill\";\n\nconst shapeClasses: Record<IconButtonShape, string> = {\n  square: \"rounded-[max(calc(var(--radius)-10px),0.45rem)]\",\n  round: \"rounded-full\",\n  pill: \"rounded-[max(calc(var(--radius)-6px),0.8rem)]\",\n};\n\nconst sizeClasses: Record<ActionSize, string> = {\n  sm: \"size-[calc(var(--control-height)-0.55rem)] px-0\",\n  md: \"size-[var(--control-height)] px-0\",\n  lg: \"size-[calc(var(--control-height)+0.55rem)] px-0\",\n};\n\nexport type IconButtonProps = Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, \"children\"> & {\n  class?: string;\n  children?: JSX.Element;\n  density?: ActionDensity;\n  destructive?: boolean;\n  intent?: ActionIntent;\n  label?: string;",
     "keywords": [
@@ -311,8 +345,25 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "content"
+    ],
+    "events": [],
+    "controlledState": [
+      "current",
+      "disabled"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Use for navigation, not mutations."
+    ],
     "compositionExamples": [
-      "{\"component\":\"link-button\"}"
+      "{\"component\":\"link-button\",\"props\":{}}"
     ],
     "snippet": "import { A } from \"@solidjs/router\";\nimport { ArrowUpRight, LoaderCircle } from \"lucide-solid\";\nimport { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\nimport {\n  type ActionDensity,\n  type ActionIntent,\n  type ActionRadius,\n  type ActionSize,\n  type ActionTone,\n  buttonFrameVariants,\n  buttonToneClasses,\n} from \"~/components/registry/actions-navigation/button\";\n\nexport type LinkButtonProps = Omit<JSX.AnchorHTMLAttributes<HTMLAnchorElement>, \"children\" | \"href\"> & {\n  children?: JSX.Element;\n  class?: string;\n  current?: boolean;\n  density?: ActionDensity;\n  destructive?: boolean;\n  disabled?: boolean;\n  end?: boolean;\n  external?: boolean;\n  fullWidth?: boolean;\n  href?: string;\n  intent?: ActionIntent;\n  pending?: boolean;\n  radius?: ActionRadius;\n  showExternalBadge?: boolean;\n  size?: ActionSize;\n  tone?: ActionTone;\n  underline?: boolean;\n};\n\nfunction isInternalHref(href: string, external?: boolean) {",
     "keywords": [
@@ -413,8 +464,27 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children"
+    ],
+    "events": [],
+    "controlledState": [
+      "disabled",
+      "pressed"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.list",
+      "resource.update"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "For formatting/stateful actions."
+    ],
     "compositionExamples": [
-      "{\"component\":\"toggle\"}"
+      "{\"component\":\"toggle\",\"props\":{}}"
     ],
     "snippet": "import { Bold } from \"lucide-solid\";\nimport { createSignal, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\nimport {\n  type ActionDensity,\n  type ActionIntent,\n  type ActionRadius,\n  type ActionSize,\n  type ActionTone,\n  ActionContent,\n  buttonDisabledState,\n  buttonFrameVariants,\n  buttonToneClasses,\n} from \"~/components/registry/actions-navigation/button\";\n\nexport type ToggleProps = Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, \"children\"> & {\n  children?: JSX.Element;\n  class?: string;\n  defaultPressed?: boolean;\n  density?: ActionDensity;\n  destructive?: boolean;\n  fullWidth?: boolean;\n  intent?: ActionIntent;\n  leftIcon?: JSX.Element;\n  loading?: boolean;\n  onPressedChange?: (pressed: boolean) => void;\n  pending?: boolean;\n  pressed?: boolean;\n  radius?: ActionRadius;\n  rightIcon?: JSX.Element;\n  size?: ActionSize;\n  tone?: ActionTone;\n};\n\nexport function Toggle(userProps: ToggleProps) {",
     "keywords": [
@@ -511,8 +581,27 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "disabled",
+      "rovingFocus"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.update"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Supports single or multiple mode."
+    ],
     "compositionExamples": [
-      "{\"component\":\"toggle-group\"}"
+      "{\"component\":\"toggle-group\",\"props\":{}}"
     ],
     "snippet": "import { Italic, List, Rows3 } from \"lucide-solid\";\nimport {\n  Show,\n  createContext,\n  createEffect,\n  createMemo,\n  createSignal,\n  mergeProps,\n  onCleanup,\n  splitProps,\n  useContext,\n} from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\nimport {\n  type ActionDensity,\n  type ActionIntent,\n  type ActionRadius,\n  type ActionSize,\n  type ActionTone,\n  buttonFrameVariants,\n  buttonToneClasses,\n} from \"~/components/registry/actions-navigation/button\";\n\ntype ToggleGroupMode = \"single\" | \"multiple\";\ntype ToggleGroupLayout = \"segmented\" | \"card\";\ntype ToggleGroupOrientation = \"horizontal\" | \"vertical\";\n\ntype RegisteredItem = {\n  disabled: boolean;\n  ref: HTMLButtonElement;\n  value: string;\n};\n\ntype ToggleGroupContextValue = {\n  destructive: () => boolean | undefined;",
     "keywords": [
@@ -604,8 +693,26 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "current",
+      "overflowed"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Support collapsed middle items."
+    ],
     "compositionExamples": [
-      "{\"component\":\"breadcrumb\"}"
+      "{\"component\":\"breadcrumb\",\"props\":{}}"
     ],
     "snippet": "import { A } from \"@solidjs/router\";\nimport { ChevronRight, Ellipsis } from \"lucide-solid\";\nimport { children, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX, ParentProps } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nfunction defaultBreadcrumbChildren() {\n  return (\n    <Breadcrumb.List>\n      <Breadcrumb.Item>\n        <Breadcrumb.Link href=\"/\">Home</Breadcrumb.Link>\n      </Breadcrumb.Item>\n      <Breadcrumb.Separator />\n      <Breadcrumb.Item>\n        <Breadcrumb.Collapsed />\n      </Breadcrumb.Item>\n      <Breadcrumb.Separator />\n      <Breadcrumb.Item>\n        <Breadcrumb.Link href=\"/dashboard-sidebar-simple\">App</Breadcrumb.Link>\n      </Breadcrumb.Item>\n      <Breadcrumb.Separator />\n      <Breadcrumb.Item>\n        <Breadcrumb.Current>Actions &amp; Navigation</Breadcrumb.Current>\n      </Breadcrumb.Item>\n    </Breadcrumb.List>\n  );\n}\n\nexport type BreadcrumbProps = ParentProps<JSX.HTMLAttributes<HTMLElement> & { label?: string }>;\n\nfunction BreadcrumbRoot(userProps: BreadcrumbProps) {\n  const props = mergeProps({ label: \"Breadcrumb\" }, userProps);\n  const [local, others] = splitProps(props, [\"children\", \"class\", \"label\"]);\n  const resolvedChildren = children(() => local.children);\n\n  return (",
     "keywords": [
@@ -689,8 +796,27 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "current",
+      "disabled"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Expose controlled paging state."
+    ],
     "compositionExamples": [
-      "{\"component\":\"pagination\"}"
+      "{\"component\":\"pagination\",\"props\":{}}"
     ],
     "snippet": "import { ChevronLeft, ChevronRight, MoreHorizontal } from \"lucide-solid\";\nimport { For, Show, createMemo, createSignal, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\nimport { buttonFrameVariants, buttonToneClasses } from \"~/components/registry/actions-navigation/button\";\n\ntype PaginationToken = number | \"ellipsis\";\n\nfunction buildRange(currentPage: number, pageCount: number, siblingCount: number, showEdges: boolean) {\n  const safePageCount = Math.max(pageCount, 1);\n  const safePage = Math.min(Math.max(currentPage, 1), safePageCount);\n  const safeSiblingCount = Math.max(siblingCount, 0);\n\n  if (!showEdges) {\n    const start = Math.max(1, safePage - safeSiblingCount);\n    const end = Math.min(safePageCount, safePage + safeSiblingCount);\n    return Array.from({ length: end - start + 1 }, (_, index) => start + index);\n  }\n\n  const range = (start: number, end: number) =>\n    Array.from({ length: end - start + 1 }, (_, index) => start + index);\n\n  const totalSlots = safeSiblingCount * 2 + 5;\n\n  if (safePageCount <= totalSlots) {\n    return range(1, safePageCount);\n  }\n\n  const leftSibling = Math.max(safePage - safeSiblingCount, 2);\n  const rightSibling = Math.min(safePage + safeSiblingCount, safePageCount - 1);\n  const showLeftEllipsis = leftSibling > 2;\n  const showRightEllipsis = rightSibling < safePageCount - 1;\n\n  if (!showLeftEllipsis && showRightEllipsis) {\n    return [...range(1, 3 + safeSiblingCount * 2), \"ellipsis\", safePageCount];\n  }",
     "keywords": [
@@ -812,8 +938,33 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "dirty",
+      "disabled",
+      "focused",
+      "invalid",
+      "readOnly"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Use native input semantics."
+    ],
     "compositionExamples": [
-      "{\"component\":\"text-field\"}"
+      "{\"component\":\"text-field\",\"props\":{}}"
     ],
     "snippet": "import { Show, children, createMemo, createSignal, createUniqueId, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { CircleX } from \"lucide-solid\";\nimport { cn } from \"~/lib/cn\";\n\ntype FieldRadius = \"md\" | \"lg\" | \"pill\";\ntype FieldSize = \"sm\" | \"md\" | \"lg\";\n\nconst frameSizeClasses = {\n  sm: \"min-h-10 gap-2.5 px-3\",\n  md: \"min-h-11 gap-3 px-3.5\",\n  lg: \"min-h-13 gap-3.5 px-4.5\",\n} as const;\n\nconst frameRadiusClasses = {\n  md: \"rounded-lg\",\n  lg: \"rounded-xl\",\n  pill: \"rounded-full\",\n} as const;\n\nconst controlSizeClasses = {\n  sm: \"text-sm\",\n  md: \"text-sm\",\n  lg: \"text-base\",\n} as const;\n\nexport type TextFieldProps = Omit<JSX.InputHTMLAttributes<HTMLInputElement>, \"defaultValue\" | \"prefix\" | \"size\" | \"value\"> & {\n  class?: string;\n  clearable?: boolean;\n  description?: JSX.Element;\n  dirty?: boolean;\n  errorMessage?: JSX.Element;\n  inputClass?: string;\n  invalid?: boolean;\n  label?: JSX.Element;\n  onValueChange?: (value: string) => void;",
     "keywords": [
@@ -931,8 +1082,31 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "disabled",
+      "focused",
+      "invalid",
+      "readOnly"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Share field shell tokens."
+    ],
     "compositionExamples": [
-      "{\"component\":\"text-area\"}"
+      "{\"component\":\"text-area\",\"props\":{}}"
     ],
     "snippet": "import { Show, createEffect, createMemo, createSignal, createUniqueId, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\ntype FieldRadius = \"md\" | \"lg\" | \"pill\";\ntype FieldSize = \"sm\" | \"md\" | \"lg\";\n\nconst frameSizeClasses = {\n  sm: \"min-h-10 gap-2.5 px-3\",\n  md: \"min-h-11 gap-3 px-3.5\",\n  lg: \"min-h-13 gap-3.5 px-4.5\",\n} as const;\n\nconst frameRadiusClasses = {\n  md: \"rounded-lg\",\n  lg: \"rounded-xl\",\n  pill: \"rounded-[1.75rem]\",\n} as const;\n\nconst controlSizeClasses = {\n  sm: \"text-sm\",\n  md: \"text-sm\",\n  lg: \"text-base\",\n} as const;\n\nexport type TextAreaProps = Omit<JSX.TextareaHTMLAttributes<HTMLTextAreaElement>, \"value\" | \"defaultValue\"> & {\n  autoResize?: boolean;\n  class?: string;\n  defaultValue?: string;\n  description?: JSX.Element;\n  errorMessage?: JSX.Element;\n  invalid?: boolean;\n  label?: JSX.Element;\n  maxRows?: number;\n  minRows?: number;\n  onValueChange?: (value: string) => void;",
     "keywords": [
@@ -1042,8 +1216,32 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "disabled",
+      "invalid",
+      "scrubbing"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create",
+      "workflow.transition"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Prefer machine logic over raw number input UX."
+    ],
     "compositionExamples": [
-      "{\"component\":\"number-field\"}"
+      "{\"component\":\"number-field\",\"props\":{}}"
     ],
     "snippet": "import { Minus, Plus } from \"lucide-solid\";\nimport { Show, children, createMemo, createSignal, createUniqueId, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\ntype NumberAlign = \"start\" | \"center\" | \"end\";\ntype NumberControlPlacement = \"inline\" | \"stacked\";\ntype FieldRadius = \"md\" | \"lg\" | \"pill\";\ntype FieldSize = \"sm\" | \"md\" | \"lg\";\n\nconst frameSizeClasses = {\n  sm: \"min-h-10 gap-2.5 px-3\",\n  md: \"min-h-11 gap-3 px-3.5\",\n  lg: \"min-h-13 gap-3.5 px-4.5\",\n} as const;\n\nconst frameRadiusClasses = {\n  md: \"rounded-lg\",\n  lg: \"rounded-xl\",\n  pill: \"rounded-full\",\n} as const;\n\nconst controlSizeClasses = {\n  sm: \"text-sm\",\n  md: \"text-sm\",\n  lg: \"text-base\",\n} as const;\n\nconst alignClasses = {\n  start: \"text-left\",\n  center: \"text-center\",\n  end: \"text-right\",\n} as const;\n\nexport type NumberFieldProps = Omit<JSX.InputHTMLAttributes<HTMLInputElement>, \"defaultValue\" | \"prefix\" | \"size\" | \"type\" | \"value\"> & {\n  align?: NumberAlign;",
     "keywords": [
@@ -1166,8 +1364,31 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "complete",
+      "disabled",
+      "focusedIndex",
+      "invalid"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Useful for auth and verification."
+    ],
     "compositionExamples": [
-      "{\"component\":\"otp-field\"}"
+      "{\"component\":\"otp-field\",\"props\":{}}"
     ],
     "snippet": "import { For, Show, createMemo, createSignal, createUniqueId, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\ntype FieldRadius = \"md\" | \"lg\" | \"pill\";\ntype FieldSize = \"sm\" | \"md\" | \"lg\";\n\nexport type OTPFieldProps = Omit<JSX.InputHTMLAttributes<HTMLInputElement>, \"value\" | \"defaultValue\" | \"size\" | \"onInput\"> & {\n  cellClass?: string;\n  class?: string;\n  defaultValue?: string;\n  description?: JSX.Element;\n  errorMessage?: JSX.Element;\n  gap?: \"tight\" | \"normal\" | \"wide\";\n  invalid?: boolean;\n  label?: JSX.Element;\n  length?: number;\n  masked?: boolean;\n  mono?: boolean;\n  onValueChange?: (value: string) => void;\n  radius?: FieldRadius;\n  size?: FieldSize;\n  value?: string;\n};\n\nconst gapClasses = {\n  normal: \"gap-3\",\n  tight: \"gap-2\",\n  wide: \"gap-4\",\n} as const;\n\nconst cellClasses = {\n  sm: \"size-11 text-lg\",\n  md: \"size-12 text-xl\",\n  lg: \"size-14 text-2xl\",\n} as const;",
     "keywords": [
@@ -1286,8 +1507,32 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "checked",
+      "disabled",
+      "indeterminate",
+      "invalid",
+      "unchecked"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Support indeterminate state."
+    ],
     "compositionExamples": [
-      "{\"component\":\"checkbox\"}"
+      "{\"component\":\"checkbox\",\"props\":{}}"
     ],
     "snippet": "import { Check, Minus } from \"lucide-solid\";\nimport { Show, createEffect, createSignal, createUniqueId, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\ntype FieldRadius = \"md\" | \"lg\" | \"pill\";\ntype FieldSize = \"sm\" | \"md\" | \"lg\";\n\ntype CheckboxTone = \"soft\" | \"outline\" | \"solid\";\n\nconst indicatorSizes = {\n  sm: \"size-5\",\n  md: \"size-5.5\",\n  lg: \"size-6\",\n} as const;\n\nconst labelSizes = {\n  sm: \"text-sm\",\n  md: \"text-sm\",\n  lg: \"text-base\",\n} as const;\n\nexport type CheckboxProps = Omit<JSX.InputHTMLAttributes<HTMLInputElement>, \"size\" | \"onChange\"> & {\n  checked?: boolean;\n  class?: string;\n  defaultChecked?: boolean;\n  description?: JSX.Element;\n  errorMessage?: JSX.Element;\n  indeterminate?: boolean;\n  invalid?: boolean;\n  label?: JSX.Element;\n  onCheckedChange?: (checked: boolean) => void;\n  radius?: FieldRadius;\n  size?: FieldSize;\n  tone?: CheckboxTone;\n};",
     "keywords": [
@@ -1393,8 +1638,31 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "checked",
+      "disabled",
+      "focused",
+      "invalid"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Arrow-key navigation required."
+    ],
     "compositionExamples": [
-      "{\"component\":\"radio-group\"}"
+      "{\"component\":\"radio-group\",\"props\":{}}"
     ],
     "snippet": "import { For, Show, createMemo, createSignal, createUniqueId, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\ntype FieldSize = \"sm\" | \"md\" | \"lg\";\n\ntype RadioOption = {\n  description?: JSX.Element;\n  disabled?: boolean;\n  label: JSX.Element;\n  value: string;\n};\n\ntype RadioLayout = \"inline\" | \"card\";\n\nexport type RadioGroupProps = Omit<JSX.FieldsetHTMLAttributes<HTMLFieldSetElement>, \"onChange\"> & {\n  description?: JSX.Element;\n  errorMessage?: JSX.Element;\n  invalid?: boolean;\n  label?: JSX.Element;\n  layout?: RadioLayout;\n  name?: string;\n  onValueChange?: (value: string) => void;\n  options?: RadioOption[];\n  required?: boolean;\n  size?: FieldSize;\n  value?: string;\n  defaultValue?: string;\n};\n\nconst defaultOptions: RadioOption[] = [\n  { value: \"pro\", label: \"Pro\", description: \"Priority support and advanced workspace controls.\" },\n  { value: \"team\", label: \"Team\", description: \"Shared seats, approvals, and collaboration defaults.\" },\n  { value: \"enterprise\", label: \"Enterprise\", description: \"Audit, SSO, and contractual billing flows.\" },\n];",
     "keywords": [
@@ -1503,8 +1771,33 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "checked",
+      "disabled",
+      "invalid",
+      "unchecked"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "attachment.lifecycle",
+      "resource.create",
+      "resource.update"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Use for instant settings."
+    ],
     "compositionExamples": [
-      "{\"component\":\"switch\"}"
+      "{\"component\":\"switch\",\"props\":{}}"
     ],
     "snippet": "import { Check, X } from \"lucide-solid\";\nimport { Show, createSignal, createUniqueId, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\ntype FieldSize = \"sm\" | \"md\" | \"lg\";\n\ntype SwitchTone = \"soft\" | \"solid\" | \"outline\";\ntype SwitchLabelPlacement = \"end\" | \"start\";\n\nconst trackSizes = {\n  sm: \"h-7 w-12\",\n  md: \"h-9 w-15\",\n  lg: \"h-10 w-17\",\n} as const;\n\nconst thumbSizes = {\n  sm: \"size-5\",\n  md: \"size-7\",\n  lg: \"size-8\",\n} as const;\n\nconst thumbTranslations = {\n  sm: \"translate-x-5\",\n  md: \"translate-x-[1.625rem]\",\n  lg: \"translate-x-7\",\n} as const;\n\nexport type SwitchProps = Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, \"onChange\" | \"size\"> & {\n  checked?: boolean;\n  class?: string;\n  defaultChecked?: boolean;\n  description?: JSX.Element;\n  errorMessage?: JSX.Element;\n  invalid?: boolean;\n  label?: JSX.Element;",
     "keywords": [
@@ -1621,8 +1914,33 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "description",
+      "label",
+      "trigger"
+    ],
+    "events": [],
+    "controlledState": [
+      "closed",
+      "highlighted",
+      "invalid",
+      "open",
+      "selected"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Use for finite lists."
+    ],
     "compositionExamples": [
-      "{\"component\":\"select\"}"
+      "{\"component\":\"select\",\"props\":{}}"
     ],
     "snippet": "import { Check, ChevronDown } from \"lucide-solid\";\nimport { For, Show, createEffect, createMemo, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Portal } from \"solid-js/web\";\nimport { cn } from \"~/lib/cn\";\n\ntype FieldRadius = \"md\" | \"lg\" | \"pill\";\ntype FieldSize = \"sm\" | \"md\" | \"lg\";\n\nexport type SelectOption = {\n  disabled?: boolean;\n  label: string;\n  value: string;\n};\n\nexport type SelectProps = Omit<JSX.SelectHTMLAttributes<HTMLSelectElement>, \"size\" | \"onChange\"> & {\n  class?: string;\n  defaultValue?: string;\n  description?: JSX.Element;\n  errorMessage?: JSX.Element;\n  invalid?: boolean;\n  label?: JSX.Element;\n  onValueChange?: (value: string) => void;\n  options?: SelectOption[];\n  placeholder?: string;\n  radius?: FieldRadius;\n  size?: FieldSize;\n  value?: string;\n};\n\nconst defaultOptions: SelectOption[] = [\n  { value: \"design\", label: \"Design system\" },\n  { value: \"admin\", label: \"Admin workspace\" },\n  { value: \"marketing\", label: \"Marketing site\" },\n  { value: \"docs\", label: \"Documentation hub\" },\n];",
     "keywords": [
@@ -1744,8 +2062,35 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "empty",
+      "highlighted",
+      "invalid",
+      "loading",
+      "open",
+      "selected"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create",
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Review focus management and escape/blur interactions in context.",
+      "Needed for typeahead and async search."
+    ],
     "compositionExamples": [
-      "{\"component\":\"combobox\"}"
+      "{\"component\":\"combobox\",\"props\":{}}"
     ],
     "snippet": "import { Check, ChevronDown, CircleX, LoaderCircle } from \"lucide-solid\";\nimport { For, Show, createEffect, createMemo, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Portal } from \"solid-js/web\";\nimport { cn } from \"~/lib/cn\";\n\ntype FieldRadius = \"md\" | \"lg\" | \"pill\";\ntype FieldSize = \"sm\" | \"md\" | \"lg\";\n\nconst frameSizeClasses = {\n  sm: \"min-h-10 gap-2.5 px-3\",\n  md: \"min-h-11 gap-3 px-3.5\",\n  lg: \"min-h-13 gap-3.5 px-4.5\",\n} as const;\n\nconst frameRadiusClasses = {\n  md: \"rounded-lg\",\n  lg: \"rounded-xl\",\n  pill: \"rounded-full\",\n} as const;\n\nconst controlSizeClasses = {\n  sm: \"text-sm\",\n  md: \"text-sm\",\n  lg: \"text-base\",\n} as const;\n\nexport type ComboboxOption = {\n  description?: string;\n  disabled?: boolean;\n  label: string;\n  value: string;\n};\n\nexport type ComboboxProps = Omit<JSX.InputHTMLAttributes<HTMLInputElement>, \"size\" | \"value\" | \"defaultValue\" | \"onInput\"> & {\n  class?: string;",
     "keywords": [
@@ -1859,8 +2204,30 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "disabled",
+      "dragging",
+      "invalid"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Support single and range modes."
+    ],
     "compositionExamples": [
-      "{\"component\":\"slider\"}"
+      "{\"component\":\"slider\",\"props\":{}}"
     ],
     "snippet": "import { For, Show, createMemo, createSignal, createUniqueId, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\ntype FieldSize = \"sm\" | \"md\" | \"lg\";\n\ntype SliderOrientation = \"horizontal\" | \"vertical\";\n\nexport type SliderProps = Omit<JSX.InputHTMLAttributes<HTMLInputElement>, \"value\" | \"defaultValue\" | \"size\" | \"type\"> & {\n  class?: string;\n  defaultValue?: number | [number, number];\n  description?: JSX.Element;\n  errorMessage?: JSX.Element;\n  invalid?: boolean;\n  label?: JSX.Element;\n  marks?: number[];\n  max?: number;\n  min?: number;\n  onValueChange?: (value: number | [number, number]) => void;\n  orientation?: SliderOrientation;\n  size?: FieldSize;\n  step?: number;\n  value?: number | [number, number];\n};\n\nfunction normalize(value: number | [number, number] | undefined, min: number, max: number) {\n  if (Array.isArray(value)) {\n    const start = Math.min(Math.max(value[0] ?? min, min), max);\n    const end = Math.min(Math.max(value[1] ?? max, min), max);\n    return start <= end ? [start, end] : [end, start];\n  }\n\n  const single = Math.min(Math.max(value ?? min, min), max);\n  return [single] as const;\n}",
     "keywords": [
@@ -1968,8 +2335,31 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "disabled",
+      "highlighted",
+      "outsideMonth",
+      "selected"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Needed for date-based flows."
+    ],
     "compositionExamples": [
-      "{\"component\":\"calendar\"}"
+      "{\"component\":\"calendar\",\"props\":{}}"
     ],
     "snippet": "import { ChevronLeft, ChevronRight } from \"lucide-solid\";\nimport { For, Show, createMemo, createSignal, createUniqueId, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\nimport { addMonths, formatDate, monthMatrix, sameDay, sameMonth, startOfDay, type CalendarValue } from \"~/components/registry/form-inputs/calendar-utils\";\n\ntype SelectionMode = \"single\" | \"range\";\n\nexport type CalendarProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"onChange\"> & {\n  compact?: boolean;\n  description?: JSX.Element;\n  disabledDates?: Date[];\n  errorMessage?: JSX.Element;\n  invalid?: boolean;\n  label?: JSX.Element;\n  mode?: SelectionMode;\n  onValueChange?: (value: CalendarValue) => void;\n  showWeekNumbers?: boolean;\n  value?: CalendarValue;\n  defaultValue?: CalendarValue;\n  defaultMonth?: Date;\n};\n\nfunction isDisabled(date: Date, disabledDates: Date[]) {\n  return disabledDates.some(entry => sameDay(entry, date));\n}\n\nfunction containsRange(date: Date, value: CalendarValue) {\n  if (!Array.isArray(value) || !value[0] || !value[1]) {\n    return false;\n  }\n\n  const target = startOfDay(date).getTime();\n  const start = startOfDay(value[0]).getTime();\n  const end = startOfDay(value[1]).getTime();\n  return target >= start && target <= end;",
     "keywords": [
@@ -2081,8 +2471,30 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "invalid",
+      "open",
+      "selected"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Wrap Calendar into field UX."
+    ],
     "compositionExamples": [
-      "{\"component\":\"date-picker\"}"
+      "{\"component\":\"date-picker\",\"props\":{}}"
     ],
     "snippet": "import { CalendarDays } from \"lucide-solid\";\nimport { Show, createEffect, createMemo, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Portal } from \"solid-js/web\";\nimport { cn } from \"~/lib/cn\";\nimport { Calendar } from \"~/components/registry/form-inputs/calendar\";\nimport { formatDate, type CalendarValue } from \"~/components/registry/form-inputs/calendar-utils\";\n\ntype FieldRadius = \"md\" | \"lg\" | \"pill\";\ntype FieldSize = \"sm\" | \"md\" | \"lg\";\n\nconst frameSizeClasses = {\n  sm: \"min-h-10 gap-2.5 px-3\",\n  md: \"min-h-11 gap-3 px-3.5\",\n  lg: \"min-h-13 gap-3.5 px-4.5\",\n} as const;\n\nconst frameRadiusClasses = {\n  md: \"rounded-lg\",\n  lg: \"rounded-xl\",\n  pill: \"rounded-full\",\n} as const;\n\nconst controlSizeClasses = {\n  sm: \"text-sm\",\n  md: \"text-sm\",\n  lg: \"text-base\",\n} as const;\n\ntype DatePickerMode = \"single\" | \"range\";\n\nexport type DatePickerProps = Omit<JSX.InputHTMLAttributes<HTMLInputElement>, \"value\" | \"defaultValue\" | \"size\"> & {\n  class?: string;\n  defaultOpen?: boolean;\n  defaultValue?: CalendarValue;\n  description?: JSX.Element;",
     "keywords": [
@@ -2193,8 +2605,30 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description",
+      "label",
+      "trigger"
+    ],
+    "events": [],
+    "controlledState": [
+      "empty",
+      "highlighted",
+      "loading",
+      "open"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Review focus management and escape/blur interactions in context.",
+      "Foundation for global cmd-k."
+    ],
     "compositionExamples": [
-      "{\"component\":\"command-menu\"}"
+      "{\"component\":\"command-menu\",\"props\":{}}"
     ],
     "snippet": "import { Portal } from \"solid-js/web\";\nimport { For, Show, createEffect, createMemo, createSignal, mergeProps, onCleanup, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Command, Search } from \"lucide-solid\";\nimport { Button } from \"~/components/registry/actions-navigation/button\";\nimport { cn } from \"~/lib/cn\";\n\nexport type CommandItem = {\n  description?: string;\n  keywords?: string[];\n  label: string;\n  shortcut?: string;\n};\n\nexport type CommandGroup = {\n  items: CommandItem[];\n  label: string;\n};\n\nexport type CommandMenuProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\" | \"ref\"> & {\n  class?: string;\n  defaultOpen?: boolean;\n  groups?: CommandGroup[];\n  onOpenChange?: (open: boolean) => void;\n  open?: boolean;\n  title?: JSX.Element;\n  triggerLabel?: JSX.Element;\n};\n\nconst defaultGroups: CommandGroup[] = [\n  {\n    label: \"Navigation\",\n    items: [\n      { label: \"Open billing settings\", description: \"Jump to plans, invoices, and cards\", shortcut: \"B\", keywords: [\"billing\", \"plan\"] },\n      { label: \"Go to members directory\", description: \"Manage roles and seat allocation\", shortcut: \"M\", keywords: [\"members\", \"team\"] },\n    ],",
     "keywords": [
@@ -2295,8 +2729,28 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "content",
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "active",
+      "disabled"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Follow APG tab pattern."
+    ],
     "compositionExamples": [
-      "{\"component\":\"tabs\"}"
+      "{\"component\":\"tabs\",\"props\":{}}"
     ],
     "snippet": "import { For, Show, createMemo, createSignal, createUniqueId, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type TabsItem = {\n  badge?: string;\n  content: JSX.Element;\n  description?: JSX.Element;\n  disabled?: boolean;\n  label: JSX.Element;\n  value: string;\n};\n\nexport type TabsProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\" | \"ref\"> & {\n  activation?: \"automatic\" | \"manual\";\n  ariaLabel?: string;\n  class?: string;\n  defaultValue?: string;\n  items?: TabsItem[];\n  onValueChange?: (value: string) => void;\n  orientation?: \"horizontal\" | \"vertical\";\n  value?: string;\n};\n\nconst defaultItems: TabsItem[] = [\n  {\n    value: \"overview\",\n    label: \"Overview\",\n    description: \"Highlights\",\n    content: (\n      <div class=\"grid gap-4 lg:grid-cols-[1.1fr_0.9fr]\">\n        <div class=\"ui-demo-inset\">\n          <div class=\"text-xs uppercase tracking-[0.2em] text-muted-foreground\">Workspace summary</div>\n          <div class=\"mt-3 text-lg font-semibold text-foreground\">Content operating system</div>\n          <p class=\"mt-2 text-sm leading-6 text-muted-foreground\">\n            Tabs keep sections parallel and quick to scan, with a clear active state and keyboard movement along the",
     "keywords": [
@@ -2391,8 +2845,28 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "content",
+      "description",
+      "label",
+      "trigger"
+    ],
+    "events": [],
+    "controlledState": [
+      "closed",
+      "disabled",
+      "open"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Support single/multiple mode."
+    ],
     "compositionExamples": [
-      "{\"component\":\"accordion\"}"
+      "{\"component\":\"accordion\",\"props\":{}}"
     ],
     "snippet": "import { For, Show, createMemo, createSignal, createUniqueId, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { ChevronDown } from \"lucide-solid\";\nimport { cn } from \"~/lib/cn\";\n\nexport type AccordionItem = {\n  content: JSX.Element;\n  description?: JSX.Element;\n  disabled?: boolean;\n  title: JSX.Element;\n  value: string;\n};\n\nexport type AccordionProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\" | \"ref\"> & {\n  allowCollapse?: boolean;\n  class?: string;\n  defaultValue?: string | string[];\n  items?: AccordionItem[];\n  multiple?: boolean;\n  onValueChange?: (value: string | string[] | undefined) => void;\n  value?: string | string[];\n};\n\nconst defaultItems: AccordionItem[] = [\n  {\n    value: \"governance\",\n    title: \"Publishing governance\",\n    description: \"Who can approve and ship content.\",\n    content: (\n      <p class=\"text-sm leading-6 text-muted-foreground\">\n        Approval logic is explicit, with reviewer roles, escalation rules, and a visible audit trail for every change.\n      </p>\n    ),\n  },\n  {\n    value: \"access\",",
     "keywords": [
@@ -2484,8 +2958,29 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "content",
+      "description",
+      "trigger"
+    ],
+    "events": [],
+    "controlledState": [
+      "closed",
+      "disabled",
+      "open"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Lighter than accordion."
+    ],
     "compositionExamples": [
-      "{\"component\":\"collapsible\"}"
+      "{\"component\":\"collapsible\",\"props\":{}}"
     ],
     "snippet": "import { Show, createSignal, createUniqueId, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { ChevronDown } from \"lucide-solid\";\nimport { cn } from \"~/lib/cn\";\n\nexport type CollapsibleProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\" | \"ref\"> & {\n  children?: JSX.Element;\n  class?: string;\n  defaultOpen?: boolean;\n  description?: JSX.Element;\n  disabled?: boolean;\n  onOpenChange?: (open: boolean) => void;\n  open?: boolean;\n  title?: JSX.Element;\n};\n\nexport function Collapsible(userProps: CollapsibleProps) {\n  const props = mergeProps(\n    {\n      defaultOpen: false,\n      description: \"A lighter disclosure for secondary detail and supporting notes.\",\n      title: \"Workspace details\",\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\n    \"children\",\n    \"class\",\n    \"defaultOpen\",\n    \"description\",\n    \"disabled\",\n    \"onOpenChange\",\n    \"open\",\n    \"title\",\n  ]);",
     "keywords": [
@@ -2599,8 +3094,30 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "content",
+      "description",
+      "footer",
+      "label",
+      "trigger"
+    ],
+    "events": [],
+    "controlledState": [
+      "busy",
+      "closing",
+      "open"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Review focus management and escape/blur interactions in context.",
+      "Trap focus and restore on close."
+    ],
     "compositionExamples": [
-      "{\"component\":\"dialog\"}"
+      "{\"component\":\"dialog\",\"props\":{}}"
     ],
     "snippet": "import { Portal } from \"solid-js/web\";\nimport { Show, createEffect, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { X } from \"lucide-solid\";\nimport { cn } from \"~/lib/cn\";\n\nexport type DialogProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\" | \"ref\"> & {\n  children?: JSX.Element;\n  class?: string;\n  closeLabel?: string;\n  defaultOpen?: boolean;\n  description?: JSX.Element;\n  dismissible?: boolean;\n  footer?: JSX.Element;\n  onOpenChange?: (open: boolean) => void;\n  open?: boolean;\n  size?: \"sm\" | \"md\" | \"lg\";\n  title?: JSX.Element;\n};\n\nfunction getFocusableElements(container: HTMLElement | undefined) {\n  if (!container) return [];\n\n  return Array.from(\n    container.querySelectorAll<HTMLElement>(\n      'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\"-1\"])',\n    ),\n  );\n}\n\nexport function Dialog(userProps: DialogProps) {\n  const props = mergeProps(\n    {\n      closeLabel: \"Close dialog\",\n      defaultOpen: false,\n      description: \"Dialogs block the surrounding page and focus attention on a contained decision or task.\",",
     "keywords": [
@@ -2700,8 +3217,27 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "busy",
+      "open"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Review focus management and escape/blur interactions in context.",
+      "For destructive or irreversible actions."
+    ],
     "compositionExamples": [
-      "{\"component\":\"alert-dialog\"}"
+      "{\"component\":\"alert-dialog\",\"props\":{}}"
     ],
     "snippet": "import { Portal } from \"solid-js/web\";\nimport { Show, createEffect, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { AlertTriangle } from \"lucide-solid\";\nimport { Button } from \"~/components/registry/actions-navigation/button\";\nimport { cn } from \"~/lib/cn\";\n\nexport type AlertDialogProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\" | \"ref\"> & {\n  busy?: boolean;\n  cancelLabel?: string;\n  class?: string;\n  confirmLabel?: string;\n  defaultOpen?: boolean;\n  description?: JSX.Element;\n  onCancel?: () => void;\n  onConfirm?: () => void;\n  onOpenChange?: (open: boolean) => void;\n  open?: boolean;\n  severity?: \"danger\" | \"warning\";\n  title?: JSX.Element;\n};\n\nfunction getFocusableElements(container: HTMLElement | undefined) {\n  if (!container) return [];\n\n  return Array.from(\n    container.querySelectorAll<HTMLElement>(\n      'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\"-1\"])',\n    ),\n  );\n}\n\nexport function AlertDialog(userProps: AlertDialogProps) {\n  const props = mergeProps(\n    {\n      busy: false,",
     "keywords": [
@@ -2816,8 +3352,30 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description",
+      "footer",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "busy",
+      "closing",
+      "dragging",
+      "open"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Review focus management and escape/blur interactions in context.",
+      "Use on mobile and contextual edit."
+    ],
     "compositionExamples": [
-      "{\"component\":\"drawer\"}"
+      "{\"component\":\"drawer\",\"props\":{}}"
     ],
     "snippet": "import { Portal } from \"solid-js/web\";\nimport { Show, createEffect, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { X } from \"lucide-solid\";\nimport { Button } from \"~/components/registry/actions-navigation/button\";\nimport { cn } from \"~/lib/cn\";\n\nexport type DrawerProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\" | \"ref\"> & {\n  children?: JSX.Element;\n  class?: string;\n  defaultOpen?: boolean;\n  description?: JSX.Element;\n  footer?: JSX.Element;\n  onOpenChange?: (open: boolean) => void;\n  open?: boolean;\n  side?: \"bottom\" | \"left\" | \"right\";\n  title?: JSX.Element;\n};\n\nfunction getFocusableElements(container: HTMLElement | undefined) {\n  if (!container) return [];\n\n  return Array.from(\n    container.querySelectorAll<HTMLElement>(\n      'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\"-1\"])',\n    ),\n  );\n}\n\nexport function Drawer(userProps: DrawerProps) {\n  const props = mergeProps(\n    {\n      defaultOpen: false,\n      description: \"Drawers keep surrounding context visible while exposing a substantial secondary surface.\",\n      side: \"right\" as const,\n      title: \"Edit member access\",",
     "keywords": [
@@ -2928,8 +3486,29 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description",
+      "label",
+      "trigger"
+    ],
+    "events": [],
+    "controlledState": [
+      "closed",
+      "open",
+      "positioned"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Review focus management and escape/blur interactions in context.",
+      "For rich inline overlays."
+    ],
     "compositionExamples": [
-      "{\"component\":\"popover\"}"
+      "{\"component\":\"popover\",\"props\":{}}"
     ],
     "snippet": "import { Portal } from \"solid-js/web\";\nimport { Show, createEffect, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { ChevronDown } from \"lucide-solid\";\nimport { Button } from \"~/components/registry/actions-navigation/button\";\nimport { cn } from \"~/lib/cn\";\n\nexport type PopoverProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\" | \"ref\"> & {\n  children?: JSX.Element;\n  class?: string;\n  defaultOpen?: boolean;\n  description?: JSX.Element;\n  onOpenChange?: (open: boolean) => void;\n  open?: boolean;\n  placement?: \"bottom-end\" | \"bottom-start\" | \"top-end\" | \"top-start\";\n  title?: JSX.Element;\n  triggerLabel?: JSX.Element;\n};\n\nfunction getPosition(anchor: HTMLElement, panel: HTMLElement | undefined, placement: PopoverProps[\"placement\"]) {\n  const rect = anchor.getBoundingClientRect();\n  const panelWidth = panel?.offsetWidth ?? Math.min(384, window.innerWidth - 32);\n  const panelHeight = panel?.offsetHeight ?? 240;\n  const baseLeft = placement?.endsWith(\"end\") ? rect.right - panelWidth : rect.left;\n  const baseTop = placement?.startsWith(\"top\") ? rect.top - panelHeight - 12 : rect.bottom + 12;\n  const maxLeft = Math.max(16, window.innerWidth - panelWidth - 16);\n  const maxTop = Math.max(16, window.innerHeight - panelHeight - 16);\n\n  return {\n    left: `${Math.min(Math.max(16, Math.round(baseLeft)), maxLeft)}px`,\n    position: \"fixed\",\n    top: `${Math.min(Math.max(16, Math.round(baseTop)), maxTop)}px`,\n  };\n}\n\nexport function Popover(userProps: PopoverProps) {",
     "keywords": [
@@ -3030,8 +3609,28 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "content",
+      "label",
+      "trigger"
+    ],
+    "events": [],
+    "controlledState": [
+      "delayed",
+      "disabled",
+      "open"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Review focus management and escape/blur interactions in context.",
+      "Never hide required information in tooltip."
+    ],
     "compositionExamples": [
-      "{\"component\":\"tooltip\"}"
+      "{\"component\":\"tooltip\",\"props\":{}}"
     ],
     "snippet": "import { Portal } from \"solid-js/web\";\nimport { Show, createEffect, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Info } from \"lucide-solid\";\nimport { cn } from \"~/lib/cn\";\n\nexport type TooltipProps = Omit<JSX.HTMLAttributes<HTMLSpanElement>, \"children\" | \"ref\"> & {\n  class?: string;\n  content?: JSX.Element;\n  delay?: number;\n  label?: JSX.Element;\n  placement?: \"bottom\" | \"left\" | \"right\" | \"top\";\n};\n\nfunction getTooltipPosition(anchor: HTMLElement, placement: NonNullable<TooltipProps[\"placement\"]>) {\n  const rect = anchor.getBoundingClientRect();\n\n  if (placement === \"bottom\") {\n    return { left: `${Math.round(rect.left + rect.width / 2)}px`, top: `${Math.round(rect.bottom + 12)}px`, transform: \"translateX(-50%)\" };\n  }\n\n  if (placement === \"left\") {\n    return { left: `${Math.round(rect.left - 12)}px`, top: `${Math.round(rect.top + rect.height / 2)}px`, transform: \"translate(-100%, -50%)\" };\n  }\n\n  if (placement === \"right\") {\n    return { left: `${Math.round(rect.right + 12)}px`, top: `${Math.round(rect.top + rect.height / 2)}px`, transform: \"translateY(-50%)\" };\n  }\n\n  return { left: `${Math.round(rect.left + rect.width / 2)}px`, top: `${Math.round(rect.top - 12)}px`, transform: \"translate(-50%, -100%)\" };\n}\n\nexport function Tooltip(userProps: TooltipProps) {\n  const props = mergeProps(\n    {\n      content: \"Use a tooltip for helpful supplementary detail, never for required information.\",",
     "keywords": [
@@ -3138,8 +3737,29 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "label",
+      "trigger"
+    ],
+    "events": [],
+    "controlledState": [
+      "checked",
+      "disabled",
+      "highlighted",
+      "open"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Review focus management and escape/blur interactions in context.",
+      "Keyboard menu semantics required."
+    ],
     "compositionExamples": [
-      "{\"component\":\"dropdown-menu\"}"
+      "{\"component\":\"dropdown-menu\",\"props\":{}}"
     ],
     "snippet": "import { Portal } from \"solid-js/web\";\nimport { For, Show, createEffect, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Check, ChevronDown } from \"lucide-solid\";\nimport { Button } from \"~/components/registry/actions-navigation/button\";\nimport { cn } from \"~/lib/cn\";\n\nexport type DropdownMenuItem = {\n  checked?: boolean;\n  disabled?: boolean;\n  label: JSX.Element;\n  role?: \"menuitem\" | \"menuitemcheckbox\" | \"menuitemradio\";\n  shortcut?: string;\n  tone?: \"default\" | \"danger\";\n};\n\nexport type DropdownMenuProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\" | \"ref\"> & {\n  class?: string;\n  items?: DropdownMenuItem[];\n  label?: JSX.Element;\n  onItemSelect?: (item: DropdownMenuItem, index: number) => void;\n};\n\nconst defaultItems: DropdownMenuItem[] = [\n  { label: \"Edit details\", shortcut: \"E\" },\n  { label: \"Duplicate view\", shortcut: \"D\" },\n  { label: \"Pin to workspace\", role: \"menuitemcheckbox\", checked: true, shortcut: \"P\" },\n  { label: \"Archive workspace\", tone: \"danger\", shortcut: \"⌘⌫\" },\n];\n\nfunction getMenuItems(container: HTMLElement | undefined) {\n  if (!container) return [];\n\n  return Array.from(container.querySelectorAll<HTMLButtonElement>('[role=\"menuitem\"],[role=\"menuitemcheckbox\"],[role=\"menuitemradio\"]')).filter(\n    item => !item.disabled,\n  );",
     "keywords": [
@@ -3240,8 +3860,28 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "checked",
+      "disabled",
+      "highlighted",
+      "open"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Review focus management and escape/blur interactions in context.",
+      "Use same menu item anatomy."
+    ],
     "compositionExamples": [
-      "{\"component\":\"context-menu\"}"
+      "{\"component\":\"context-menu\",\"props\":{}}"
     ],
     "snippet": "import { Portal } from \"solid-js/web\";\nimport { For, Show, createEffect, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Check } from \"lucide-solid\";\nimport { cn } from \"~/lib/cn\";\n\nexport type ContextMenuItem = {\n  checked?: boolean;\n  disabled?: boolean;\n  label: JSX.Element;\n  role?: \"menuitem\" | \"menuitemcheckbox\" | \"menuitemradio\";\n  shortcut?: string;\n  tone?: \"default\" | \"danger\";\n};\n\nexport type ContextMenuProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\" | \"ref\"> & {\n  areaLabel?: JSX.Element;\n  children?: JSX.Element;\n  class?: string;\n  items?: ContextMenuItem[];\n  onItemSelect?: (item: ContextMenuItem, index: number) => void;\n};\n\nconst defaultItems: ContextMenuItem[] = [\n  { label: \"Open detail panel\", shortcut: \"↵\" },\n  { label: \"Mark as priority\", role: \"menuitemcheckbox\", checked: true, shortcut: \"P\" },\n  { label: \"Copy record ID\", shortcut: \"C\" },\n  { label: \"Delete record\", tone: \"danger\", shortcut: \"⌘⌫\" },\n];\n\nfunction getMenuItems(container: HTMLElement | undefined) {\n  if (!container) return [];\n\n  return Array.from(container.querySelectorAll<HTMLButtonElement>('[role=\"menuitem\"],[role=\"menuitemcheckbox\"],[role=\"menuitemradio\"]')).filter(\n    item => !item.disabled,\n  );",
     "keywords": [
@@ -3339,8 +3979,27 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "label",
+      "trigger"
+    ],
+    "events": [],
+    "controlledState": [
+      "disabled",
+      "highlighted",
+      "open"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Review focus management and escape/blur interactions in context.",
+      "Use only for app-like IA."
+    ],
     "compositionExamples": [
-      "{\"component\":\"menubar\"}"
+      "{\"component\":\"menubar\",\"props\":{}}"
     ],
     "snippet": "import { Portal } from \"solid-js/web\";\nimport { For, Show, createEffect, createSignal, createUniqueId, mergeProps, onCleanup, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Check, ChevronDown } from \"lucide-solid\";\nimport { cn } from \"~/lib/cn\";\n\nexport type MenubarItem = {\n  checked?: boolean;\n  disabled?: boolean;\n  label: JSX.Element;\n  role?: \"menuitem\" | \"menuitemcheckbox\" | \"menuitemradio\";\n  shortcut?: string;\n  tone?: \"default\" | \"danger\";\n};\n\nexport type MenubarMenu = {\n  items: MenubarItem[];\n  label: JSX.Element;\n};\n\nexport type MenubarProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\" | \"ref\"> & {\n  class?: string;\n  menus?: MenubarMenu[];\n  onItemSelect?: (menuIndex: number, itemIndex: number) => void;\n};\n\nconst defaultMenus: MenubarMenu[] = [\n  {\n    label: \"File\",\n    items: [\n      { label: \"New workspace\", shortcut: \"⌘N\" },\n      { label: \"Duplicate\", shortcut: \"⇧⌘D\" },\n      { label: \"Archive\", tone: \"danger\", shortcut: \"⌘⌫\" },\n    ],\n  },\n  {",
     "keywords": [
@@ -3442,8 +4101,26 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "complete",
+      "error",
+      "indeterminate"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "For long-running work."
+    ],
     "compositionExamples": [
-      "{\"component\":\"progress\"}"
+      "{\"component\":\"progress\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type ProgressProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\"> & {\n  animated?: boolean;\n  class?: string;\n  indeterminate?: boolean;\n  label?: JSX.Element;\n  max?: number;\n  striped?: boolean;\n  tone?: \"accent\" | \"danger\" | \"highlight\";\n  value?: number;\n};\n\nconst toneClasses = {\n  accent: \"bg-[linear-gradient(90deg,color-mix(in_oklab,var(--primary)_86%,white_14%),var(--primary))] text-primary-foreground\",\n  danger: \"bg-[linear-gradient(90deg,color-mix(in_oklab,var(--destructive)_82%,white_10%),var(--destructive))] text-destructive-foreground\",\n  highlight: \"bg-[linear-gradient(90deg,color-mix(in_oklab,var(--secondary)_88%,white_12%),var(--secondary-foreground))] text-secondary-foreground\",\n} as const;\n\nexport function Progress(userProps: ProgressProps) {\n  const props = mergeProps(\n    {\n      animated: false,\n      indeterminate: false,\n      label: \"Progress\",\n      max: 100,\n      striped: false,\n      tone: \"accent\" as const,\n      value: 64,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"animated\", \"class\", \"indeterminate\", \"label\", \"max\", \"striped\", \"tone\", \"value\"]);",
     "keywords": [
@@ -3537,8 +4214,29 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "icon",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "disabled",
+      "removable",
+      "selected"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.list",
+      "workflow.transition"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Use for status and metadata."
+    ],
     "compositionExamples": [
-      "{\"component\":\"badge\"}"
+      "{\"component\":\"badge\",\"props\":{}}"
     ],
     "snippet": "import { mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { X } from \"lucide-solid\";\nimport { cn } from \"~/lib/cn\";\n\nexport type BadgeProps = Omit<JSX.HTMLAttributes<HTMLSpanElement>, \"children\" | \"ref\"> & {\n  children?: JSX.Element;\n  class?: string;\n  emphasis?: \"soft\" | \"solid\";\n  icon?: JSX.Element;\n  onRemove?: () => void;\n  removable?: boolean;\n  selected?: boolean;\n  size?: \"md\" | \"sm\";\n  tone?: \"accent\" | \"danger\" | \"neutral\" | \"success\";\n};\n\nconst toneStyles = {\n  accent: {\n    soft: \"border-accent/42 bg-accent/90 text-accent-foreground\",\n    solid: \"border-primary/28 bg-primary text-primary-foreground shadow-xs\",\n  },\n  danger: {\n    soft: \"border-destructive/26 bg-destructive/10 text-destructive\",\n    solid: \"border-destructive/34 bg-destructive text-destructive-foreground shadow-xs\",\n  },\n  neutral: {\n    soft: \"border-border/78 bg-[var(--muted-soft)] text-foreground\",\n    solid: \"border-border/80 bg-foreground text-background shadow-xs\",\n  },\n  success: {\n    soft: \"border-success/26 bg-success/10 text-success\",\n    solid: \"border-success/32 bg-success text-success-foreground shadow-xs\",\n  },\n} as const;",
     "keywords": [
@@ -3641,8 +4339,26 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children"
+    ],
+    "events": [],
+    "controlledState": [
+      "fallback",
+      "loading"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "attachment.lifecycle",
+      "resource.list",
+      "workflow.transition"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Always safe fallback path."
+    ],
     "compositionExamples": [
-      "{\"component\":\"avatar\"}"
+      "{\"component\":\"avatar\",\"props\":{}}"
     ],
     "snippet": "import { Match, Show, Switch, createMemo, createSignal, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type AvatarProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\" | \"ref\"> & {\n  alt?: string;\n  bordered?: boolean;\n  class?: string;\n  fallback?: JSX.Element;\n  loading?: boolean;\n  shape?: \"circle\" | \"rounded\";\n  size?: \"lg\" | \"md\" | \"sm\";\n  src?: string;\n  status?: \"offline\" | \"online\";\n};\n\nexport function Avatar(userProps: AvatarProps) {\n  const props = mergeProps(\n    { alt: \"Stylyf user\", bordered: true, loading: false, shape: \"circle\" as const, size: \"md\" as const, status: undefined },\n    userProps,\n  );\n  const [local, others] = splitProps(props, [\"alt\", \"bordered\", \"class\", \"fallback\", \"loading\", \"shape\", \"size\", \"src\", \"status\"]);\n  const [failed, setFailed] = createSignal(false);\n  const initials = createMemo(() =>\n    local.alt\n      .split(\" \")\n      .filter(Boolean)\n      .slice(0, 2)\n      .map(part => part[0]?.toUpperCase())\n      .join(\"\") || \"ST\",\n  );\n\n  const sizeClass = () =>\n    ({\n      sm: \"size-10 text-sm\",\n      md: \"size-12 text-base\",",
     "keywords": [
@@ -3747,8 +4463,30 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "closing",
+      "open",
+      "paused",
+      "swipe"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Non-blocking feedback."
+    ],
     "compositionExamples": [
-      "{\"component\":\"toast\"}"
+      "{\"component\":\"toast\",\"props\":{}}"
     ],
     "snippet": "import { For, Show, createSignal, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { CheckCircle2, Info, TriangleAlert, X } from \"lucide-solid\";\nimport { Button } from \"~/components/registry/actions-navigation/button\";\nimport { cn } from \"~/lib/cn\";\n\nexport type ToastItem = {\n  actionLabel?: string;\n  description?: JSX.Element;\n  id: string;\n  title: JSX.Element;\n  tone?: \"danger\" | \"info\" | \"success\";\n};\n\nexport type ToastProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\" | \"ref\"> & {\n  class?: string;\n  defaultItems?: ToastItem[];\n  items?: ToastItem[];\n  onAction?: (id: string) => void;\n  onDismiss?: (id: string) => void;\n  placement?: \"bottom-left\" | \"bottom-right\" | \"top-right\";\n};\n\nconst defaultItems: ToastItem[] = [\n  {\n    id: \"deploy-success\",\n    title: \"Deployment complete\",\n    description: \"The production registry was rebuilt and verified.\",\n    tone: \"success\",\n    actionLabel: \"View logs\",\n  },\n];\n\nfunction toneClasses(tone: NonNullable<ToastItem[\"tone\"]>) {\n  return {\n    danger: \"border-destructive/30 bg-destructive/10 text-destructive\",",
     "keywords": [
@@ -3841,8 +4579,23 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children"
+    ],
+    "events": [],
+    "controlledState": [
+      "loading"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Use layout-faithful placeholders."
+    ],
     "compositionExamples": [
-      "{\"component\":\"skeleton\"}"
+      "{\"component\":\"skeleton\",\"props\":{}}"
     ],
     "snippet": "import { mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type SkeletonProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\" | \"ref\"> & {\n  class?: string;\n  height?: string;\n  shimmer?: boolean;\n  shape?: \"circle\" | \"line\" | \"rect\";\n  width?: string;\n};\n\nexport function Skeleton(userProps: SkeletonProps) {\n  const props = mergeProps({ height: \"1rem\", shimmer: true, shape: \"rect\" as const, width: \"100%\" }, userProps);\n  const [local, others] = splitProps(props, [\"class\", \"height\", \"shimmer\", \"shape\", \"width\"]);\n\n  return (\n    <div\n      class={cn(\n        \"relative overflow-hidden border border-border/65 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--muted-soft)_86%,white_14%),var(--muted-soft))] shadow-inset\",\n        local.shape === \"circle\" ? \"rounded-full\" : local.shape === \"line\" ? \"rounded-full\" : \"rounded-lg\",\n        local.shimmer &&\n          \"before:absolute before:inset-0 before:bg-[linear-gradient(110deg,transparent_0%,transparent_34%,rgba(255,255,255,0.48)_50%,transparent_66%,transparent_100%)] before:animate-[ui-shimmer-sweep_1.35s_linear_infinite]\",\n        local.class,\n      )}\n      style={{ height: local.height, width: local.width }}\n      aria-hidden=\"true\"\n      {...others}\n    />\n  );\n}",
     "keywords": [
@@ -3919,8 +4672,22 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Keep semantic role minimal."
+    ],
     "compositionExamples": [
-      "{\"component\":\"separator\"}"
+      "{\"component\":\"separator\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type SeparatorProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\" | \"ref\"> & {\n  class?: string;\n  label?: JSX.Element;\n  orientation?: \"horizontal\" | \"vertical\";\n  tone?: \"accent\" | \"default\";\n};\n\nexport function Separator(userProps: SeparatorProps) {\n  const props = mergeProps({ label: undefined, orientation: \"horizontal\" as const, tone: \"default\" as const }, userProps);\n  const [local, others] = splitProps(props, [\"class\", \"label\", \"orientation\", \"tone\"]);\n\n  return (\n    <div\n      role=\"separator\"\n      aria-orientation={local.orientation}\n      class={cn(\n        \"flex items-center gap-3 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground\",\n        local.orientation === \"vertical\" ? \"h-full min-h-12 flex-col justify-center\" : \"w-full\",\n        local.class,\n      )}\n      {...others}\n    >\n      <div\n        class={cn(\n          \"shrink-0\",\n          local.orientation === \"vertical\" ? \"h-full w-px bg-border/80\" : \"h-px flex-1 bg-border/80\",\n          local.tone === \"accent\" && (local.orientation === \"vertical\" ? \"bg-primary/42\" : \"bg-primary/42\"),\n        )}\n      />\n      <Show when={local.label}>\n        <span class=\"shrink-0 rounded-full bg-background px-1.5 text-[0.68rem] text-muted-foreground\">{local.label}</span>\n        <div",
     "keywords": [
@@ -4017,8 +4784,30 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "busy",
+      "disabled",
+      "invalid"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Build once; every field composes through it."
+    ],
     "compositionExamples": [
-      "{\"component\":\"field-row\"}"
+      "{\"component\":\"field-row\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type FieldRowProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\"> & {\n  action?: JSX.Element;\n  children?: JSX.Element;\n  class?: string;\n  description?: JSX.Element;\n  disabled?: boolean;\n  errorMessage?: JSX.Element;\n  invalid?: boolean;\n  label?: JSX.Element;\n  layout?: \"inline\" | \"stacked\";\n  labelWidth?: \"narrow\" | \"regular\" | \"wide\";\n  required?: boolean;\n};\n\nconst labelWidthClasses = {\n  narrow: \"xl:basis-40\",\n  regular: \"xl:basis-52\",\n  wide: \"xl:basis-64\",\n} as const;\n\nexport function FieldRow(userProps: FieldRowProps) {\n  const props = mergeProps(\n    {\n      disabled: false,\n      invalid: false,\n      labelWidth: \"regular\" as const,\n      layout: \"inline\" as const,\n      required: false,\n    },\n    userProps,\n  );",
     "keywords": [
@@ -4119,8 +4908,29 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description",
+      "footer"
+    ],
+    "events": [],
+    "controlledState": [
+      "dirty"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create",
+      "resource.detail"
+    ],
+    "a11yNotes": [
+      "Great for settings surfaces."
+    ],
     "compositionExamples": [
-      "{\"component\":\"fieldset-card\"}"
+      "{\"component\":\"fieldset-card\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Badge } from \"~/components/registry/feedback-display/badge\";\nimport { cn } from \"~/lib/cn\";\n\nexport type FieldsetCardProps = Omit<JSX.HTMLAttributes<HTMLFieldSetElement>, \"children\"> & {\n  actions?: JSX.Element;\n  children?: JSX.Element;\n  class?: string;\n  description?: JSX.Element;\n  dirty?: boolean;\n  disabledSubtree?: boolean;\n  footer?: JSX.Element;\n  title?: JSX.Element;\n  tone?: \"default\" | \"muted\" | \"accent\";\n};\n\nexport function FieldsetCard(userProps: FieldsetCardProps) {\n  const props = mergeProps(\n    {\n      dirty: false,\n      disabledSubtree: false,\n      tone: \"default\" as const,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\n    \"actions\",\n    \"children\",\n    \"class\",\n    \"description\",\n    \"dirty\",\n    \"disabledSubtree\",\n    \"footer\",\n    \"title\",",
     "keywords": [
@@ -4224,8 +5034,31 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description",
+      "footer"
+    ],
+    "events": [],
+    "controlledState": [
+      "dirty",
+      "invalid",
+      "submitting",
+      "valid"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create"
+    ],
+    "a11yNotes": [
+      "Works with client or server validation."
+    ],
     "compositionExamples": [
-      "{\"component\":\"form-section\"}"
+      "{\"component\":\"form-section\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Badge } from \"~/components/registry/feedback-display/badge\";\nimport { cn } from \"~/lib/cn\";\n\nexport type FormSectionProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  actions?: JSX.Element;\n  children?: JSX.Element;\n  class?: string;\n  columns?: 1 | 2;\n  description?: JSX.Element;\n  dirty?: boolean;\n  footer?: JSX.Element;\n  invalid?: boolean;\n  submitting?: boolean;\n  title?: JSX.Element;\n  valid?: boolean;\n};\n\nexport function FormSection(userProps: FormSectionProps) {\n  const props = mergeProps(\n    {\n      columns: 1 as const,\n      dirty: false,\n      invalid: false,\n      submitting: false,\n      valid: false,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\n    \"actions\",\n    \"children\",\n    \"class\",\n    \"columns\",",
     "keywords": [
@@ -4332,8 +5165,33 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description",
+      "icon",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "focused",
+      "hasValue",
+      "loading"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Used across tables and pages."
+    ],
     "compositionExamples": [
-      "{\"component\":\"search-field\"}"
+      "{\"component\":\"search-field\",\"props\":{}}"
     ],
     "snippet": "import { Search, SlidersHorizontal, Sparkles } from \"lucide-solid\";\nimport { Show, createMemo, createSignal, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Button } from \"~/components/registry/actions-navigation/button\";\nimport { TextField } from \"~/components/registry/form-inputs/text-field\";\nimport { cn } from \"~/lib/cn\";\n\nexport type SearchFieldProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\"> & {\n  class?: string;\n  defaultValue?: string;\n  loading?: boolean;\n  onSearch?: (value: string) => void;\n  onValueChange?: (value: string) => void;\n  placeholder?: string;\n  shortcut?: string;\n  submitLabel?: string;\n  value?: string;\n};\n\nexport function SearchField(userProps: SearchFieldProps) {\n  const props = mergeProps(\n    {\n      defaultValue: \"\",\n      loading: false,\n      placeholder: \"Search projects, customers, or commands\",\n      shortcut: \"⌘K\",\n      submitLabel: \"Search\",\n      value: undefined,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\n    \"class\",\n    \"defaultValue\",\n    \"loading\",",
     "keywords": [
@@ -4439,8 +5297,27 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children"
+    ],
+    "events": [],
+    "controlledState": [
+      "busy"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create"
+    ],
+    "a11yNotes": [
+      "Preserve native keyboard and focus behavior when composing.",
+      "Backbone of list pages."
+    ],
     "compositionExamples": [
-      "{\"component\":\"filter-toolbar\"}"
+      "{\"component\":\"filter-toolbar\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Badge } from \"~/components/registry/feedback-display/badge\";\nimport { cn } from \"~/lib/cn\";\n\nexport type FilterToolbarProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\"> & {\n  actions?: JSX.Element;\n  bulkActions?: JSX.Element;\n  chips?: JSX.Element;\n  class?: string;\n  dirtyFilters?: boolean;\n  filters?: JSX.Element;\n  search?: JSX.Element;\n  selectionCount?: number;\n  sticky?: boolean;\n  title?: JSX.Element;\n};\n\nexport function FilterToolbar(userProps: FilterToolbarProps) {\n  const props = mergeProps(\n    {\n      dirtyFilters: false,\n      selectionCount: 0,\n      sticky: false,\n      title: \"Filters and actions\",\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\n    \"actions\",\n    \"bulkActions\",\n    \"chips\",\n    \"class\",\n    \"dirtyFilters\",\n    \"filters\",",
     "keywords": [
@@ -4540,8 +5417,31 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "disabled",
+      "open"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Review focus management and escape/blur interactions in context.",
+      "Often paired with FilterToolbar."
+    ],
     "compositionExamples": [
-      "{\"component\":\"sort-menu\"}"
+      "{\"component\":\"sort-menu\",\"props\":{}}"
     ],
     "snippet": "import { ArrowDownWideNarrow } from \"lucide-solid\";\nimport { createMemo, createSignal, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Select, type SelectOption } from \"~/components/registry/form-inputs/select\";\nimport { cn } from \"~/lib/cn\";\n\nexport type SortMenuProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\"> & {\n  class?: string;\n  compact?: boolean;\n  defaultValue?: string;\n  label?: JSX.Element;\n  onValueChange?: (value: string) => void;\n  options?: SelectOption[];\n  value?: string;\n};\n\nconst defaultOptions: SelectOption[] = [\n  { value: \"newest\", label: \"Newest first\" },\n  { value: \"updated\", label: \"Recently updated\" },\n  { value: \"name\", label: \"Name (A-Z)\" },\n  { value: \"priority\", label: \"Highest priority\" },\n];\n\nexport function SortMenu(userProps: SortMenuProps) {\n  const props = mergeProps(\n    {\n      compact: false,\n      defaultValue: \"updated\",\n      label: \"Sort\",\n      options: defaultOptions,\n      value: undefined,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"class\", \"compact\", \"defaultValue\", \"label\", \"onValueChange\", \"options\", \"value\"]);",
     "keywords": [
@@ -4638,8 +5538,42 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "editing",
+      "invalid",
+      "readonly",
+      "saving"
+    ],
+    "defaultDataShape": {
+      "items": [
+        {
+          "id": "sample-id",
+          "title": "Sample item",
+          "status": "draft"
+        }
+      ],
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create",
+      "resource.list",
+      "resource.update"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Useful in profile/settings screens."
+    ],
     "compositionExamples": [
-      "{\"component\":\"inline-editable-field\"}"
+      "{\"component\":\"inline-editable-field\",\"props\":{}}"
     ],
     "snippet": "import { PencilLine } from \"lucide-solid\";\nimport { Match, Show, Switch, createMemo, createSignal, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Button } from \"~/components/registry/actions-navigation/button\";\nimport { TextField } from \"~/components/registry/form-inputs/text-field\";\nimport { cn } from \"~/lib/cn\";\n\nexport type InlineEditableFieldProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\"> & {\n  class?: string;\n  defaultEditing?: boolean;\n  defaultValue?: string;\n  description?: JSX.Element;\n  invalid?: boolean;\n  label?: JSX.Element;\n  onSave?: (value: string) => void;\n  readOnly?: boolean;\n  saving?: boolean;\n  value?: string;\n};\n\nexport function InlineEditableField(userProps: InlineEditableFieldProps) {\n  const props = mergeProps(\n    {\n      defaultEditing: false,\n      defaultValue: \"launch-brief\",\n      description: \"Inline mode keeps profile and settings surfaces scannable until the user chooses to edit.\",\n      invalid: false,\n      label: \"Project slug\",\n      readOnly: false,\n      saving: false,\n      value: undefined,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [",
     "keywords": [
@@ -4742,8 +5676,31 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "disabled",
+      "invalid",
+      "pending"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create",
+      "resource.update"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Critical for settings consistency."
+    ],
     "compositionExamples": [
-      "{\"component\":\"settings-row\"}"
+      "{\"component\":\"settings-row\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Badge } from \"~/components/registry/feedback-display/badge\";\nimport { cn } from \"~/lib/cn\";\n\nexport type SettingsRowProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\"> & {\n  children?: JSX.Element;\n  class?: string;\n  description?: JSX.Element;\n  disabled?: boolean;\n  invalid?: boolean;\n  label?: JSX.Element;\n  meta?: JSX.Element;\n  pending?: boolean;\n};\n\nexport function SettingsRow(userProps: SettingsRowProps) {\n  const props = mergeProps(\n    {\n      disabled: false,\n      invalid: false,\n      pending: false,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\n    \"children\",\n    \"class\",\n    \"description\",\n    \"disabled\",\n    \"invalid\",\n    \"label\",\n    \"meta\",\n    \"pending\",\n  ]);",
     "keywords": [
@@ -4838,8 +5795,32 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description",
+      "footer"
+    ],
+    "events": [],
+    "controlledState": [
+      "dirty",
+      "readonly",
+      "saving"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create",
+      "resource.detail",
+      "resource.update"
+    ],
+    "a11yNotes": [
+      "Wraps SettingsRows."
+    ],
     "compositionExamples": [
-      "{\"component\":\"settings-panel\"}"
+      "{\"component\":\"settings-panel\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Badge } from \"~/components/registry/feedback-display/badge\";\nimport { cn } from \"~/lib/cn\";\n\nexport type SettingsPanelProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  actions?: JSX.Element;\n  children?: JSX.Element;\n  class?: string;\n  description?: JSX.Element;\n  dirty?: boolean;\n  footer?: JSX.Element;\n  readOnly?: boolean;\n  saving?: boolean;\n  title?: JSX.Element;\n};\n\nexport function SettingsPanel(userProps: SettingsPanelProps) {\n  const props = mergeProps(\n    {\n      dirty: false,\n      readOnly: false,\n      saving: false,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\n    \"actions\",\n    \"children\",\n    \"class\",\n    \"description\",\n    \"dirty\",\n    \"footer\",\n    \"readOnly\",\n    \"saving\",",
     "keywords": [
@@ -4941,8 +5922,36 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "header",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "complete",
+      "dragging",
+      "error",
+      "uploading"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "attachment.lifecycle",
+      "resource.create",
+      "resource.list",
+      "workflow.transition"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Foundation for import flows."
+    ],
     "compositionExamples": [
-      "{\"component\":\"file-uploader\"}"
+      "{\"component\":\"file-uploader\",\"props\":{}}"
     ],
     "snippet": "import { FilePlus2, FileUp, Files, RefreshCw, TriangleAlert } from \"lucide-solid\";\nimport { For, Show, createSignal, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Button } from \"~/components/registry/actions-navigation/button\";\nimport { Badge } from \"~/components/registry/feedback-display/badge\";\nimport { Progress } from \"~/components/registry/feedback-display/progress\";\nimport { cn } from \"~/lib/cn\";\n\nexport type UploadItem = {\n  name: string;\n  progress?: number;\n  status: \"complete\" | \"error\" | \"uploading\";\n  subtitle?: string;\n};\n\nexport type FileUploaderProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\"> & {\n  class?: string;\n  compact?: boolean;\n  items?: UploadItem[];\n  title?: JSX.Element;\n};\n\ntype UploadEntry = UploadItem & {\n  id: string;\n};\n\nconst defaultItems: UploadItem[] = [\n  { name: \"customer-export.csv\", status: \"uploading\", progress: 72, subtitle: \"Mapping headers…\" },\n  { name: \"workspace-members.csv\", status: \"complete\", progress: 100, subtitle: \"Ready to import\" },\n  { name: \"legacy-contacts.csv\", status: \"error\", progress: 28, subtitle: \"Header mismatch in column 4\" },\n];\n\nexport function FileUploader(userProps: FileUploaderProps) {\n  const props = mergeProps(\n    {\n      compact: false,",
     "keywords": [
@@ -5042,8 +6051,33 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "trigger"
+    ],
+    "events": [],
+    "controlledState": [
+      "cropping",
+      "failed",
+      "uploading"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "attachment.lifecycle",
+      "resource.create",
+      "resource.detail"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "For avatars, banners, gallery content."
+    ],
     "compositionExamples": [
-      "{\"component\":\"media-uploader\"}"
+      "{\"component\":\"media-uploader\",\"props\":{}}"
     ],
     "snippet": "import { ImagePlus, Play, Scissors, TriangleAlert, UploadCloud } from \"lucide-solid\";\nimport { For, Show, createSignal, mergeProps, onCleanup, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Button } from \"~/components/registry/actions-navigation/button\";\nimport { Badge } from \"~/components/registry/feedback-display/badge\";\nimport { cn } from \"~/lib/cn\";\n\nexport type MediaItem = {\n  kind: \"image\" | \"video\";\n  status?: \"cropping\" | \"failed\" | \"uploading\";\n  title: string;\n};\n\nexport type MediaUploaderProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\"> & {\n  class?: string;\n  items?: MediaItem[];\n  title?: JSX.Element;\n};\n\ntype MediaEntry = MediaItem & {\n  id: string;\n  previewUrl?: string;\n  ownsPreviewUrl?: boolean;\n};\n\nconst defaultItems: MediaItem[] = [\n  { title: \"Workspace hero\", kind: \"image\" },\n  { title: \"Intro reel\", kind: \"video\", status: \"uploading\" },\n  { title: \"Avatar crop\", kind: \"image\", status: \"cropping\" },\n  { title: \"Fallback cover\", kind: \"image\", status: \"failed\" },\n];\n\nexport function MediaUploader(userProps: MediaUploaderProps) {\n  const props = mergeProps(\n    {\n      title: \"Media uploader\",",
     "keywords": [
@@ -5148,8 +6182,29 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description"
+    ],
+    "events": [],
+    "controlledState": [
+      "busy",
+      "readonly"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create",
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Use on almost every route."
+    ],
     "compositionExamples": [
-      "{\"component\":\"page-header\"}"
+      "{\"component\":\"page-header\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Badge } from \"~/components/registry/feedback-display/badge\";\nimport { cn } from \"~/lib/cn\";\n\nexport type PageHeaderProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  actions?: JSX.Element;\n  class?: string;\n  description?: JSX.Element;\n  eyebrow?: JSX.Element;\n  meta?: JSX.Element;\n  readonly?: boolean;\n  stale?: boolean;\n  title?: JSX.Element;\n};\n\nexport function PageHeader(userProps: PageHeaderProps) {\n  const props = mergeProps(\n    {\n      readonly: false,\n      stale: false,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"actions\", \"class\", \"description\", \"eyebrow\", \"meta\", \"readonly\", \"stale\", \"title\"]);\n\n  return (\n    <section\n      class={cn(\n        \"ui-shell-muted overflow-hidden border border-border/80 px-[var(--space-5)] py-[var(--space-5)] shadow-soft\",\n        local.class,\n      )}\n      {...others}\n    >\n      <div class=\"flex flex-col gap-[var(--space-5)] xl:flex-row xl:items-start xl:justify-between\">",
     "keywords": [
@@ -5227,8 +6282,26 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description"
+    ],
+    "events": [],
+    "controlledState": [],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {}
+    },
+    "recommendedBindings": [
+      "resource.create",
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Keeps long pages structured."
+    ],
     "compositionExamples": [
-      "{\"component\":\"section-header\"}"
+      "{\"component\":\"section-header\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type SectionHeaderProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  actions?: JSX.Element;\n  anchorHref?: string;\n  class?: string;\n  description?: JSX.Element;\n  strong?: boolean;\n  title?: JSX.Element;\n};\n\nexport function SectionHeader(userProps: SectionHeaderProps) {\n  const props = mergeProps(\n    {\n      strong: false,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"actions\", \"anchorHref\", \"class\", \"description\", \"strong\", \"title\"]);\n\n  return (\n    <section\n      class={cn(\n        \"ui-shell-muted flex flex-col gap-4 border border-border/80 px-[var(--space-5)] py-[var(--space-4)] sm:flex-row sm:items-end sm:justify-between\",\n        local.class,\n      )}\n      {...others}\n    >\n      <div class=\"space-y-2.5\">\n        <h3 class={cn(\"text-[1.45rem] tracking-[-0.03em]\", local.strong ? \"font-semibold text-foreground\" : \"font-medium text-foreground\")}>{local.title}</h3>\n        <Show when={local.description}>\n          <p class=\"max-w-2xl text-sm leading-6 text-muted-foreground\">{local.description}</p>\n        </Show>",
     "keywords": [
@@ -5320,8 +6393,37 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "footer",
+      "icon",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "loading"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {},
+      "metrics": [
+        {
+          "label": "Sample",
+          "value": 1
+        }
+      ]
+    },
+    "recommendedBindings": [
+      "resource.create",
+      "resource.detail",
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Base for dashboards."
+    ],
     "compositionExamples": [
-      "{\"component\":\"stat-card\"}"
+      "{\"component\":\"stat-card\",\"props\":{}}"
     ],
     "snippet": "import { ArrowDownRight, ArrowUpRight, Minus } from \"lucide-solid\";\nimport { Match, Show, Switch, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Skeleton } from \"~/components/registry/feedback-display/skeleton\";\nimport { cn } from \"~/lib/cn\";\n\nexport type StatCardProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  accent?: \"accent\" | \"highlight\" | \"neutral\";\n  class?: string;\n  delta?: string;\n  footer?: JSX.Element;\n  icon?: JSX.Element;\n  label?: JSX.Element;\n  loading?: boolean;\n  trend?: \"negative\" | \"neutral\" | \"positive\";\n  value?: JSX.Element;\n};\n\nexport function StatCard(userProps: StatCardProps) {\n  const props = mergeProps(\n    {\n      accent: \"accent\" as const,\n      delta: \"+12.4%\",\n      footer: \"Compared with last week\",\n      label: \"Net expansion\",\n      loading: false,\n      trend: \"positive\" as const,\n      value: \"$148.2k\",\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"accent\", \"class\", \"delta\", \"footer\", \"icon\", \"label\", \"loading\", \"trend\", \"value\"]);\n\n  return (\n    <article",
     "keywords": [
@@ -5411,8 +6513,34 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children"
+    ],
+    "events": [],
+    "controlledState": [
+      "empty",
+      "loading"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {},
+      "metrics": [
+        {
+          "label": "Sample",
+          "value": 1
+        }
+      ]
+    },
+    "recommendedBindings": [
+      "resource.create",
+      "resource.detail",
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Use for analytics headers."
+    ],
     "compositionExamples": [
-      "{\"component\":\"stat-grid\"}"
+      "{\"component\":\"stat-grid\",\"props\":{}}"
     ],
     "snippet": "import { mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type StatGridProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, \"children\"> & {\n  children?: JSX.Element;\n  class?: string;\n  columns?: 2 | 3 | 4;\n  loading?: boolean;\n};\n\nexport function StatGrid(userProps: StatGridProps) {\n  const props = mergeProps(\n    {\n      columns: 3 as const,\n      loading: false,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"children\", \"class\", \"columns\", \"loading\"]);\n\n  return (\n    <div\n      class={cn(\n        \"grid gap-[var(--space-4)]\",\n        local.columns === 2 && \"md:grid-cols-2\",\n        local.columns === 3 && \"md:grid-cols-2 xl:grid-cols-3\",\n        local.columns === 4 && \"md:grid-cols-2 xl:grid-cols-4\",\n        local.class,\n      )}\n      data-loading={local.loading ? \"true\" : \"false\"}\n      {...others}\n    >\n      {local.children}\n    </div>",
     "keywords": [
@@ -5506,8 +6634,37 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description",
+      "icon"
+    ],
+    "events": [],
+    "controlledState": [
+      "empty",
+      "filteredEmpty",
+      "firstRun"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {},
+      "metrics": [
+        {
+          "label": "Sample",
+          "value": 1
+        }
+      ]
+    },
+    "recommendedBindings": [
+      "resource.create",
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "One component, many contexts."
+    ],
     "compositionExamples": [
-      "{\"component\":\"empty-state\"}"
+      "{\"component\":\"empty-state\",\"props\":{}}"
     ],
     "snippet": "import { Inbox } from \"lucide-solid\";\nimport { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type EmptyStateProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  actions?: JSX.Element;\n  class?: string;\n  description?: JSX.Element;\n  eyebrow?: JSX.Element;\n  icon?: JSX.Element;\n  title?: JSX.Element;\n};\n\nexport function EmptyState(userProps: EmptyStateProps) {\n  const props = mergeProps(\n    {\n      description: \"Use a single reusable empty state for no-data, first-run, and filtered-empty cases.\",\n      eyebrow: \"No records yet\",\n      icon: <Inbox class=\"size-5\" />,\n      title: \"Nothing to show\",\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"actions\", \"class\", \"description\", \"eyebrow\", \"icon\", \"title\"]);\n\n  return (\n    <section class={cn(\"ui-shell-muted px-[var(--space-6)] py-[var(--space-8)] text-center shadow-soft\", local.class)} {...others}>\n      <div class=\"mx-auto inline-flex size-16 items-center justify-center rounded-[var(--radius-2xl)] border border-accent/36 bg-accent text-accent-foreground shadow-soft\">\n        {local.icon}\n      </div>\n      <Show when={local.eyebrow}>\n        <div class=\"mt-[var(--space-5)] text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground\">{local.eyebrow}</div>\n      </Show>\n      <h3 class=\"mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground\">{local.title}</h3>",
     "keywords": [
@@ -5591,8 +6748,34 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children"
+    ],
+    "events": [],
+    "controlledState": [
+      "retrying"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {},
+      "metrics": [
+        {
+          "label": "Sample",
+          "value": 1
+        }
+      ]
+    },
+    "recommendedBindings": [
+      "resource.create",
+      "resource.detail",
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "For route, card, and widget scope."
+    ],
     "compositionExamples": [
-      "{\"component\":\"error-state\"}"
+      "{\"component\":\"error-state\",\"props\":{}}"
     ],
     "snippet": "import { ShieldAlert } from \"lucide-solid\";\nimport { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type ErrorStateProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  actions?: JSX.Element;\n  class?: string;\n  detail?: JSX.Element;\n  title?: JSX.Element;\n};\n\nexport function ErrorState(userProps: ErrorStateProps) {\n  const props = mergeProps(\n    {\n      detail: \"The registry data could not be refreshed. Show recovery guidance, not just a failure banner.\",\n      title: \"Something went wrong\",\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"actions\", \"class\", \"detail\", \"title\"]);\n\n  return (\n    <section\n      class={cn(\n        \"ui-shell-muted border-destructive/18 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--destructive)_9%,var(--card)_91%),var(--card))] px-[var(--space-6)] py-[var(--space-6)] shadow-soft\",\n        local.class,\n      )}\n      {...others}\n    >\n      <div class=\"flex flex-col gap-4 sm:flex-row sm:items-start\">\n        <div class=\"inline-flex size-12 shrink-0 items-center justify-center rounded-[var(--radius-xl)] border border-destructive/18 bg-destructive text-destructive-foreground shadow-soft\">\n          <ShieldAlert class=\"size-5\" />\n        </div>\n        <div class=\"min-w-0 flex-1 space-y-3\">",
     "keywords": [
@@ -5675,8 +6858,36 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "description",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "cancellable",
+      "loading"
+    ],
+    "defaultDataShape": {
+      "values": {},
+      "errors": {},
+      "metrics": [
+        {
+          "label": "Sample",
+          "value": 1
+        }
+      ]
+    },
+    "recommendedBindings": [
+      "resource.create",
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "For indeterminate waits."
+    ],
     "compositionExamples": [
-      "{\"component\":\"loading-state\"}"
+      "{\"component\":\"loading-state\",\"props\":{}}"
     ],
     "snippet": "import { LoaderCircle } from \"lucide-solid\";\nimport { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Progress } from \"~/components/registry/feedback-display/progress\";\nimport { cn } from \"~/lib/cn\";\n\nexport type LoadingStateProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  cancelAction?: JSX.Element;\n  class?: string;\n  compact?: boolean;\n  description?: JSX.Element;\n  progress?: number;\n  title?: JSX.Element;\n};\n\nexport function LoadingState(userProps: LoadingStateProps) {\n  const props = mergeProps(\n    {\n      compact: false,\n      description: \"Use this when layout-faithful skeletons are unnecessary and you need a focused progress message.\",\n      progress: undefined,\n      title: \"Syncing workspace data\",\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"cancelAction\", \"class\", \"compact\", \"description\", \"progress\", \"title\"]);\n\n  return (\n    <section\n      class={cn(\n        \"ui-shell-muted flex flex-col items-start gap-[var(--space-5)] shadow-soft\",\n        local.compact ? \"p-[var(--space-5)]\" : \"px-[var(--space-6)] py-[var(--space-7)]\",\n        local.class,\n      )}\n      {...others}",
     "keywords": [
@@ -5779,8 +6990,36 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "header"
+    ],
+    "events": [],
+    "controlledState": [
+      "hover",
+      "loading",
+      "selected",
+      "sorted"
+    ],
+    "defaultDataShape": {
+      "items": [
+        {
+          "id": "sample-id",
+          "title": "Sample item",
+          "status": "draft"
+        }
+      ]
+    },
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Keep raw table separate from data grid."
+    ],
     "compositionExamples": [
-      "{\"component\":\"table\"}"
+      "{\"component\":\"table\",\"props\":{}}"
     ],
     "snippet": "import { splitProps } from \"solid-js\";\nimport type { JSX, ParentProps } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type TableRootProps = Omit<JSX.HTMLAttributes<HTMLTableElement>, \"ref\"> & {\n  class?: string;\n  density?: \"comfortable\" | \"compact\";\n  stickyHeader?: boolean;\n  zebra?: boolean;\n};\n\nexport type TableSectionProps = Omit<JSX.HTMLAttributes<HTMLTableSectionElement>, \"ref\"> & {\n  class?: string;\n};\n\nexport type TableRowProps = Omit<JSX.HTMLAttributes<HTMLTableRowElement>, \"ref\"> & {\n  class?: string;\n  selected?: boolean;\n};\n\nexport type TableCellProps = Omit<JSX.HTMLAttributes<HTMLTableCellElement>, \"ref\"> & {\n  class?: string;\n  numeric?: boolean;\n};\n\nexport type TableHeaderCellProps = Omit<JSX.HTMLAttributes<HTMLTableCellElement>, \"ref\"> & {\n  class?: string;\n  numeric?: boolean;\n  sorted?: \"asc\" | \"desc\";\n};\n\nexport type TableCaptionProps = Omit<JSX.HTMLAttributes<HTMLTableCaptionElement>, \"ref\"> & {\n  class?: string;\n};\n\nfunction TableRoot(props: ParentProps<TableRootProps>) {",
     "keywords": [
@@ -5878,8 +7117,34 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "footer",
+      "header"
+    ],
+    "events": [],
+    "controlledState": [
+      "empty",
+      "loading"
+    ],
+    "defaultDataShape": {
+      "items": [
+        {
+          "id": "sample-id",
+          "title": "Sample item",
+          "status": "draft"
+        }
+      ]
+    },
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Preserve native keyboard and focus behavior when composing.",
+      "Simpler than a table."
+    ],
     "compositionExamples": [
-      "{\"component\":\"data-list\"}"
+      "{\"component\":\"data-list\",\"props\":{}}"
     ],
     "snippet": "import { For, Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Badge } from \"~/components/registry/feedback-display/badge\";\nimport { cn } from \"~/lib/cn\";\n\nexport type DataListRow = {\n  meta?: string;\n  summary?: string;\n  title: string;\n};\n\nexport type DataListProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  class?: string;\n  footer?: JSX.Element;\n  header?: JSX.Element;\n  rows?: DataListRow[];\n  selectedIndex?: number;\n};\n\nconst defaultRows: DataListRow[] = [\n  { title: \"Q2 workspace launch\", summary: \"Final design QA and rollout sequencing\", meta: \"Updated 14m ago\" },\n  { title: \"Security review\", summary: \"Collect 2FA screenshots and audit controls\", meta: \"Updated 1h ago\" },\n  { title: \"Pricing refresh\", summary: \"Legal review pending on enterprise contract text\", meta: \"Updated yesterday\" },\n];\n\nexport function DataList(userProps: DataListProps) {\n  const props = mergeProps(\n    {\n      footer: undefined,\n      header: \"Recent records\",\n      rows: defaultRows,\n      selectedIndex: 0,\n    },\n    userProps,\n  );",
     "keywords": [
@@ -5979,8 +7244,34 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children"
+    ],
+    "events": [],
+    "controlledState": [
+      "empty",
+      "loading",
+      "selection",
+      "sync"
+    ],
+    "defaultDataShape": {
+      "items": [
+        {
+          "id": "sample-id",
+          "title": "Sample item",
+          "status": "draft"
+        }
+      ]
+    },
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Preserve native keyboard and focus behavior when composing.",
+      "No row logic; just shell."
+    ],
     "compositionExamples": [
-      "{\"component\":\"data-table-shell\"}"
+      "{\"component\":\"data-table-shell\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type DataTableShellProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  class?: string;\n  emptyState?: JSX.Element;\n  pagination?: JSX.Element;\n  selectionBar?: JSX.Element;\n  table?: JSX.Element;\n  toolbar?: JSX.Element;\n};\n\nexport function DataTableShell(userProps: DataTableShellProps) {\n  const props = mergeProps(userProps);\n  const [local, others] = splitProps(props, [\"class\", \"emptyState\", \"pagination\", \"selectionBar\", \"table\", \"toolbar\"]);\n\n  return (\n    <section class={cn(\"ui-shell-muted overflow-hidden border border-border/80 p-0 shadow-soft\", local.class)} {...others}>\n      <Show when={local.toolbar}>\n        <div class=\"border-b border-border/70 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--card)_96%,white_4%),color-mix(in_oklab,var(--muted-soft)_82%,var(--card)_18%))] px-[var(--space-5)] py-[var(--space-4)]\">\n          {local.toolbar}\n        </div>\n      </Show>\n      <Show when={local.selectionBar}>\n        <div class=\"border-b border-border/70 bg-[color:color-mix(in_oklab,var(--info)_10%,var(--card)_90%)] px-[var(--space-5)] py-[var(--space-3)]\">\n          {local.selectionBar}\n        </div>\n      </Show>\n      <div class=\"bg-[linear-gradient(180deg,color-mix(in_oklab,var(--card)_98%,white_2%),color-mix(in_oklab,var(--card)_92%,var(--muted-soft)_8%))] px-[var(--space-5)] py-[var(--space-5)]\">\n        <Show when={local.table} fallback={local.emptyState}>\n          {local.table}\n        </Show>\n      </div>\n      <Show when={local.pagination}>\n        <div class=\"border-t border-border/70 bg-[color:color-mix(in_oklab,var(--muted-soft)_66%,var(--background)_34%)] px-[var(--space-5)] py-[var(--space-4)]\">",
     "keywords": [
@@ -6071,8 +7362,28 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "open"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.list",
+      "resource.update"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Review focus management and escape/blur interactions in context.",
+      "Pairs with data table."
+    ],
     "compositionExamples": [
-      "{\"component\":\"column-visibility-menu\"}"
+      "{\"component\":\"column-visibility-menu\",\"props\":{}}"
     ],
     "snippet": "import { Settings2 } from \"lucide-solid\";\nimport { For, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Button } from \"~/components/registry/actions-navigation/button\";\nimport { Checkbox } from \"~/components/registry/form-inputs/checkbox\";\nimport { cn } from \"~/lib/cn\";\n\nexport type ColumnVisibilityItem = {\n  checked: boolean;\n  label: string;\n};\n\nexport type ColumnVisibilityMenuProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  class?: string;\n  columns?: ColumnVisibilityItem[];\n};\n\nconst defaultColumns: ColumnVisibilityItem[] = [\n  { label: \"Customer\", checked: true },\n  { label: \"Owner\", checked: true },\n  { label: \"Status\", checked: true },\n  { label: \"MRR\", checked: false },\n];\n\nexport function ColumnVisibilityMenu(userProps: ColumnVisibilityMenuProps) {\n  const props = mergeProps(\n    {\n      columns: defaultColumns,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"class\", \"columns\"]);\n\n  return (\n    <section class={cn(\"ui-shell-muted max-w-sm space-y-[var(--space-4)] border border-border/80 p-[var(--space-5)] shadow-soft\", local.class)} {...others}>",
     "keywords": [
@@ -6158,8 +7469,25 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children"
+    ],
+    "events": [],
+    "controlledState": [
+      "busy",
+      "visible"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Preserve native keyboard and focus behavior when composing.",
+      "For multi-row actions."
+    ],
     "compositionExamples": [
-      "{\"component\":\"bulk-action-bar\"}"
+      "{\"component\":\"bulk-action-bar\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Badge } from \"~/components/registry/feedback-display/badge\";\nimport { cn } from \"~/lib/cn\";\n\nexport type BulkActionBarProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  actions?: JSX.Element;\n  class?: string;\n  count?: number;\n  visible?: boolean;\n};\n\nexport function BulkActionBar(userProps: BulkActionBarProps) {\n  const props = mergeProps(\n    {\n      count: 12,\n      visible: true,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"actions\", \"class\", \"count\", \"visible\"]);\n\n  return (\n    <Show when={local.visible}>\n      <section\n        class={cn(\n          \"ui-shell-muted flex flex-col gap-4 border border-border/80 bg-[linear-gradient(90deg,color-mix(in_oklab,var(--info)_10%,var(--card)_90%),var(--card))] px-[var(--space-5)] py-[var(--space-4)] shadow-soft sm:flex-row sm:items-center sm:justify-between\",\n          local.class,\n        )}\n        {...others}\n      >\n        <div class=\"flex items-center gap-3\">\n          <Badge tone=\"accent\">{local.count} selected</Badge>\n          <div>\n            <div class=\"text-sm font-semibold text-foreground\">Bulk actions ready</div>",
     "keywords": [
@@ -6251,8 +7579,28 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description"
+    ],
+    "events": [],
+    "controlledState": [
+      "dirty",
+      "loading",
+      "open"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.detail",
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Preserve native keyboard and focus behavior when composing.",
+      "Often docked beside tables."
+    ],
     "compositionExamples": [
-      "{\"component\":\"detail-panel\"}"
+      "{\"component\":\"detail-panel\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type DetailPanelProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  actions?: JSX.Element;\n  body?: JSX.Element;\n  class?: string;\n  description?: JSX.Element;\n  title?: JSX.Element;\n};\n\nexport function DetailPanel(userProps: DetailPanelProps) {\n  const props = mergeProps(\n    {\n      description: \"Docked detail surface for the currently selected record.\",\n      title: \"Selected record\",\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"actions\", \"body\", \"class\", \"description\", \"title\"]);\n\n  return (\n    <aside class={cn(\"ui-shell-muted space-y-[var(--space-5)] border border-border/80 p-[var(--space-6)] shadow-soft\", local.class)} {...others}>\n      <div class=\"space-y-2\">\n        <div class=\"text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground\">Selected record</div>\n        <h3 class=\"text-lg font-semibold tracking-[-0.02em] text-foreground\">{local.title}</h3>\n        <p class=\"text-sm leading-6 text-muted-foreground\">{local.description}</p>\n      </div>\n      <div class=\"rounded-[calc(var(--radius-lg)+2px)] border border-border/70 bg-card/90 p-[var(--space-4)] shadow-inset\">{local.body}</div>\n      <Show when={local.actions}>\n        <div class=\"border-t border-border/70 pt-[var(--space-4)]\">{local.actions}</div>\n      </Show>\n    </aside>\n  );",
     "keywords": [
@@ -6348,8 +7696,32 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children"
+    ],
+    "events": [],
+    "controlledState": [
+      "collapsed",
+      "loading",
+      "unread"
+    ],
+    "defaultDataShape": {
+      "items": [
+        {
+          "id": "sample-id",
+          "title": "Sample item",
+          "status": "draft"
+        }
+      ]
+    },
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Use for audits and timelines."
+    ],
     "compositionExamples": [
-      "{\"component\":\"activity-feed\"}"
+      "{\"component\":\"activity-feed\",\"props\":{}}"
     ],
     "snippet": "import { For, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Avatar } from \"~/components/registry/feedback-display/avatar\";\nimport { cn } from \"~/lib/cn\";\n\nexport type ActivityItem = {\n  actor: string;\n  body: string;\n  meta: string;\n};\n\nexport type ActivityFeedProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  class?: string;\n  items?: ActivityItem[];\n  title?: JSX.Element;\n};\n\nconst defaultItems: ActivityItem[] = [\n  { actor: \"Sanyam Singhal\", body: \"Updated the registry deployment documentation.\", meta: \"6 min ago\" },\n  { actor: \"Ops team\", body: \"Verified TLS issuance for stylyf.com.\", meta: \"28 min ago\" },\n  { actor: \"Design system\", body: \"Promoted the feedback surfaces to stable.\", meta: \"2 h ago\" },\n];\n\nexport function ActivityFeed(userProps: ActivityFeedProps) {\n  const props = mergeProps(\n    {\n      items: defaultItems,\n      title: \"Activity feed\",\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"class\", \"items\", \"title\"]);\n\n  return (\n    <section class={cn(\"ui-shell-muted space-y-[var(--space-4)] border border-border/80 p-[var(--space-5)] shadow-soft\", local.class)} {...others}>",
     "keywords": [
@@ -6444,8 +7816,25 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "description"
+    ],
+    "events": [],
+    "controlledState": [
+      "active",
+      "completed",
+      "upcoming"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "For onboarding and history."
+    ],
     "compositionExamples": [
-      "{\"component\":\"timeline\"}"
+      "{\"component\":\"timeline\",\"props\":{}}"
     ],
     "snippet": "import { For, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type TimelineItem = {\n  description?: string;\n  state: \"active\" | \"completed\" | \"upcoming\";\n  title: string;\n};\n\nexport type TimelineProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  class?: string;\n  items?: TimelineItem[];\n};\n\nconst defaultItems: TimelineItem[] = [\n  { title: \"Workspace details\", description: \"Name, slug, and default locale.\", state: \"completed\" },\n  { title: \"Brand settings\", description: \"Tokens and shell preferences.\", state: \"active\" },\n  { title: \"Invite collaborators\", description: \"Roles, permissions, and first-run guidance.\", state: \"upcoming\" },\n];\n\nexport function Timeline(userProps: TimelineProps) {\n  const props = mergeProps(\n    {\n      items: defaultItems,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"class\", \"items\"]);\n\n  return (\n    <section class={cn(\"ui-shell-muted space-y-[var(--space-5)] border border-border/80 p-[var(--space-6)] shadow-soft\", local.class)} {...others}>\n      <For each={local.items}>\n        {item => (\n          <div class=\"relative flex gap-4 pl-1 last:pb-0\">",
     "keywords": [
@@ -6533,8 +7922,32 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children"
+    ],
+    "events": [],
+    "controlledState": [
+      "loading",
+      "selected",
+      "unread"
+    ],
+    "defaultDataShape": {
+      "items": [
+        {
+          "id": "sample-id",
+          "title": "Sample item",
+          "status": "draft"
+        }
+      ]
+    },
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Can back both page and popover."
+    ],
     "compositionExamples": [
-      "{\"component\":\"notification-list\"}"
+      "{\"component\":\"notification-list\",\"props\":{}}"
     ],
     "snippet": "import { For, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Badge } from \"~/components/registry/feedback-display/badge\";\nimport { cn } from \"~/lib/cn\";\n\nexport type NotificationItem = {\n  body: string;\n  title: string;\n  unread?: boolean;\n};\n\nexport type NotificationListProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  class?: string;\n  items?: NotificationItem[];\n};\n\nconst defaultItems: NotificationItem[] = [\n  { title: \"Deployment recovered\", body: \"stylyf.com is serving the latest production build.\", unread: true },\n  { title: \"Invite accepted\", body: \"A new collaborator joined the workspace.\", unread: true },\n  { title: \"Billing receipt ready\", body: \"April invoice is now available.\", unread: false },\n];\n\nexport function NotificationList(userProps: NotificationListProps) {\n  const props = mergeProps(\n    {\n      items: defaultItems,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"class\", \"items\"]);\n\n  return (\n    <section class={cn(\"ui-shell-muted overflow-hidden border border-border/80 p-0 shadow-soft\", local.class)} {...others}>\n      <div class=\"border-b border-border/70 px-[var(--space-5)] py-[var(--space-4)]\">\n        <div class=\"flex items-center justify-between gap-3\">",
     "keywords": [
@@ -6634,8 +8047,28 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "editing",
+      "replying",
+      "sending"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "resource.list"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Use for collaboration UIs."
+    ],
     "compositionExamples": [
-      "{\"component\":\"comment-thread\"}"
+      "{\"component\":\"comment-thread\",\"props\":{}}"
     ],
     "snippet": "import { For, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Button } from \"~/components/registry/actions-navigation/button\";\nimport { Avatar } from \"~/components/registry/feedback-display/avatar\";\nimport { TextArea } from \"~/components/registry/form-inputs/text-area\";\nimport { cn } from \"~/lib/cn\";\n\nexport type CommentItem = {\n  author: string;\n  body: string;\n  meta: string;\n};\n\nexport type CommentThreadProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  class?: string;\n  comments?: CommentItem[];\n};\n\nconst defaultComments: CommentItem[] = [\n  { author: \"Sanyam Singhal\", body: \"Let’s keep the larger compositions standalone even when that costs some duplication.\", meta: \"Today · 10:24 UTC\" },\n  { author: \"Registry reviewer\", body: \"Agreed. That keeps the source tab honest and makes downstream copying cleaner.\", meta: \"Today · 10:27 UTC\" },\n];\n\nexport function CommentThread(userProps: CommentThreadProps) {\n  const props = mergeProps(\n    {\n      comments: defaultComments,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"class\", \"comments\"]);\n\n  return (\n    <section class={cn(\"ui-shell-muted space-y-[var(--space-5)] border border-border/80 p-[var(--space-6)] shadow-soft\", local.class)} {...others}>\n      <div class=\"space-y-[var(--space-4)]\">",
     "keywords": [
@@ -6737,8 +8170,27 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "description"
+    ],
+    "events": [],
+    "controlledState": [
+      "complete",
+      "current",
+      "disabled",
+      "error"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "workflow.transition"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "For multi-step workflows."
+    ],
     "compositionExamples": [
-      "{\"component\":\"stepper\"}"
+      "{\"component\":\"stepper\",\"props\":{}}"
     ],
     "snippet": "import { For, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { cn } from \"~/lib/cn\";\n\nexport type StepperItem = {\n  description?: string;\n  state: \"complete\" | \"current\" | \"upcoming\";\n  title: string;\n};\n\nexport type StepperProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  class?: string;\n  items?: StepperItem[];\n  orientation?: \"horizontal\" | \"vertical\";\n};\n\nconst defaultItems: StepperItem[] = [\n  { title: \"Workspace basics\", description: \"Name and slug\", state: \"complete\" },\n  { title: \"Brand tokens\", description: \"Colors and type\", state: \"current\" },\n  { title: \"Invite team\", description: \"Roles and defaults\", state: \"upcoming\" },\n];\n\nexport function Stepper(userProps: StepperProps) {\n  const props = mergeProps(\n    {\n      items: defaultItems,\n      orientation: \"horizontal\" as const,\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"class\", \"items\", \"orientation\"]);\n\n  return (\n    <section class={cn(\"ui-shell-muted border border-border/80 p-[var(--space-5)] shadow-soft\", local.class)} {...others}>\n      <div class=\"mb-[var(--space-5)] flex items-center justify-between gap-3\">",
     "keywords": [
@@ -6841,8 +8293,27 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "description",
+      "footer"
+    ],
+    "events": [],
+    "controlledState": [
+      "complete",
+      "currentStep",
+      "invalid",
+      "pending"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "workflow.transition"
+    ],
+    "a11yNotes": [
+      "Base shell for multi-step transactional flows."
+    ],
     "compositionExamples": [
-      "{\"component\":\"wizard-shell\"}"
+      "{\"component\":\"wizard-shell\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Badge } from \"~/components/registry/feedback-display/badge\";\nimport { cn } from \"~/lib/cn\";\n\nexport type WizardShellProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  body?: JSX.Element;\n  class?: string;\n  currentStep?: number;\n  description?: JSX.Element;\n  footer?: JSX.Element;\n  steps?: number;\n  summary?: JSX.Element;\n  title?: JSX.Element;\n};\n\nexport function WizardShell(userProps: WizardShellProps) {\n  const props = mergeProps(\n    {\n      currentStep: 2,\n      description: \"A structured container for multi-step setup, onboarding, and transactional journeys.\",\n      steps: 4,\n      title: \"Create workspace\",\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"body\", \"class\", \"currentStep\", \"description\", \"footer\", \"steps\", \"summary\", \"title\"]);\n\n  return (\n    <section class={cn(\"ui-shell-muted overflow-hidden border border-border/80 p-0 shadow-soft\", local.class)} {...others}>\n      <div class=\"border-b border-border/80 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--secondary)_10%,var(--card)_90%),var(--card))] px-[var(--space-6)] py-[var(--space-5)]\">\n        <div class=\"flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between\">\n          <div class=\"flex flex-wrap items-center gap-2\">\n            <Badge tone=\"accent\">Step {local.currentStep} of {local.steps}</Badge>\n            <Badge tone=\"neutral\">Wizard shell</Badge>",
     "keywords": [
@@ -6945,8 +8416,28 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "children",
+      "icon",
+      "label"
+    ],
+    "events": [],
+    "controlledState": [
+      "active",
+      "collapsed",
+      "expanded"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "workflow.transition"
+    ],
+    "a11yNotes": [
+      "Includes explicit ARIA/role/label semantics in source.",
+      "Preserve native keyboard and focus behavior when composing.",
+      "Basis for dashboard sidebars."
+    ],
     "compositionExamples": [
-      "{\"component\":\"sidebar-nav\"}"
+      "{\"component\":\"sidebar-nav\",\"props\":{}}"
     ],
     "snippet": "import { For, Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Badge } from \"~/components/registry/feedback-display/badge\";\nimport { cn } from \"~/lib/cn\";\n\nexport type SidebarNavGroup = {\n  items: { active?: boolean; badge?: string; href?: string; icon?: JSX.Element; label: string }[];\n  label: string;\n};\n\nexport type SidebarNavProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  class?: string;\n  collapsed?: boolean;\n  groups?: SidebarNavGroup[];\n  title?: JSX.Element;\n};\n\nconst defaultGroups: SidebarNavGroup[] = [\n  {\n    label: \"Workspace\",\n    items: [\n      { label: \"Overview\", active: true },\n      { label: \"Members\", badge: \"12\" },\n      { label: \"Billing\" },\n    ],\n  },\n  {\n    label: \"Settings\",\n    items: [{ label: \"Brand\" }, { label: \"Security\" }, { label: \"Notifications\", badge: \"3\" }],\n  },\n];\n\nexport function SidebarNav(userProps: SidebarNavProps) {\n  const props = mergeProps(\n    {\n      collapsed: false,",
     "keywords": [
@@ -7043,8 +8534,26 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "header"
+    ],
+    "events": [],
+    "controlledState": [
+      "scrolled"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "attachment.lifecycle",
+      "resource.detail",
+      "workflow.transition"
+    ],
+    "a11yNotes": [
+      "Basis for marketing/app nav."
+    ],
     "compositionExamples": [
-      "{\"component\":\"top-nav-bar\"}"
+      "{\"component\":\"top-nav-bar\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Avatar } from \"~/components/registry/feedback-display/avatar\";\nimport { cn } from \"~/lib/cn\";\n\nexport type TopNavBarProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  actions?: JSX.Element;\n  brand?: JSX.Element;\n  class?: string;\n  nav?: JSX.Element;\n  search?: JSX.Element;\n};\n\nexport function TopNavBar(userProps: TopNavBarProps) {\n  const props = mergeProps(\n    {\n      brand: \"Stylyf\",\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"actions\", \"brand\", \"class\", \"nav\", \"search\"]);\n\n  return (\n    <header\n      class={cn(\n        \"ui-shell-muted flex flex-col gap-4 border border-border/80 px-[var(--space-5)] py-[var(--space-4)] shadow-soft lg:flex-row lg:items-center lg:justify-between\",\n        local.class,\n      )}\n      {...others}\n    >\n      <div class=\"flex flex-wrap items-center gap-4 lg:gap-6\">\n        <div class=\"ui-shell flex items-center gap-3 px-3 py-2\">\n          <div class=\"flex size-8 items-center justify-center rounded-[var(--radius-md)] bg-primary/12 text-primary\">\n            <span class=\"text-sm font-semibold\">S</span>\n          </div>",
     "keywords": [
@@ -7149,8 +8658,27 @@
       }
     ],
     "requiredProps": [],
+    "slots": [
+      "actions",
+      "children",
+      "description",
+      "header"
+    ],
+    "events": [],
+    "controlledState": [
+      "readonly",
+      "stale",
+      "syncing"
+    ],
+    "defaultDataShape": {},
+    "recommendedBindings": [
+      "workflow.transition"
+    ],
+    "a11yNotes": [
+      "Pairs with SidebarNav."
+    ],
     "compositionExamples": [
-      "{\"component\":\"app-header\"}"
+      "{\"component\":\"app-header\",\"props\":{}}"
     ],
     "snippet": "import { Show, mergeProps, splitProps } from \"solid-js\";\nimport type { JSX } from \"solid-js\";\nimport { Breadcrumb } from \"~/components/registry/actions-navigation/breadcrumb\";\nimport { cn } from \"~/lib/cn\";\n\nexport type AppHeaderProps = Omit<JSX.HTMLAttributes<HTMLElement>, \"children\"> & {\n  actions?: JSX.Element;\n  breadcrumbs?: JSX.Element;\n  class?: string;\n  description?: JSX.Element;\n  meta?: JSX.Element;\n  tabs?: JSX.Element;\n  title?: JSX.Element;\n};\n\nexport function AppHeader(userProps: AppHeaderProps) {\n  const props = mergeProps(\n    {\n      title: \"Workspace\",\n      description: \"Contextual header shell for dashboards and deeper product workspaces.\",\n      breadcrumbs: (\n        <Breadcrumb>\n          <Breadcrumb.List>\n            <Breadcrumb.Item><Breadcrumb.Link href=\"#\">Workspace</Breadcrumb.Link></Breadcrumb.Item>\n            <Breadcrumb.Separator />\n            <Breadcrumb.Item><Breadcrumb.Current>Overview</Breadcrumb.Current></Breadcrumb.Item>\n          </Breadcrumb.List>\n        </Breadcrumb>\n      ),\n    },\n    userProps,\n  );\n\n  const [local, others] = splitProps(props, [\"actions\", \"breadcrumbs\", \"class\", \"description\", \"meta\", \"tabs\", \"title\"]);\n\n  return (",
     "keywords": [
