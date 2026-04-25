@@ -398,6 +398,33 @@ async function main() {
   ]) {
     await assertFile(resolve(genericRoot, relativePath));
   }
+  const genericListRoute = await readFile(resolve(genericRoot, "src/routes/inbox/index.tsx"), "utf8");
+  for (const expectedText of [
+    'import { createAsync } from "@solidjs/router";',
+    'import { listRecords } from "~/lib/server/queries/records-list";',
+    "const recordsRows = createAsync(() => listRecords());",
+    "<LoadingState",
+    "<EmptyState",
+    "<ErrorState",
+  ]) {
+    if (!genericListRoute.includes(expectedText)) {
+      throw new Error(`Generated generic list route is missing data-bound route wiring: ${expectedText}`);
+    }
+  }
+  const genericDetailRoute = await readFile(resolve(genericRoot, "src/routes/inbox/[id].tsx"), "utf8");
+  for (const expectedText of [
+    'import { createAsync, useParams } from "@solidjs/router";',
+    'import { getRecords } from "~/lib/server/queries/records-detail";',
+    "const params = useParams();",
+    "const recordData = createAsync(() => getRecords(params.id));",
+    "<LoadingState",
+    "<EmptyState",
+    "<ErrorState",
+  ]) {
+    if (!genericDetailRoute.includes(expectedText)) {
+      throw new Error(`Generated generic detail route is missing data-bound route wiring: ${expectedText}`);
+    }
+  }
   await assertNoRuntimeStylyfImports(genericRoot, "Generated generic app");
 
   const internalRoot = resolve(verifyRoot, "generated-internal");
@@ -488,6 +515,7 @@ async function main() {
       "  - intro/new/validate/plan/generate v1.0 commands work",
       "  - layout prop contracts validate values and normalize documented aliases",
       "  - route bindings survive spec expansion into resolved app IR",
+      "  - bound list/detail routes import generated queries and route-level loading/empty/error states",
       "  - generic app source honors explicit surface route hints",
       "  - CMS admin content routes are generated under authenticated app shell protection",
       "  - portable internal rich app source is generated with auth/data/media files",

@@ -3,10 +3,12 @@ import { readFile } from "node:fs/promises";
 import type {
   AppIR,
   AppShellId,
+  BindingIR,
   ComponentRefIR,
   LayoutNodeIR,
   LayoutNodeId,
   PageShellId,
+  ResourceIR,
   RouteIR,
   SectionIR,
 } from "../compiler/generated-app.js";
@@ -80,6 +82,16 @@ function pascalCase(value: string) {
     .split(/[^a-zA-Z0-9]+/g)
     .filter(Boolean)
     .map(segment => `${segment[0]?.toUpperCase() ?? ""}${segment.slice(1)}`)
+    .join("");
+}
+
+function camelCase(value: string) {
+  return value
+    .split(/[^a-zA-Z0-9]+/g)
+    .filter(Boolean)
+    .map((segment, index) =>
+      index === 0 ? segment.toLowerCase() : `${segment[0]?.toUpperCase() ?? ""}${segment.slice(1).toLowerCase()}`,
+    )
     .join("");
 }
 
@@ -159,6 +171,10 @@ function escapeString(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
+function tableNameFor(resource: ResourceIR) {
+  return resource.table ?? resource.name;
+}
+
 function jsxPropValue(value: unknown): string {
   if (typeof value === "string") {
     return `"${escapeString(value)}"`;
@@ -191,6 +207,14 @@ function renderProps(props?: Record<string, unknown>, extra?: Record<string, unk
 function importPathToAssetCandidates(importPath: string) {
   const base = importPath.replace(/^~\//, "src/");
   return [`${base}.tsx`, `${base}.ts`];
+}
+
+function addNamedImport(imports: Map<string, Set<string>>, importPath: string, name: string) {
+  if (!imports.has(importPath)) {
+    imports.set(importPath, new Set());
+  }
+
+  imports.get(importPath)?.add(name);
 }
 
 async function resolveBundledSourceRelativePath(importPath: string) {
@@ -328,6 +352,142 @@ function renderSection(
   return renderLayoutNode(node, assemblyLookup, imports, copiedRegistryImports, layoutImports);
 }
 
+type ResourceRouteBinding = {
+  operation: "list" | "detail" | "create" | "update";
+  resource: ResourceIR;
+};
+
+function resourceBindingOperation(binding: BindingIR): ResourceRouteBinding["operation"] | null {
+  if (binding.kind === "resource.list") return "list";
+  if (binding.kind === "resource.detail") return "detail";
+  if (binding.kind === "resource.create") return "create";
+  if (binding.kind === "resource.update") return "update";
+  return null;
+}
+
+function findResource(app: AppIR, name?: string) {
+  if (!name) return null;
+  return app.resources?.find(resource => resource.name === name || tableNameFor(resource) === name) ?? null;
+}
+
+function defaultRouteBindingOperation(route: RouteIR): ResourceRouteBinding["operation"] | null {
+  if (route.page === "resource-index") return "list";
+  if (route.page === "resource-detail") return "detail";
+  if (route.page === "resource-create") return "create";
+  if (route.page === "resource-edit") return "update";
+  return null;
+}
+
+function resolveResourceRouteBinding(route: RouteIR, app: AppIR): ResourceRouteBinding | null {
+  const explicitBinding = (route.bindings ?? [])
+    .map(binding => ({ binding, operation: resourceBindingOperation(binding) }))
+    .find(entry => entry.operation && entry.binding.resource);
+
+  if (explicitBinding?.operation) {
+    const resource = findResource(app, explicitBinding.binding.resource);
+    return resource ? { operation: explicitBinding.operation, resource } : null;
+  }
+
+  const operation = defaultRouteBindingOperation(route);
+  const resource = findResource(app, route.resource);
+  return operation && resource ? { operation, resource } : null;
+}
+
+function serverFunctionImportFor(resource: ResourceIR, operation: ResourceRouteBinding["operation"]) {
+  const folder = operation === "list" || operation === "detail" ? "queries" : "actions";
+  const action = operation === "list" ? "list" : operation === "detail" ? "detail" : operation;
+  const prefix = operation === "list" ? "list" : operation === "detail" ? "get" : operation;
+
+  return {
+    exportName: `${prefix}${pascalCase(tableNameFor(resource))}`,
+    importPath: `~/lib/server/${folder}/${slugify(`${resource.name}-${action}`)}`,
+  };
+}
+
+function registerDataStateImports(imports: Map<string, Set<string>>, copiedRegistryImports: Set<string>) {
+  for (const [importPath, exportName] of [
+    ["~/components/registry/information-states/loading-state", "LoadingState"],
+    ["~/components/registry/information-states/empty-state", "EmptyState"],
+    ["~/components/registry/information-states/error-state", "ErrorState"],
+  ] as const) {
+    addNamedImport(imports, importPath, exportName);
+    copiedRegistryImports.add(importPath);
+  }
+}
+
+function indentMultiline(source: string, spaces: number) {
+  const prefix = " ".repeat(spaces);
+  return source
+    .split("\n")
+    .map(line => (line.trim() ? `${prefix}${line}` : line))
+    .join("\n");
+}
+
+function renderDataBoundRouteContent(
+  route: RouteIR,
+  binding: ResourceRouteBinding | null,
+  renderedSections: string,
+  imports: Map<string, Set<string>>,
+  copiedRegistryImports: Set<string>,
+) {
+  if (!binding || (binding.operation !== "list" && binding.operation !== "detail")) {
+    return {
+      solidImports: new Set<string>(),
+      routerImports: new Set<string>(),
+      setupLines: [] as string[],
+      content: renderedSections,
+    };
+  }
+
+  registerDataStateImports(imports, copiedRegistryImports);
+  const solidImports = new Set<string>(["ErrorBoundary", "Show"]);
+  const routerImports = new Set<string>(["createAsync"]);
+  const resourceLabel = humanize(binding.resource.name);
+  const resourceLabelSingular = resourceLabel.replace(/s$/, "");
+  const serverFunction = serverFunctionImportFor(binding.resource, binding.operation);
+  addNamedImport(imports, serverFunction.importPath, serverFunction.exportName);
+
+  if (binding.operation === "detail") {
+    routerImports.add("useParams");
+  }
+
+  const resourceVariable = camelCase(binding.resource.name || "records") || "records";
+  const rowAccessor = binding.operation === "list" ? `${resourceVariable}Rows` : `${camelCase(resourceLabelSingular) || "record"}Data`;
+  const setupLines =
+    binding.operation === "list"
+      ? [`  const ${rowAccessor} = createAsync(() => ${serverFunction.exportName}());`]
+      : ["  const params = useParams();", `  const ${rowAccessor} = createAsync(() => ${serverFunction.exportName}(params.id));`];
+
+  const indentedSections = indentMultiline(renderedSections, 6);
+  const content =
+    binding.operation === "list"
+      ? [
+          '          <ErrorBoundary fallback={(error) => <ErrorState title="Unable to load records" detail={error instanceof Error ? error.message : String(error)} />}>',
+          `            <Show when={${rowAccessor}() !== undefined} fallback={<LoadingState title=${jsxPropValue(`Loading ${resourceLabel.toLowerCase()}`)} description="Fetching the latest generated resource data." />}>`,
+          `              <Show when={(${rowAccessor}()?.length ?? 0) > 0} fallback={<EmptyState eyebrow="No records" title=${jsxPropValue(`No ${resourceLabel.toLowerCase()} yet`)} description="Create your first record or adjust the generated query filters." />}>`,
+          indentedSections,
+          "              </Show>",
+          "            </Show>",
+          "          </ErrorBoundary>",
+        ].join("\n")
+      : [
+          '          <ErrorBoundary fallback={(error) => <ErrorState title="Unable to load record" detail={error instanceof Error ? error.message : String(error)} />}>',
+          `            <Show when={${rowAccessor}() !== undefined} fallback={<LoadingState title=${jsxPropValue(`Loading ${resourceLabelSingular.toLowerCase()}`)} description="Fetching this generated resource record." />}>`,
+          `              <Show when={${rowAccessor}()} fallback={<EmptyState eyebrow="Not found" title=${jsxPropValue(`${resourceLabelSingular} not found`)} description="The requested record was not returned by the generated detail query." />}>`,
+          indentedSections,
+          "              </Show>",
+          "            </Show>",
+          "          </ErrorBoundary>",
+        ].join("\n");
+
+  return {
+    solidImports,
+    routerImports,
+    setupLines,
+    content,
+  };
+}
+
 function renderResourceFormRouteSource(route: RouteIR, app: AppIR, assemblyLookup: Map<string, AssemblyItem>) {
   const copiedRegistryImports = new Set<string>();
   const imports = new Map<string, Set<string>>();
@@ -406,13 +566,17 @@ function renderRouteSource(route: RouteIR, app: AppIR, assemblyLookup: Map<strin
   const pageShellId = route.page;
   const appShellName = appShellComponentName(appShellId);
   const pageShellName = pageShellComponentName(pageShellId);
+  const dataBinding = resolveResourceRouteBinding(route, app);
 
   const renderedSections = route.sections
     .map(section => renderSection(section, assemblyLookup, imports, copiedRegistryImports, layoutImports))
     .join("\n");
+  const dataBoundRoute = renderDataBoundRouteContent(route, dataBinding, renderedSections, imports, copiedRegistryImports);
 
   const importLines = [
     'import { Title } from "@solidjs/meta";',
+    dataBoundRoute.solidImports.size > 0 ? `import { ${[...dataBoundRoute.solidImports].sort().join(", ")} } from "solid-js";` : "",
+    dataBoundRoute.routerImports.size > 0 ? `import { ${[...dataBoundRoute.routerImports].sort().join(", ")} } from "@solidjs/router";` : "",
     `import { ${appShellName} } from "~/components/shells/app/${appShellId}";`,
     `import { ${pageShellName} } from "~/components/shells/page/${pageShellId}";`,
     ...[...layoutImports]
@@ -421,7 +585,7 @@ function renderRouteSource(route: RouteIR, app: AppIR, assemblyLookup: Map<strin
     ...[...imports.entries()]
       .sort(([left], [right]) => left.localeCompare(right))
       .map(([importPath, names]) => `import { ${[...names].sort().join(", ")} } from "${importPath}";`),
-  ];
+  ].filter(Boolean);
 
   const title = route.title ?? `${app.name} ${pageShellId.replace(/-/g, " ")}`;
 
@@ -429,12 +593,13 @@ function renderRouteSource(route: RouteIR, app: AppIR, assemblyLookup: Map<strin
     ...importLines,
     "",
     `export default function ${routeComponentName(route.path)}() {`,
+    ...dataBoundRoute.setupLines,
     "  return (",
     "    <>",
     `      <Title>${title}</Title>`,
     `      <${appShellName} title=${jsxPropValue(app.name)}>`,
     `        <${pageShellName} title=${jsxPropValue(title)}>`,
-    renderedSections,
+    dataBoundRoute.content,
     `        </${pageShellName}>`,
     `      </${appShellName}>`,
     "    </>",
