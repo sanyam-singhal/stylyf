@@ -38,13 +38,13 @@
     "env-s3"
   ],
   "snippets": [
-    "snippet-v04-spec-workflow",
+    "snippet-v1-spec-workflow",
     "snippet-canonical-portable-example",
     "snippet-canonical-hosted-example",
-    "snippet-v0-resource-grammar",
-    "snippet-v0-resource-form-routes",
-    "snippet-v0-attachment-lifecycle",
-    "snippet-v0-workflow-events-notifications",
+    "snippet-v1-resource-grammar",
+    "snippet-v1-resource-form-routes",
+    "snippet-v1-attachment-lifecycle",
+    "snippet-v1-workflow-events-notifications",
     "snippet-drizzle-db-module",
     "snippet-libsql-db-module",
     "snippet-better-auth-module",

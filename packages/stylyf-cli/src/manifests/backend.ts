@@ -429,7 +429,7 @@ export const backendEnvCatalog: Array<BackendCatalogEntry> = [
 
 export const backendSnippetCatalog: Array<BackendCatalogEntry> = [
   {
-    id: "snippet-v04-spec-workflow",
+    id: "snippet-v1-spec-workflow",
     label: "v1.0 Spec Workflow",
     kind: "backend-snippet",
     area: "Operator Workflow",
@@ -468,7 +468,7 @@ export const backendSnippetCatalog: Array<BackendCatalogEntry> = [
     sourcePath: "examples/README.md",
   },
   {
-    id: "snippet-v0-resource-grammar",
+    id: "snippet-v1-resource-grammar",
     label: "v1.0 Resource Grammar",
     kind: "backend-snippet",
     area: "SpecV10 DSL",
@@ -481,7 +481,7 @@ export const backendSnippetCatalog: Array<BackendCatalogEntry> = [
     sourcePath: "src/spec/types.ts",
   },
   {
-    id: "snippet-v0-resource-form-routes",
+    id: "snippet-v1-resource-form-routes",
     label: "v1.0 Resource Create And Edit Routes",
     kind: "backend-snippet",
     area: "SpecV10 DSL",
@@ -494,7 +494,7 @@ export const backendSnippetCatalog: Array<BackendCatalogEntry> = [
     sourcePath: "src/spec/types.ts",
   },
   {
-    id: "snippet-v0-attachment-lifecycle",
+    id: "snippet-v1-attachment-lifecycle",
     label: "v1.0 Attachment Lifecycle",
     kind: "backend-snippet",
     area: "SpecV10 DSL",
@@ -507,7 +507,7 @@ export const backendSnippetCatalog: Array<BackendCatalogEntry> = [
     sourcePath: "src/spec/types.ts",
   },
   {
-    id: "snippet-v0-workflow-events-notifications",
+    id: "snippet-v1-workflow-events-notifications",
     label: "v1.0 Workflow Events And Notifications",
     kind: "backend-snippet",
     area: "SpecV10 DSL",
