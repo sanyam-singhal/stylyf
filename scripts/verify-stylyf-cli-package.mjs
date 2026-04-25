@@ -125,6 +125,20 @@ async function run(cmd, args, cwd) {
   });
 }
 
+async function assertCommandFails(cmd, args, cwd, expectedText) {
+  try {
+    await run(cmd, args, cwd);
+  } catch (error) {
+    const output = `${error.stdout ?? ""}\n${error.stderr ?? ""}`;
+    if (expectedText && !output.includes(expectedText)) {
+      throw new Error(`Expected failed command output to include "${expectedText}", got:\n${output}`);
+    }
+    return;
+  }
+
+  throw new Error(`Expected command to fail: ${cmd} ${args.join(" ")}`);
+}
+
 
 async function assertFile(path) {
   try {
@@ -287,6 +301,54 @@ async function main() {
     await run(stylyfBin, ["plan", "--spec", output, "--json"], verifyRoot);
   }
 
+  const aliasLayoutSpec = {
+    ...genericSpec,
+    surfaces: [
+      {
+        name: "Alias Grid",
+        kind: "list",
+        object: "records",
+        path: "/alias-grid",
+        audience: "user",
+        sections: [
+          {
+            layout: "grid",
+            props: { columns: 2 },
+            children: ["data-table-shell"],
+          },
+        ],
+      },
+    ],
+  };
+  const invalidLayoutSpec = {
+    ...genericSpec,
+    surfaces: [
+      {
+        name: "Invalid Grid",
+        kind: "list",
+        object: "records",
+        path: "/invalid-grid",
+        audience: "user",
+        sections: [
+          {
+            layout: "grid",
+            props: { columns: 8 },
+            children: ["data-table-shell"],
+          },
+        ],
+      },
+    ],
+  };
+
+  await writeJson(resolve(verifyRoot, "alias-layout.spec.json"), aliasLayoutSpec);
+  await writeJson(resolve(verifyRoot, "invalid-layout.spec.json"), invalidLayoutSpec);
+  await run(stylyfBin, ["validate", "--spec", "alias-layout.spec.json"], verifyRoot);
+  const { stdout: resolvedAliasPlan } = await run(stylyfBin, ["plan", "--spec", "alias-layout.spec.json", "--resolved"], verifyRoot);
+  if (!resolvedAliasPlan.includes('"cols": 2') || resolvedAliasPlan.includes('"columns"')) {
+    throw new Error("Documented grid.columns alias was not normalized to grid.cols in the resolved plan.");
+  }
+  await assertCommandFails(stylyfBin, ["validate", "--spec", "invalid-layout.spec.json"], verifyRoot, "props.cols must be one of");
+
   await writeJson(resolve(verifyRoot, "generic.spec.json"), genericSpec);
   await writeJson(resolve(verifyRoot, "internal-rich.spec.json"), internalRichSpec);
   await writeJson(resolve(verifyRoot, "hosted-rich.spec.json"), hostedRichSpec);
@@ -406,6 +468,7 @@ async function main() {
       "  - tarball bundles dist manifests, templates, and source assets",
       "  - installed stylyf binary runs outside the repo",
       "  - intro/new/validate/plan/generate v1.0 commands work",
+      "  - layout prop contracts validate values and normalize documented aliases",
       "  - generic app source honors explicit surface route hints",
       "  - CMS admin content routes are generated under authenticated app shell protection",
       "  - portable internal rich app source is generated with auth/data/media files",

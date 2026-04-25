@@ -344,12 +344,12 @@ function renderCompositionTopic() {
                   {
                     id: "records-workspace",
                     layout: "stack",
-                    props: { gap: "var(--space-6)" },
+                    props: { gap: "loose" },
                     children: [
                       { component: "page-header", props: { title: "Records", description: "Review and organize submitted records." } },
                       {
                         layout: "grid",
-                        props: { columns: 2 },
+                        props: { cols: 2 },
                         children: [{ component: "filter-toolbar" }, { component: "bulk-action-bar" }],
                       },
                       { component: "data-table-shell" },

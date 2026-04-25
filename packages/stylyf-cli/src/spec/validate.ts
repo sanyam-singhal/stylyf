@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import {
   actorKinds,
   apiRouteMethods,
@@ -30,13 +31,53 @@ import {
   workflowNotificationAudiences,
 } from "./schema.js";
 import type { StylyfSpecV10 } from "./types.js";
+import { layoutPropContracts, type CompositionPropContract } from "../manifests/props.js";
 
 type ValidationContext = {
   errors: string[];
 };
 
+type AssemblyContractEntry = {
+  id: string;
+  slug: string;
+  label: string;
+  exportName: string;
+  clusterDirectory: string;
+  props?: CompositionPropContract[];
+};
+
+let componentContractLookup: Map<string, CompositionPropContract[]> | undefined;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeKey(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function loadComponentContractLookup() {
+  if (componentContractLookup) {
+    return componentContractLookup;
+  }
+
+  const lookup = new Map<string, CompositionPropContract[]>();
+  const registryUrl = new URL("../manifests/generated/assembly-registry.json", import.meta.url);
+  const registry = JSON.parse(readFileSync(registryUrl, "utf8")) as AssemblyContractEntry[];
+
+  for (const item of registry) {
+    const props = item.props ?? [];
+    for (const alias of [item.id, item.slug, item.label, item.exportName, `${item.clusterDirectory}/${item.slug}`]) {
+      lookup.set(normalizeKey(alias), props);
+    }
+  }
+
+  componentContractLookup = lookup;
+  return lookup;
+}
+
+function componentPropContracts(componentName: string) {
+  return loadComponentContractLookup().get(normalizeKey(componentName)) ?? [];
 }
 
 function hasOnlyKeys(value: Record<string, unknown>, allowed: readonly string[], path: string, context: ValidationContext) {
@@ -104,7 +145,46 @@ function optionalRecord(value: Record<string, unknown>, key: string, path: strin
   }
 }
 
-function validateLayoutProps(value: unknown, path: string, context: ValidationContext) {
+function propContractByName(contracts: readonly CompositionPropContract[]) {
+  const byName = new Map<string, CompositionPropContract>();
+  for (const contract of contracts) {
+    byName.set(contract.name, contract);
+    for (const alias of contract.aliases ?? []) {
+      byName.set(alias, contract);
+    }
+  }
+  return byName;
+}
+
+function validateContractValue(value: unknown, contract: CompositionPropContract, path: string, context: ValidationContext) {
+  if (contract.type === "enum") {
+    if (!contract.values?.some(entry => entry === value)) {
+      context.errors.push(`${path} must be one of: ${(contract.values ?? []).join(", ")}.`);
+    }
+    return;
+  }
+
+  if (contract.type === "boolean" && typeof value !== "boolean") {
+    context.errors.push(`${path} must be a boolean.`);
+    return;
+  }
+
+  if (contract.type === "number" && typeof value !== "number") {
+    context.errors.push(`${path} must be a number.`);
+    return;
+  }
+
+  if ((contract.type === "string" || contract.type === "jsx") && typeof value !== "string") {
+    context.errors.push(`${path} must be a string.`);
+    return;
+  }
+
+  if (contract.type === "json" && value === undefined) {
+    context.errors.push(`${path} must be valid JSON.`);
+  }
+}
+
+function validateLayoutProps(layout: string, value: unknown, path: string, context: ValidationContext) {
   if (value === undefined) {
     return;
   }
@@ -112,11 +192,119 @@ function validateLayoutProps(value: unknown, path: string, context: ValidationCo
     context.errors.push(`${path} must be an object when provided.`);
     return;
   }
+
+  const layoutContract = layoutPropContracts[layout as keyof typeof layoutPropContracts];
+  if (!layoutContract) {
+    for (const [key, item] of Object.entries(value)) {
+      if (typeof item !== "string" && typeof item !== "number" && typeof item !== "boolean") {
+        context.errors.push(`${path}.${key} must be a string, number, or boolean.`);
+      }
+    }
+    return;
+  }
+
+  const contracts = propContractByName(layoutContract.props);
   for (const [key, item] of Object.entries(value)) {
     if (typeof item !== "string" && typeof item !== "number" && typeof item !== "boolean") {
       context.errors.push(`${path}.${key} must be a string, number, or boolean.`);
+      continue;
+    }
+
+    const contract = contracts.get(key);
+    if (!contract) {
+      context.errors.push(`${path}.${key} is not supported by the ${layout} layout. Supported props: ${layoutContract.props.map(prop => prop.name).join(", ")}.`);
+      continue;
+    }
+
+    validateContractValue(item, contract, `${path}.${key}`, context);
+  }
+}
+
+function validateComponentProps(componentName: string, value: unknown, path: string, context: ValidationContext) {
+  if (value === undefined || !isRecord(value)) {
+    return;
+  }
+
+  const contracts = propContractByName(componentPropContracts(componentName));
+  for (const [key, item] of Object.entries(value)) {
+    const contract = contracts.get(key);
+    if (!contract) {
+      continue;
+    }
+
+    validateContractValue(item, contract, `${path}.${key}`, context);
+  }
+}
+
+function normalizeLayoutProps(layout: string, props: unknown) {
+  if (!isRecord(props)) {
+    return;
+  }
+
+  const layoutContract = layoutPropContracts[layout as keyof typeof layoutPropContracts];
+  if (!layoutContract) {
+    return;
+  }
+
+  for (const contract of layoutContract.props as readonly CompositionPropContract[]) {
+    for (const alias of contract.aliases ?? []) {
+      if (props[alias] !== undefined && props[contract.name] === undefined) {
+        props[contract.name] = props[alias];
+      }
+      if (props[alias] !== undefined) {
+        delete props[alias];
+      }
     }
   }
+}
+
+function normalizeCompositionNode(value: unknown) {
+  if (typeof value === "string" || !isRecord(value)) {
+    return;
+  }
+
+  if (typeof value.layout === "string") {
+    normalizeLayoutProps(value.layout, value.props);
+    if (Array.isArray(value.children)) {
+      value.children.forEach(normalizeCompositionNode);
+    }
+  }
+}
+
+function normalizeSections(value: unknown) {
+  if (!Array.isArray(value)) {
+    return;
+  }
+
+  for (const section of value) {
+    if (!isRecord(section)) {
+      continue;
+    }
+    if (typeof section.layout === "string") {
+      normalizeLayoutProps(section.layout, section.props);
+    }
+    if (Array.isArray(section.children)) {
+      section.children.forEach(normalizeCompositionNode);
+    }
+  }
+}
+
+function normalizeSpecAliases(value: Record<string, unknown>) {
+  const normalized = JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
+
+  for (const surface of Array.isArray(normalized.surfaces) ? normalized.surfaces : []) {
+    if (isRecord(surface)) {
+      normalizeSections(surface.sections);
+    }
+  }
+
+  for (const route of Array.isArray(normalized.routes) ? normalized.routes : []) {
+    if (isRecord(route)) {
+      normalizeSections(route.sections);
+    }
+  }
+
+  return normalized;
 }
 
 function validateComponentNode(value: Record<string, unknown>, path: string, context: ValidationContext) {
@@ -124,6 +312,9 @@ function validateComponentNode(value: Record<string, unknown>, path: string, con
   requireString(value, "component", path, context);
   optionalString(value, "variant", path, context);
   optionalRecord(value, "props", path, context);
+  if (typeof value.component === "string") {
+    validateComponentProps(value.component, value.props, `${path}.props`, context);
+  }
 
   if (value.items !== undefined) {
     if (!Array.isArray(value.items) || value.items.some(item => !isRecord(item))) {
@@ -147,7 +338,7 @@ function validateCompositionNode(value: unknown, path: string, context: Validati
   if (typeof value.layout === "string") {
     hasOnlyKeys(value, ["layout", "props", "children"], path, context);
     enumValue(value.layout, layoutNodes, `${path}.layout`, context);
-    validateLayoutProps(value.props, `${path}.props`, context);
+    validateLayoutProps(value.layout, value.props, `${path}.props`, context);
     if (value.children !== undefined) {
       validateCompositionChildren(value.children, `${path}.children`, context);
     }
@@ -181,7 +372,9 @@ function validateSections(value: unknown, path: string, context: ValidationConte
     hasOnlyKeys(section, ["id", "layout", "props", "children"], sectionPath, context);
     optionalString(section, "id", sectionPath, context);
     enumValue(section.layout, layoutNodes, `${sectionPath}.layout`, context);
-    validateLayoutProps(section.props, `${sectionPath}.props`, context);
+    if (typeof section.layout === "string") {
+      validateLayoutProps(section.layout, section.props, `${sectionPath}.props`, context);
+    }
     validateCompositionChildren(section.children, `${sectionPath}.children`, context);
   });
 }
@@ -668,39 +861,41 @@ export function validateSpecV10(value: unknown): StylyfSpecV10 {
     throw new Error("Spec must be a JSON object.");
   }
 
+  const normalized = normalizeSpecAliases(value);
+
   hasOnlyKeys(
-    value,
+    normalized,
     ["version", "app", "backend", "database", "env", "media", "experience", "actors", "objects", "flows", "surfaces", "routes", "apis", "server"],
     "spec",
     context,
   );
 
-  if (value.version !== "1.0") {
+  if (normalized.version !== "1.0") {
     context.errors.push('version must be "1.0".');
   }
 
-  validateApp(value.app, context);
-  validateBackend(value.backend, context);
-  validateDatabase(value.database, context);
-  validateEnv(value.env, context);
-  validateMedia(value.media, context);
-  validateExperience(value.experience, context);
-  validateActors(value.actors, context);
-  validateObjects(value.objects, context);
-  validateFlows(value.flows, context);
-  validateSurfaces(value.surfaces, context);
-  validateRoutes(value.routes, context);
-  validateApis(value.apis, context);
-  validateServer(value.server, context);
-  validateObjectReferences(value, context);
+  validateApp(normalized.app, context);
+  validateBackend(normalized.backend, context);
+  validateDatabase(normalized.database, context);
+  validateEnv(normalized.env, context);
+  validateMedia(normalized.media, context);
+  validateExperience(normalized.experience, context);
+  validateActors(normalized.actors, context);
+  validateObjects(normalized.objects, context);
+  validateFlows(normalized.flows, context);
+  validateSurfaces(normalized.surfaces, context);
+  validateRoutes(normalized.routes, context);
+  validateApis(normalized.apis, context);
+  validateServer(normalized.server, context);
+  validateObjectReferences(normalized, context);
 
-  if (isRecord(value.app) && value.app.kind === "free-saas-tool") {
-    validateNoBillingConcepts(value, context);
+  if (isRecord(normalized.app) && normalized.app.kind === "free-saas-tool") {
+    validateNoBillingConcepts(normalized, context);
   }
 
   if (context.errors.length > 0) {
     throw new Error(`Invalid Stylyf v1.0 spec:\n${context.errors.map(error => `- ${error}`).join("\n")}`);
   }
 
-  return value as StylyfSpecV10;
+  return normalized as StylyfSpecV10;
 }

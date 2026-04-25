@@ -12,7 +12,7 @@
           "id": "records-workspace",
           "layout": "stack",
           "props": {
-            "gap": "var(--space-6)"
+            "gap": "loose"
           },
           "children": [
             {
@@ -25,7 +25,7 @@
             {
               "layout": "grid",
               "props": {
-                "columns": 2
+                "cols": 2
               },
               "children": [
                 "filter-toolbar",
