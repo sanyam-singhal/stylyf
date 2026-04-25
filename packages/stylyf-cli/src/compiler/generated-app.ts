@@ -75,7 +75,21 @@ export type RouteIR = {
   title?: string;
   access?: AuthAccess;
   bindings?: BindingIR[];
+  metadata?: RouteMetadataIR;
   sections: SectionIR[];
+};
+
+export type RouteMetadataIR = {
+  title?: string;
+  description?: string;
+  canonical?: string;
+  robots?: "index" | "noindex";
+  openGraph?: {
+    title?: string;
+    description?: string;
+    image?: string;
+  };
+  structuredData?: Record<string, unknown>;
 };
 
 export type BindingIR = {

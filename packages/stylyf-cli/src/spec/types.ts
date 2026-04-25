@@ -196,6 +196,7 @@ export type SurfaceSpec = {
   page?: PageShellId;
   title?: string;
   bindings?: BindingSpec[];
+  metadata?: RouteMetadataSpec;
   sections?: SectionSpec[];
 };
 
@@ -207,7 +208,21 @@ export type RouteSpec = {
   title?: string;
   access?: AuthAccess;
   bindings?: BindingSpec[];
+  metadata?: RouteMetadataSpec;
   sections?: SectionSpec[];
+};
+
+export type RouteMetadataSpec = {
+  title?: string;
+  description?: string;
+  canonical?: string;
+  robots?: "index" | "noindex";
+  openGraph?: {
+    title?: string;
+    description?: string;
+    image?: string;
+  };
+  structuredData?: Record<string, unknown>;
 };
 
 export type EnvVarSpec = {

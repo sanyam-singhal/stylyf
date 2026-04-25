@@ -580,6 +580,9 @@ async function main() {
   if (!genericIndexRoute.includes("GeneratedNavigation")) {
     throw new Error("Generated app routes do not pass generated navigation into app shells.");
   }
+  if (!genericIndexRoute.includes('name="robots" content="noindex"') || !genericIndexRoute.includes('name="description"')) {
+    throw new Error("Generated private app routes are missing route metadata/noindex defaults.");
+  }
   await assertNoRuntimeStylyfImports(genericRoot, "Generated generic app");
 
   const internalRoot = resolve(verifyRoot, "generated-internal");
@@ -723,6 +726,7 @@ async function main() {
       "  - generated apps include Playwright smoke test harness and package scripts",
       "  - generated apps include split env profiles, thin env re-export, and env preflight",
       "  - generated apps include route-derived navigation config wired into shells",
+      "  - generated routes include metadata tags and private noindex defaults",
       "  - route bindings survive spec expansion into resolved app IR",
       "  - bound list/detail routes import generated queries and route-level loading/empty/error states",
       "  - generic app source honors explicit surface route hints",

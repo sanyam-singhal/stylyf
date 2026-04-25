@@ -475,6 +475,7 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         title: surface.title ?? surface.name ?? "Dashboard",
         access: surface.audience === "public" ? "public" : "user",
         bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? dashboardSections(),
       };
     case "landing":
@@ -485,6 +486,7 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         title: surface.title ?? surface.name ?? "Home",
         access: "public",
         bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [section("stack", [component("page-header"), component("empty-state")])],
       };
     case "list":
@@ -496,6 +498,7 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         title: surface.title ?? surface.name ?? resourceTitle,
         access: surface.audience === "public" ? "public" : "user",
         bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? resourceListSections(resource),
       };
     case "detail":
@@ -507,6 +510,7 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         title: surface.title ?? surface.name ?? `${resourceTitle} detail`,
         access: surface.audience === "public" ? "public" : "user",
         bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [section("stack", [component("page-header"), component("detail-panel")])],
       };
     case "create":
@@ -518,6 +522,7 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         title: surface.title ?? surface.name ?? `Create ${titleFor(singularize(resource))}`,
         access: surface.audience === "public" ? "public" : "user",
         bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [],
       };
     case "edit":
@@ -529,6 +534,7 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         title: surface.title ?? surface.name ?? `Edit ${titleFor(singularize(resource))}`,
         access: surface.audience === "public" ? "public" : "user",
         bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [],
       };
     case "settings":
@@ -539,6 +545,7 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         title: surface.title ?? surface.name ?? "Settings",
         access: surface.audience === "public" ? "public" : "user",
         bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [section("stack", [component("settings-panel"), component("settings-row")])],
       };
     case "content-index":
@@ -551,6 +558,7 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
           title: surface.title ?? surface.name ?? "Content",
           access: "user",
           bindings,
+          metadata: surface.metadata,
           sections: explicitSections ?? resourceListSections(resource),
         };
       }
@@ -561,6 +569,7 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         title: surface.title ?? surface.name ?? resourceTitle,
         access: "public",
         bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [section("stack", [component("section-header"), component("data-list")])],
       };
     case "content-detail":
@@ -571,6 +580,7 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         title: surface.title ?? surface.name ?? titleFor(singularize(resource)),
         access: "public",
         bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [section("stack", [component("page-header"), component("separator")])],
       };
     case "tool":
@@ -581,6 +591,7 @@ function surfaceToRoute(surface: SurfaceSpec, resources: ResourceIR[], fallbackS
         title: surface.title ?? surface.name ?? "Tool",
         access: surface.audience === "user" || surface.audience === "admin" || surface.audience === "editor" ? "user" : "public",
         bindings,
+        metadata: surface.metadata,
         sections: explicitSections ?? [section("stack", [component("form-section"), component("progress"), component("toast")])],
       };
   }
@@ -626,6 +637,7 @@ function routeFromSpec(route: RouteSpec, fallbackShell: RouteIR["shell"]): Route
     title: route.title,
     access: route.access ?? "user",
     bindings,
+    metadata: route.metadata,
     sections: sectionsFromSpec(route.sections) ?? [],
   };
 }

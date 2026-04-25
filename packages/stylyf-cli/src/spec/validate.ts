@@ -735,7 +735,7 @@ function validateSurfaces(value: unknown, context: ValidationContext) {
       context.errors.push(`${path} must be an object.`);
       return;
     }
-    hasOnlyKeys(surface, ["name", "kind", "object", "path", "audience", "shell", "page", "title", "bindings", "sections"], path, context);
+    hasOnlyKeys(surface, ["name", "kind", "object", "path", "audience", "shell", "page", "title", "bindings", "metadata", "sections"], path, context);
     requireString(surface, "name", path, context);
     enumValue(surface.kind, surfaceKinds, `${path}.kind`, context);
     optionalString(surface, "object", path, context);
@@ -745,8 +745,37 @@ function validateSurfaces(value: unknown, context: ValidationContext) {
     optionalEnum(surface, "page", pageShells, path, context);
     optionalString(surface, "title", path, context);
     validateBindings(surface.bindings, `${path}.bindings`, context);
+    validateRouteMetadata(surface.metadata, `${path}.metadata`, context);
     validateSections(surface.sections, `${path}.sections`, context);
   });
+}
+
+function validateRouteMetadata(value: unknown, path: string, context: ValidationContext) {
+  if (value === undefined) {
+    return;
+  }
+  if (!isRecord(value)) {
+    context.errors.push(`${path} must be an object when provided.`);
+    return;
+  }
+  hasOnlyKeys(value, ["title", "description", "canonical", "robots", "openGraph", "structuredData"], path, context);
+  optionalString(value, "title", path, context);
+  optionalString(value, "description", path, context);
+  optionalString(value, "canonical", path, context);
+  optionalEnum(value, "robots", ["index", "noindex"], path, context);
+  if (value.openGraph !== undefined) {
+    if (!isRecord(value.openGraph)) {
+      context.errors.push(`${path}.openGraph must be an object when provided.`);
+    } else {
+      hasOnlyKeys(value.openGraph, ["title", "description", "image"], `${path}.openGraph`, context);
+      optionalString(value.openGraph, "title", `${path}.openGraph`, context);
+      optionalString(value.openGraph, "description", `${path}.openGraph`, context);
+      optionalString(value.openGraph, "image", `${path}.openGraph`, context);
+    }
+  }
+  if (value.structuredData !== undefined && !isRecord(value.structuredData)) {
+    context.errors.push(`${path}.structuredData must be an object when provided.`);
+  }
 }
 
 function validateRoutes(value: unknown, context: ValidationContext) {
@@ -763,7 +792,7 @@ function validateRoutes(value: unknown, context: ValidationContext) {
       context.errors.push(`${path} must be an object.`);
       return;
     }
-    hasOnlyKeys(route, ["path", "shell", "page", "resource", "title", "access", "bindings", "sections"], path, context);
+    hasOnlyKeys(route, ["path", "shell", "page", "resource", "title", "access", "bindings", "metadata", "sections"], path, context);
     requireString(route, "path", path, context);
     optionalEnum(route, "shell", appShells, path, context);
     enumValue(route.page, pageShells, `${path}.page`, context);
@@ -771,6 +800,7 @@ function validateRoutes(value: unknown, context: ValidationContext) {
     optionalString(route, "title", path, context);
     optionalEnum(route, "access", authAccessLevels, path, context);
     validateBindings(route.bindings, `${path}.bindings`, context);
+    validateRouteMetadata(route.metadata, `${path}.metadata`, context);
     validateSections(route.sections, `${path}.sections`, context);
   });
 }
