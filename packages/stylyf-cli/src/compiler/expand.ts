@@ -5,6 +5,7 @@ import type {
   ComponentRefIR,
   DatabaseIR,
   LayoutNodeIR,
+  PolicyIR,
   ResourceAccessPreset,
   ResourceAttachmentIR,
   ResourceFieldIR,
@@ -23,6 +24,7 @@ import type {
   LayoutSpec,
   MediaAttachmentSpec,
   ObjectSpec,
+  PolicySpec,
   RouteSpec,
   SectionSpec,
   StylyfSpecV10,
@@ -205,9 +207,10 @@ function defaultMediaAttachments(spec: StylyfSpecV10): ResourceAttachmentIR[] {
   ];
 }
 
-function objectToResource(object: ObjectSpec, spec: StylyfSpecV10): ResourceIR {
+function objectToResource(object: ObjectSpec, spec: StylyfSpecV10, policies?: PolicyIR): ResourceIR {
   const ownership = object.ownership ?? (spec.app.kind === "cms-site" ? "user" : "user");
   const visibility = object.visibility ?? (spec.app.kind === "cms-site" ? "mixed" : "private");
+  const membership = defaultMembership(policies);
   const fields = object.fields?.map(fieldToResourceField) ?? [
     { name: "title", type: "varchar", required: true },
     { name: "status", type: "enum", enumValues: ["draft", "review", "approved"] },
@@ -224,11 +227,11 @@ function objectToResource(object: ObjectSpec, spec: StylyfSpecV10): ResourceIR {
           delete: "owner" as const,
         }
       : {
-          list: ownership === "none" ? ("user" as const) : ("owner" as const),
-          read: ownership === "none" ? ("user" as const) : ("owner" as const),
-          create: "user" as const,
-          update: ownership === "none" ? ("user" as const) : ("owner" as const),
-          delete: ownership === "none" ? ("user" as const) : ("owner" as const),
+          list: ownership === "workspace" ? ("workspace-member" as const) : ownership === "none" ? ("user" as const) : ("owner" as const),
+          read: ownership === "workspace" ? ("workspace-member" as const) : ownership === "none" ? ("user" as const) : ("owner" as const),
+          create: ownership === "workspace" ? ("workspace-member" as const) : ("user" as const),
+          update: ownership === "workspace" ? ("workspace-member" as const) : ownership === "none" ? ("user" as const) : ("owner" as const),
+          delete: ownership === "workspace" ? ("workspace-member" as const) : ownership === "none" ? ("user" as const) : ("owner" as const),
         };
 
   return {
@@ -240,7 +243,12 @@ function objectToResource(object: ObjectSpec, spec: StylyfSpecV10): ResourceIR {
       ownership === "none"
         ? { model: "none" }
         : ownership === "workspace"
-          ? { model: "workspace", workspaceField: "workspace_id" }
+          ? {
+              model: "workspace",
+              membershipTable: membership?.table ?? "workspace_memberships",
+              workspaceField: membership?.workspaceField ?? "workspace_id",
+              roleField: membership?.roleField ?? "role",
+            }
           : { model: "user", ownerField: spec.app.kind === "cms-site" ? "author_id" : "owner_id" },
     access: {
       ...defaultAccess,
@@ -333,6 +341,45 @@ function backendFor(spec: StylyfSpecV10): { database?: DatabaseIR; auth?: AuthIR
     },
     storage,
   };
+}
+
+function policiesFromSpec(policy?: PolicySpec): PolicyIR | undefined {
+  const roles = policy?.roles?.map(role => ({ name: role.name, description: role.description })) ?? [
+    { name: "admin", description: "Full privileged operator role. Generated code requires an explicit membership row before this grants access." },
+    { name: "editor", description: "Content/editorial operator role. Generated code requires an explicit membership row before this grants access." },
+    { name: "member", description: "Default workspace member role." },
+  ];
+
+  const memberships =
+    policy?.memberships?.map(membership => ({
+      name: membership.name ?? "workspace",
+      table: membership.table ?? "workspace_memberships",
+      userField: membership.userField ?? "user_id",
+      workspaceField: membership.workspaceField ?? "workspace_id",
+      roleField: membership.roleField ?? "role",
+      roles: membership.roles ?? roles.map(role => role.name),
+    })) ?? [
+      {
+        name: "workspace",
+        table: "workspace_memberships",
+        userField: "user_id",
+        workspaceField: "workspace_id",
+        roleField: "role",
+        roles: roles.map(role => role.name),
+      },
+    ];
+
+  const actors = policy?.actors?.map(actor => ({ actor: actor.actor, role: actor.role, membership: actor.membership })) ?? [
+    { actor: "admin", role: "admin", membership: memberships[0]?.name },
+    { actor: "editor", role: "editor", membership: memberships[0]?.name },
+    { actor: "member", role: "member", membership: memberships[0]?.name },
+  ];
+
+  return { roles, memberships, actors };
+}
+
+function defaultMembership(policy: PolicyIR | undefined) {
+  return policy?.memberships[0];
 }
 
 function protectedRoutes(routes: RouteIR[]) {
@@ -605,7 +652,8 @@ function routesFor(spec: StylyfSpecV10, resources: ResourceIR[], expansion: Kind
 
 export function expandSpecToGeneratedApp(spec: StylyfSpecV10): AppIR {
   const expansion = kindExpansionFor(spec);
-  const resources = expansion.defaultObjects(spec).map(object => objectToResource(object, spec));
+  const policies = policiesFromSpec(spec.policies);
+  const resources = expansion.defaultObjects(spec).map(object => objectToResource(object, spec, policies));
   const workflows = expansion.defaultFlows(spec, resources).map(flowToWorkflow);
   const routes = routesFor(spec, resources, expansion);
   const backend = backendFor(spec);
@@ -630,6 +678,7 @@ export function expandSpecToGeneratedApp(spec: StylyfSpecV10): AppIR {
     routes,
     env: spec.env,
     database,
+    policies,
     auth,
     storage: backend.storage,
     resources,

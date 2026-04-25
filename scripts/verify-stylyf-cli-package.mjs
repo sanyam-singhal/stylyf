@@ -25,6 +25,28 @@ const internalRichSpec = {
   media: {
     mode: "rich",
   },
+  policies: {
+    roles: [
+      { name: "admin" },
+      { name: "editor" },
+      { name: "member" },
+    ],
+    memberships: [
+      {
+        name: "workspace",
+        table: "workspace_memberships",
+        userField: "user_id",
+        workspaceField: "workspace_id",
+        roleField: "role",
+        roles: ["admin", "editor", "member"],
+      },
+    ],
+    actors: [
+      { actor: "admin", role: "admin", membership: "workspace" },
+      { actor: "editor", role: "editor", membership: "workspace" },
+      { actor: "member", role: "member", membership: "workspace" },
+    ],
+  },
   objects: [
     {
       name: "tickets",
@@ -34,6 +56,15 @@ const internalRichSpec = {
         { name: "title", type: "short-text", required: true },
         { name: "status", type: "status", options: ["draft", "review", "approved"] },
         { name: "summary", type: "long-text" },
+      ],
+    },
+    {
+      name: "projects",
+      ownership: "workspace",
+      visibility: "private",
+      fields: [
+        { name: "name", type: "short-text", required: true },
+        { name: "status", type: "status", options: ["active", "paused"] },
       ],
     },
   ],
@@ -448,6 +479,29 @@ async function main() {
   ]) {
     await assertFile(resolve(internalRoot, relativePath));
   }
+  const internalSchema = await readFile(resolve(internalRoot, "src/lib/db/schema.ts"), "utf8");
+  for (const expectedText of [
+    'export const workspaceMemberships = sqliteTable("workspace_memberships"',
+    'userId: text("user_id").notNull()',
+    'workspaceId: text("workspace_id").notNull()',
+    'role: text("role").notNull()',
+  ]) {
+    if (!internalSchema.includes(expectedText)) {
+      throw new Error(`Generated portable app is missing membership policy schema: ${expectedText}`);
+    }
+  }
+  const internalPolicy = await readFile(resolve(internalRoot, "src/lib/server/resource-policy.ts"), "utf8");
+  for (const expectedText of [
+    "export async function requireRole",
+    "export async function requireWorkspaceMember",
+    "export async function requireOwner",
+    "export const membershipPolicies",
+    "workspace_memberships",
+  ]) {
+    if (!internalPolicy.includes(expectedText)) {
+      throw new Error(`Generated portable app is missing policy helper wiring: ${expectedText}`);
+    }
+  }
   await assertNoRuntimeStylyfImports(internalRoot, "Generated portable app");
 
   const freeRoot = resolve(verifyRoot, "generated-free-tool");
@@ -518,6 +572,7 @@ async function main() {
       "  - bound list/detail routes import generated queries and route-level loading/empty/error states",
       "  - generic app source honors explicit surface route hints",
       "  - CMS admin content routes are generated under authenticated app shell protection",
+      "  - portable app generates membership policy schema and role/workspace/owner helpers",
       "  - portable internal rich app source is generated with auth/data/media files",
       "  - free SaaS tool app generates and has no billing/payment surface",
       "  - hosted Supabase/Tigris app generates expected auth/data/storage files",

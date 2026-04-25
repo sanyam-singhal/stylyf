@@ -59,6 +59,32 @@ export type ActorSpec = {
   description?: string;
 };
 
+export type RolePolicySpec = {
+  name: string;
+  description?: string;
+};
+
+export type MembershipPolicySpec = {
+  name?: string;
+  table?: string;
+  userField?: string;
+  workspaceField?: string;
+  roleField?: string;
+  roles?: string[];
+};
+
+export type ActorPolicySpec = {
+  actor: string;
+  role?: string;
+  membership?: string;
+};
+
+export type PolicySpec = {
+  roles?: RolePolicySpec[];
+  memberships?: MembershipPolicySpec[];
+  actors?: ActorPolicySpec[];
+};
+
 export type FieldSpec = {
   name: string;
   label?: string;
@@ -244,6 +270,7 @@ export type StylyfSpecV10 = {
     radius?: "edge" | "trim" | "soft" | "mellow";
   };
   actors?: ActorSpec[];
+  policies?: PolicySpec;
   objects?: ObjectSpec[];
   flows?: FlowSpec[];
   surfaces?: SurfaceSpec[];

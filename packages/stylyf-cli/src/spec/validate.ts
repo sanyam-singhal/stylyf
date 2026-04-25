@@ -573,6 +573,74 @@ function validateRelations(value: unknown, path: string, context: ValidationCont
   });
 }
 
+function validatePolicies(value: unknown, context: ValidationContext) {
+  if (value === undefined) {
+    return;
+  }
+  if (!isRecord(value)) {
+    context.errors.push("policies must be an object when provided.");
+    return;
+  }
+
+  hasOnlyKeys(value, ["roles", "memberships", "actors"], "policies", context);
+
+  if (value.roles !== undefined) {
+    if (!Array.isArray(value.roles)) {
+      context.errors.push("policies.roles must be an array when provided.");
+    } else {
+      value.roles.forEach((role, index) => {
+        const path = `policies.roles[${index}]`;
+        if (!isRecord(role)) {
+          context.errors.push(`${path} must be an object.`);
+          return;
+        }
+        hasOnlyKeys(role, ["name", "description"], path, context);
+        requireString(role, "name", path, context);
+        optionalString(role, "description", path, context);
+      });
+    }
+  }
+
+  if (value.memberships !== undefined) {
+    if (!Array.isArray(value.memberships)) {
+      context.errors.push("policies.memberships must be an array when provided.");
+    } else {
+      value.memberships.forEach((membership, index) => {
+        const path = `policies.memberships[${index}]`;
+        if (!isRecord(membership)) {
+          context.errors.push(`${path} must be an object.`);
+          return;
+        }
+        hasOnlyKeys(membership, ["name", "table", "userField", "workspaceField", "roleField", "roles"], path, context);
+        optionalString(membership, "name", path, context);
+        optionalString(membership, "table", path, context);
+        optionalString(membership, "userField", path, context);
+        optionalString(membership, "workspaceField", path, context);
+        optionalString(membership, "roleField", path, context);
+        optionalStringArray(membership, "roles", path, context);
+      });
+    }
+  }
+
+  if (value.actors !== undefined) {
+    if (!Array.isArray(value.actors)) {
+      context.errors.push("policies.actors must be an array when provided.");
+    } else {
+      value.actors.forEach((actor, index) => {
+        const path = `policies.actors[${index}]`;
+        if (!isRecord(actor)) {
+          context.errors.push(`${path} must be an object.`);
+          return;
+        }
+        hasOnlyKeys(actor, ["actor", "role", "membership"], path, context);
+        requireString(actor, "actor", path, context);
+        optionalString(actor, "role", path, context);
+        optionalString(actor, "membership", path, context);
+      });
+    }
+  }
+}
+
 function validateObjects(value: unknown, context: ValidationContext) {
   if (value === undefined) {
     return;
@@ -929,6 +997,56 @@ function validateCompositionBindingReferences(
   }
 }
 
+function validatePolicyReferences(value: Record<string, unknown>, context: ValidationContext) {
+  if (!isRecord(value.policies)) {
+    return;
+  }
+
+  const roles = new Set(
+    Array.isArray(value.policies.roles)
+      ? value.policies.roles
+          .filter(isRecord)
+          .map(role => role.name)
+          .filter((name): name is string => typeof name === "string" && name.length > 0)
+      : [],
+  );
+  const memberships = new Set(
+    Array.isArray(value.policies.memberships)
+      ? value.policies.memberships
+          .filter(isRecord)
+          .map(membership => (typeof membership.name === "string" ? membership.name : "workspace"))
+          .filter((name): name is string => typeof name === "string" && name.length > 0)
+      : ["workspace"],
+  );
+
+  if (Array.isArray(value.policies.memberships)) {
+    value.policies.memberships.forEach((membership, index) => {
+      if (!isRecord(membership) || !Array.isArray(membership.roles)) {
+        return;
+      }
+      membership.roles.forEach((role, roleIndex) => {
+        if (typeof role === "string" && roles.size > 0 && !roles.has(role)) {
+          context.errors.push(`policies.memberships[${index}].roles[${roleIndex}] references unknown role "${role}".`);
+        }
+      });
+    });
+  }
+
+  if (Array.isArray(value.policies.actors)) {
+    value.policies.actors.forEach((actor, index) => {
+      if (!isRecord(actor)) {
+        return;
+      }
+      if (typeof actor.role === "string" && roles.size > 0 && !roles.has(actor.role)) {
+        context.errors.push(`policies.actors[${index}].role references unknown role "${actor.role}".`);
+      }
+      if (typeof actor.membership === "string" && memberships.size > 0 && !memberships.has(actor.membership)) {
+        context.errors.push(`policies.actors[${index}].membership references unknown membership "${actor.membership}".`);
+      }
+    });
+  }
+}
+
 function validateObjectReferences(value: Record<string, unknown>, context: ValidationContext) {
   if (!Array.isArray(value.objects)) {
     return;
@@ -1033,7 +1151,7 @@ export function validateSpecV10(value: unknown): StylyfSpecV10 {
 
   hasOnlyKeys(
     normalized,
-    ["version", "app", "backend", "database", "env", "media", "experience", "actors", "objects", "flows", "surfaces", "routes", "apis", "server"],
+    ["version", "app", "backend", "database", "env", "media", "experience", "actors", "policies", "objects", "flows", "surfaces", "routes", "apis", "server"],
     "spec",
     context,
   );
@@ -1049,12 +1167,14 @@ export function validateSpecV10(value: unknown): StylyfSpecV10 {
   validateMedia(normalized.media, context);
   validateExperience(normalized.experience, context);
   validateActors(normalized.actors, context);
+  validatePolicies(normalized.policies, context);
   validateObjects(normalized.objects, context);
   validateFlows(normalized.flows, context);
   validateSurfaces(normalized.surfaces, context);
   validateRoutes(normalized.routes, context);
   validateApis(normalized.apis, context);
   validateServer(normalized.server, context);
+  validatePolicyReferences(normalized, context);
   validateObjectReferences(normalized, context);
 
   if (isRecord(normalized.app) && normalized.app.kind === "free-saas-tool") {

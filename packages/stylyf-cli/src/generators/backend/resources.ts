@@ -203,6 +203,63 @@ function deriveAttachmentSchemaTables(resource: ResourceIR): DatabaseSchemaIR[] 
   ];
 }
 
+function deriveMembershipSchemaTables(app: AppIR): DatabaseSchemaIR[] {
+  const memberships = app.policies?.memberships ?? [];
+  const needsMembershipTables = (app.resources ?? []).some(
+    resource =>
+      resource.ownership?.model === "workspace" ||
+      Object.values(resource.access ?? {}).some(access => access === "workspace-member"),
+  );
+
+  if (!needsMembershipTables) {
+    return [];
+  }
+
+  const membershipTables = memberships.length > 0
+    ? memberships
+    : [
+        {
+          table: "workspace_memberships",
+          userField: "user_id",
+          workspaceField: "workspace_id",
+          roleField: "role",
+        },
+      ];
+
+  const seen = new Set<string>();
+  return membershipTables
+    .filter(membership => {
+      if (seen.has(membership.table)) {
+        return false;
+      }
+      seen.add(membership.table);
+      return true;
+    })
+    .map(membership => ({
+      table: membership.table,
+      columns: [
+        {
+          name: "id",
+          type: "uuid",
+          primaryKey: true,
+        },
+        {
+          name: membership.userField,
+          type: "uuid",
+        },
+        {
+          name: membership.workspaceField,
+          type: "uuid",
+        },
+        {
+          name: membership.roleField,
+          type: "varchar",
+        },
+      ],
+      timestamps: true,
+    }));
+}
+
 function accessToAuth(access?: ResourceAccessPreset): AuthAccess {
   return access === undefined || access === "public" ? "public" : "user";
 }
@@ -250,8 +307,10 @@ export function materializeAppForGeneration(app: AppIR): AppIR {
 
   const existingSchema = app.database?.schema ?? [];
   const existingTables = new Set(existingSchema.map(table => table.table));
-  const derivedSchema = app.resources
-    .flatMap(resource => [deriveSchemaTable(resource), ...deriveAttachmentSchemaTables(resource)])
+  const derivedSchema = [
+    ...app.resources.flatMap(resource => [deriveSchemaTable(resource), ...deriveAttachmentSchemaTables(resource)]),
+    ...deriveMembershipSchemaTables(app),
+  ]
     .filter(table => !existingTables.has(table.table));
 
   const existingServer = app.server ?? [];
@@ -305,9 +364,101 @@ export function renderGeneratedResourcePolicyModule(app: AppIR) {
     ownership: resource.ownership ?? { model: "none" },
     access: resource.access ?? {},
   }));
+  const rolePolicies = app.policies?.roles ?? [];
+  const membershipPolicies = app.policies?.memberships ?? [];
+  const actorPolicies = app.policies?.actors ?? [];
+  const usesPortableDb = app.database?.provider !== "supabase";
+  const needsMembershipTables = (app.resources ?? []).some(
+    resource =>
+      resource.ownership?.model === "workspace" ||
+      Object.values(resource.access ?? {}).some(access => access === "workspace-member"),
+  );
+  const portablePolicyHelpers =
+    usesPortableDb && membershipPolicies.length > 0 && needsMembershipTables
+      ? [
+          'import { and, eq } from "drizzle-orm";',
+          'import { db, schema } from "~/lib/db";',
+          "",
+        ]
+      : [];
+  const portableHelperFunctions =
+    usesPortableDb && membershipPolicies.length > 0 && needsMembershipTables
+      ? [
+          "function camelCase(value: string) {",
+          "  return value",
+          "    .split(/[^a-zA-Z0-9]+/g)",
+          "    .filter(Boolean)",
+          "    .map((segment, index) =>",
+          "      index === 0 ? `${segment[0]?.toLowerCase() ?? \"\"}${segment.slice(1)}` : `${segment[0]?.toUpperCase() ?? \"\"}${segment.slice(1)}`,",
+          "    )",
+          "    .join(\"\");",
+          "}",
+          "",
+          "function resolveSchemaTable(tableName: string) {",
+          "  const table = (schema as Record<string, any>)[camelCase(tableName)];",
+          "  if (!table) throw new Error(`Policy table ${tableName} is not present in the generated database schema.`);",
+          "  return table;",
+          "}",
+          "",
+          "function membershipPolicy(name = \"workspace\") {",
+          "  const policy = membershipPolicies.find(entry => entry.name === name) ?? membershipPolicies[0];",
+          "  if (!policy) throw new Error(\"No membership policy is configured for this app.\");",
+          "  return policy;",
+          "}",
+          "",
+          "export async function requireWorkspaceMember(workspaceId: string, membershipName?: string) {",
+          "  const { userId } = await requireViewerIdentity();",
+          "  const policy = membershipPolicy(membershipName);",
+          "  const table = resolveSchemaTable(policy.table);",
+          "  const rows = await db",
+          "    .select()",
+          "    .from(table)",
+          "    .where(and(eq(table[policy.userField], userId), eq(table[policy.workspaceField], workspaceId)))",
+          "    .limit(1);",
+          "  if (rows.length === 0) throw new Error(\"Workspace membership is required for this action.\");",
+          "  return rows[0];",
+          "}",
+          "",
+          "export async function requireRole(role: string, options?: { workspaceId?: string; membership?: string }) {",
+          "  const { userId } = await requireViewerIdentity();",
+          "  const policy = membershipPolicy(options?.membership);",
+          "  const table = resolveSchemaTable(policy.table);",
+          "  const predicates = [eq(table[policy.userField], userId), eq(table[policy.roleField], role)];",
+          "  if (options?.workspaceId) predicates.push(eq(table[policy.workspaceField], options.workspaceId));",
+          "  const rows = await db.select().from(table).where(and(...predicates)).limit(1);",
+          "  if (rows.length === 0) throw new Error(`Role ${role} is required for this action.`);",
+          "  return rows[0];",
+          "}",
+          "",
+          "export async function requireOwner(ownerId: string | null | undefined) {",
+          "  const { userId } = await requireViewerIdentity();",
+          "  if (!ownerId || ownerId !== userId) throw new Error(\"Resource ownership is required for this action.\");",
+          "  return { userId };",
+          "}",
+          "",
+        ]
+      : [
+          "export async function requireWorkspaceMember(_workspaceId: string, _membershipName?: string) {",
+          "  await requireViewerIdentity();",
+          "  throw new Error(\"Workspace membership helpers require a generated membership policy table.\");",
+          "}",
+          "",
+          "export async function requireRole(role: string, _options?: { workspaceId?: string; membership?: string }) {",
+          "  await requireViewerIdentity();",
+          "  throw new Error(`Role ${role} is not wired to a generated membership policy table.`);",
+          "}",
+          "",
+          "export async function requireOwner(ownerId: string | null | undefined) {",
+          "  const { userId } = await requireViewerIdentity();",
+          "  if (!ownerId || ownerId !== userId) throw new Error(\"Resource ownership is required for this action.\");",
+          "  return { userId };",
+          "}",
+          "",
+        ];
 
   return [
     'import { getSession, requireSession } from "~/lib/server/guards";',
+    ...portablePolicyHelpers,
     "",
     "function extractUserId(session: unknown) {",
     "  if (!session || typeof session !== \"object\") return null;",
@@ -316,6 +467,12 @@ export function renderGeneratedResourcePolicyModule(app: AppIR) {
     "}",
     "",
     "export const resourcePolicies = " + JSON.stringify(policies, null, 2) + " as const;",
+    "",
+    "export const rolePolicies = " + JSON.stringify(rolePolicies, null, 2) + " as const;",
+    "",
+    "export const membershipPolicies = " + JSON.stringify(membershipPolicies, null, 2) + " as const;",
+    "",
+    "export const actorPolicies = " + JSON.stringify(actorPolicies, null, 2) + " as const;",
     "",
     "export async function getViewerIdentity() {",
     "  const session = await getSession();",
@@ -331,6 +488,7 @@ export function renderGeneratedResourcePolicyModule(app: AppIR) {
     "  return { session, userId };",
     "}",
     "",
+    ...portableHelperFunctions,
   ].join("\n");
 }
 

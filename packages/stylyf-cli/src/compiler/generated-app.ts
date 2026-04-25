@@ -195,6 +195,32 @@ export type ResourceIR = {
   workflow?: string;
 };
 
+export type RolePolicyIR = {
+  name: string;
+  description?: string;
+};
+
+export type MembershipPolicyIR = {
+  name: string;
+  table: string;
+  userField: string;
+  workspaceField: string;
+  roleField: string;
+  roles: string[];
+};
+
+export type ActorPolicyIR = {
+  actor: string;
+  role?: string;
+  membership?: string;
+};
+
+export type PolicyIR = {
+  roles: RolePolicyIR[];
+  memberships: MembershipPolicyIR[];
+  actors: ActorPolicyIR[];
+};
+
 export type WorkflowTransitionIR = {
   name: string;
   from: string | string[];
@@ -258,6 +284,7 @@ export type AppIR = {
   routes: RouteIR[];
   env?: EnvIR;
   database?: DatabaseIR;
+  policies?: PolicyIR;
   resources?: ResourceIR[];
   workflows?: WorkflowIR[];
   auth?: AuthIR;
