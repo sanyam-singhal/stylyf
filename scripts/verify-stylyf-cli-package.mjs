@@ -109,6 +109,10 @@ const genericSpec = {
   media: {
     mode: "basic",
   },
+  deployment: {
+    profile: "docker",
+    serviceName: "pack-verify-generic",
+  },
   objects: [
     {
       name: "records",
@@ -494,6 +498,8 @@ async function main() {
     "src/routes/api/readiness.ts",
     "src/api.contracts.json",
     "src/lib/server/observability.ts",
+    "DEPLOYMENT.md",
+    "Dockerfile",
     "playwright.config.ts",
     "tests/smoke/routes.spec.ts",
     "tests/smoke/auth.spec.ts",
@@ -595,6 +601,11 @@ async function main() {
   const observabilityModule = await readFile(resolve(genericRoot, "src/lib/server/observability.ts"), "utf8");
   if (!readinessRoute.includes("missingEnv") || !observabilityModule.includes("logInfo") || !observabilityModule.includes("logError")) {
     throw new Error("Generated app is missing observability/readiness baseline.");
+  }
+  const deploymentMarkdown = await readFile(resolve(genericRoot, "DEPLOYMENT.md"), "utf8");
+  const dockerfile = await readFile(resolve(genericRoot, "Dockerfile"), "utf8");
+  if (!deploymentMarkdown.includes("Profile: docker") || !dockerfile.includes("npm run build")) {
+    throw new Error("Generated app is missing opt-in deployment profile scaffolding.");
   }
   await assertNoRuntimeStylyfImports(genericRoot, "Generated generic app");
 
@@ -754,6 +765,7 @@ async function main() {
       "  - generated apps include route-derived navigation config wired into shells",
       "  - generated routes include metadata tags and private noindex defaults",
       "  - generated apps include observability module, readiness route, and operations notes",
+      "  - opt-in deployment profiles emit source-only deployment notes/files",
       "  - route bindings survive spec expansion into resolved app IR",
       "  - bound list/detail routes import generated queries and route-level loading/empty/error states",
       "  - generic app source honors explicit surface route hints",

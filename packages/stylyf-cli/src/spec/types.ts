@@ -329,6 +329,12 @@ export type NavigationSpec = {
   commandMenu?: NavItemSpec[];
 };
 
+export type DeploymentSpec = {
+  profile: "none" | "node" | "docker" | "systemd-caddy";
+  domain?: string;
+  serviceName?: string;
+};
+
 export type StylyfSpecV10 = {
   version: "1.0";
   app: {
@@ -374,4 +380,5 @@ export type StylyfSpecV10 = {
   server?: ServerModuleSpec[];
   fixtures?: FixtureSpec[];
   navigation?: NavigationSpec;
+  deployment?: DeploymentSpec;
 };

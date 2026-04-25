@@ -370,6 +370,12 @@ export type NavigationIR = {
   commandMenu: NavItemIR[];
 };
 
+export type DeploymentIR = {
+  profile: "none" | "node" | "docker" | "systemd-caddy";
+  domain?: string;
+  serviceName?: string;
+};
+
 export type AppIR = {
   name: string;
   shell: AppShellId;
@@ -386,4 +392,5 @@ export type AppIR = {
   server?: ServerModuleIR[];
   fixtures?: FixtureIR[];
   navigation?: NavigationIR;
+  deployment?: DeploymentIR;
 };

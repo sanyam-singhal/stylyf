@@ -1128,6 +1128,20 @@ function validateNavigation(value: unknown, context: ValidationContext) {
   validateNavItems(value.commandMenu, "navigation.commandMenu", context);
 }
 
+function validateDeployment(value: unknown, context: ValidationContext) {
+  if (value === undefined) {
+    return;
+  }
+  if (!isRecord(value)) {
+    context.errors.push("deployment must be an object when provided.");
+    return;
+  }
+  hasOnlyKeys(value, ["profile", "domain", "serviceName"], "deployment", context);
+  enumValue(value.profile, ["none", "node", "docker", "systemd-caddy"], "deployment.profile", context);
+  optionalString(value, "domain", "deployment", context);
+  optionalString(value, "serviceName", "deployment", context);
+}
+
 function validateNoBillingConcepts(value: unknown, context: ValidationContext) {
   const serialized = JSON.stringify(value).toLowerCase();
   for (const token of ["stripe", "billing", "checkout", "payment", "subscription"]) {
@@ -1398,7 +1412,7 @@ export function validateSpecV10(value: unknown): StylyfSpecV10 {
 
   hasOnlyKeys(
     normalized,
-    ["version", "app", "backend", "database", "env", "media", "experience", "actors", "policies", "objects", "flows", "surfaces", "routes", "apis", "server", "fixtures", "navigation"],
+    ["version", "app", "backend", "database", "env", "media", "experience", "actors", "policies", "objects", "flows", "surfaces", "routes", "apis", "server", "fixtures", "navigation", "deployment"],
     "spec",
     context,
   );
@@ -1423,6 +1437,7 @@ export function validateSpecV10(value: unknown): StylyfSpecV10 {
   validateServer(normalized.server, context);
   validateFixtures(normalized.fixtures, context);
   validateNavigation(normalized.navigation, context);
+  validateDeployment(normalized.deployment, context);
   validatePolicyReferences(normalized, context);
   validateObjectReferences(normalized, context);
 

@@ -79,6 +79,12 @@ import { bundledSourcePathExists, readBundledSourceFile, writeGeneratedFile } fr
 import { installGeneratedProjectDependencies, runGeneratedProjectScript, writeProjectScaffold } from "./project.js";
 import { renderGeneratedNavigationModule } from "./navigation.js";
 import {
+  renderGeneratedCaddyfile,
+  renderGeneratedDeploymentMarkdown,
+  renderGeneratedDockerfile,
+  renderGeneratedSystemdUnit,
+} from "./deployment.js";
+import {
   renderGeneratedAppCss,
   renderGeneratedAppRoot,
   renderGeneratedEntryClient,
@@ -790,6 +796,14 @@ export async function generateFrontendDraftFromApp(appIr: AppIR, targetPath: str
   await writeGeneratedFile(resolve(targetPath, "src/app.css"), await renderGeneratedAppCss(app));
   await writeGeneratedFile(resolve(targetPath, "src/lib/theme-system.ts"), renderGeneratedThemeSystem(app));
   await writeGeneratedFile(resolve(targetPath, "src/components/generated-navigation.tsx"), renderGeneratedNavigationModule(app));
+  await writeGeneratedFile(resolve(targetPath, "DEPLOYMENT.md"), renderGeneratedDeploymentMarkdown(app));
+  if (app.deployment?.profile === "docker") {
+    await writeGeneratedFile(resolve(targetPath, "Dockerfile"), renderGeneratedDockerfile(app));
+  }
+  if (app.deployment?.profile === "systemd-caddy") {
+    await writeGeneratedFile(resolve(targetPath, "deploy/systemd.service"), renderGeneratedSystemdUnit(app));
+    await writeGeneratedFile(resolve(targetPath, "deploy/Caddyfile"), renderGeneratedCaddyfile(app));
+  }
   await writeGeneratedFile(resolve(targetPath, "src/lib/server/observability.ts"), renderGeneratedObservabilityModule(app));
   if (!(app.apis ?? []).some(api => api.path === "/api/health")) {
     await writeGeneratedFile(resolve(targetPath, "src/routes/api/health.ts"), renderGeneratedHealthRoute(app));
