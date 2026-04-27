@@ -89,6 +89,7 @@ const defaultAllowedCommands = new Set([
   "git",
   "gh",
   "node",
+  "webknife",
 ]);
 
 const allowedNpmScripts = new Set([

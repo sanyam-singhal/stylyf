@@ -533,23 +533,38 @@ export const runScreenshotReview = action(async (projectId: string) => {
   await mkdir(logsPath, { recursive: true });
 
   const result = await runCommand({
-    command: "npx",
-    args: ["@depths/webknife", "shot", project.previewUrl, "--out", webknifePath, "--ci", "--json"],
+    command: "webknife",
+    args: ["shot", project.previewUrl, "--out", webknifePath, "--ci", "--json"],
     cwd: project.workspacePath,
     logsDir: logsPath,
   });
 
   const status = result.exitCode === 0 ? "completed" : "failed";
   const supabase = createSupabaseServerClient();
-  await supabase.from("commands").insert({
+  const completedAt = new Date().toISOString();
+  const { data: commandRecord, error: commandError } = await supabase
+    .from("commands")
+    .insert({
+      project_id: projectId,
+      command: `webknife shot ${project.previewUrl} --out .webknife --ci --json`,
+      cwd: project.workspacePath,
+      status,
+      exit_code: result.exitCode,
+      stdout_path: result.stdoutPath,
+      stderr_path: result.stderrPath,
+      completed_at: completedAt,
+    })
+    .select("id")
+    .single();
+  if (commandError) throw commandError;
+  await supabase.from("build_runs").insert({
     project_id: projectId,
-    command: `npx @depths/webknife shot ${project.previewUrl} --out .webknife --ci --json`,
-    cwd: project.workspacePath,
+    command_id: commandRecord?.id ?? null,
+    kind: "webknife",
     status,
-    exit_code: result.exitCode,
-    stdout_path: result.stdoutPath,
-    stderr_path: result.stderrPath,
-    completed_at: new Date().toISOString(),
+    summary: status === "completed" ? "Screenshot review completed." : "Screenshot review failed.",
+    artifact_path: webknifePath,
+    completed_at: completedAt,
   });
   await supabase.from("webknife_runs").insert({
     project_id: projectId,
