@@ -104,9 +104,7 @@ npm run landing:build
 
 ## Operations
 
-- Builder deployment: [DEPLOYMENT.md](./DEPLOYMENT.md)
-- Builder operator workflow: [BUILDER_OPERATIONS.md](./BUILDER_OPERATIONS.md)
-- Builder security model: [BUILDER_SECURITY.md](./BUILDER_SECURITY.md)
+- Builder app operations, deployment, security, smoke testing, and dogfood lessons: [apps/builder/README.md](./apps/builder/README.md)
 - Dogfood/scaffold issues: [ISSUES.md](./ISSUES.md)
 
 ## Releases
