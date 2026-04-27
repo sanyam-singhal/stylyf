@@ -15,7 +15,6 @@
     "env:check": "tsx src/lib/env.check.ts",
     "storage:cors:check": "tsx scripts/storage-cors.ts check",
     "storage:cors:apply": "tsx scripts/storage-cors.ts apply",
-    "seed": "tsx scripts/seed.ts",
     "preflight": "npm run env:check && npm run check"
   },
   "dependencies": {
