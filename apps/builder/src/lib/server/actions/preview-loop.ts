@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { env } from "~/lib/env.server";
 import { createSupabaseServerClient } from "~/lib/supabase";
 import { requireViewerIdentity } from "~/lib/server/resource-policy";
+import { recordTelemetry } from "~/lib/server/telemetry";
 
 const processRegistry = new Map<string, ManagedProcess>();
 
@@ -147,6 +148,12 @@ export const startProjectPreview = action(async (projectId: string) => {
     type: "preview.started",
     summary: `Preview started on ${previewUrl}.`,
   });
+  await recordTelemetry({
+    projectId,
+    userId,
+    kind: "preview.started",
+    summary: `Preview started on port ${port}.`,
+  });
 
   return { ok: true, previewUrl, port, pid: preview.pid };
 }, "preview.start-project");
@@ -168,6 +175,12 @@ export const stopProjectPreview = action(async (projectId: string) => {
     projectId,
     userId,
     type: "preview.stopped",
+    summary: "Preview process stopped.",
+  });
+  await recordTelemetry({
+    projectId,
+    userId,
+    kind: "preview.stopped",
     summary: "Preview process stopped.",
   });
 

@@ -4,6 +4,7 @@ import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { createSupabaseServerClient } from "~/lib/supabase";
 import { requireViewerIdentity } from "~/lib/server/resource-policy";
+import { recordTelemetry } from "~/lib/server/telemetry";
 
 type ProjectRow = Record<string, unknown>;
 
@@ -94,6 +95,13 @@ export const runWebknifeScreenshot = action(async (projectId: string) => {
     type: "webknife.shot",
     summary: command.exitCode === 0 ? "Webknife screenshot completed." : "Webknife screenshot failed.",
     artifact_path: workspace.webknife,
+  });
+  await recordTelemetry({
+    projectId,
+    userId,
+    kind: command.exitCode === 0 ? "webknife.completed" : "webknife.failed",
+    summary: command.exitCode === 0 ? "Webknife screenshot completed." : "Webknife screenshot failed.",
+    artifactPath: workspace.webknife,
   });
 
   return { ok: command.exitCode === 0, exitCode: command.exitCode, artifactPath: workspace.webknife };

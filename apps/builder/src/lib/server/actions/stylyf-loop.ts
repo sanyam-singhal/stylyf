@@ -5,6 +5,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { createSupabaseServerClient } from "~/lib/supabase";
 import { requireViewerIdentity } from "~/lib/server/resource-policy";
+import { recordTelemetry } from "~/lib/server/telemetry";
 
 type StylyfStep = "validate" | "plan" | "generate";
 
@@ -162,6 +163,15 @@ export const runStylyfProjectStep = action(async (projectId: string, step: Styly
         ? [cliBin, "plan", "--spec", specPath]
         : [cliBin, "generate", "--spec", specPath, "--target", workspace.app, "--no-install"];
 
+  if (step === "generate") {
+    await recordTelemetry({
+      projectId,
+      userId,
+      kind: "generation.started",
+      summary: "Stylyf generation started.",
+    });
+  }
+
   const command = await runCommand({
     command: "node",
     args,
@@ -178,6 +188,25 @@ export const runStylyfProjectStep = action(async (projectId: string, step: Styly
     stdoutPath: command.stdoutPath,
     stderrPath: command.stderrPath,
   });
+
+  if (step === "validate") {
+    await recordTelemetry({
+      projectId,
+      userId,
+      kind: "spec.validated",
+      summary: command.exitCode === 0 ? "Stylyf spec validation passed." : "Stylyf spec validation failed.",
+      artifactPath: command.stdoutPath,
+    });
+  }
+  if (step === "generate") {
+    await recordTelemetry({
+      projectId,
+      userId,
+      kind: command.exitCode === 0 ? "generation.completed" : "generation.failed",
+      summary: command.exitCode === 0 ? "Stylyf generation completed." : "Stylyf generation failed.",
+      artifactPath: command.exitCode === 0 ? command.stdoutPath : command.stderrPath,
+    });
+  }
 
   const eventSummary =
     command.exitCode === 0
