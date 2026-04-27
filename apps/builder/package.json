@@ -9,7 +9,7 @@
     "preview": "vinxi preview",
     "check": "tsc --noEmit",
     "test": "npm run test:types && npm run test:smoke",
-    "test:types": "tsc --noEmit",
+    "test:types": "tsc -p tests/tsconfig.json --noEmit",
     "test:e2e": "playwright test",
     "test:smoke": "playwright test tests/smoke",
     "env:check": "tsx src/lib/env.check.ts",

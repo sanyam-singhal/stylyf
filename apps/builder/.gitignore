@@ -4,6 +4,7 @@
 dist
 node_modules
 design/smoke
+test-results
 
 .DS_Store
 Thumbs.db
