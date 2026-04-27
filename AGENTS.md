@@ -9,7 +9,9 @@ The repo contains:
 
 - `packages/stylyf-cli`: the publishable CLI
 - `packages/stylyf-source`: the internal source-owned UI inventory and styling grammar used to build CLI assets
-- `apps/landing`: the public landing page for Stylyf
+- `packages/stylyf-builder-core`: internal server-only builder orchestration helpers
+- `apps/builder`: the auth-gated internal app factory deployed at `stylyf.com`
+- `apps/landing`: retained landing app source, not the default live site
 
 Generated apps must:
 
@@ -35,6 +37,11 @@ For CLI/package work:
 - `npm run cli:build`
 - `npm run cli:verify-pack`
 
+For builder app work:
+
+- `npm run builder:check`
+- `npm run builder:build`
+
 For landing app work:
 
 - `npm --prefix apps/landing run check`
@@ -59,5 +66,6 @@ The generated app must not depend on this repo.
 ## Current Shape
 
 - The root package is a workspace orchestrator.
-- The landing page is a small static SolidStart app.
-- The old registry showcase is no longer the public product surface.
+- The CLI is the public package product.
+- The builder app is the live internal control plane at `stylyf.com`.
+- The old registry showcase is no longer a product surface.

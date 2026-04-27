@@ -2,11 +2,13 @@
 
 Stylyf is a monorepo centered on [`@depths/stylyf-cli`](https://www.npmjs.com/package/@depths/stylyf-cli), an agent-operated scaffolding compiler for generating standalone full-stack SolidStart apps.
 
-The repo now has a simple split:
+The CLI remains the public package product. The repo also now contains an internal dogfood control plane for Depths AI:
 
 - `packages/stylyf-cli`: the publishable CLI
-- `packages/stylyf-source`: the internal source-owned UI inventory and styling grammar used to build CLI manifests and bundled assets
-- `apps/landing`: the public landing page for the CLI
+- `packages/stylyf-source`: the source-owned UI inventory and styling grammar used to build CLI manifests and bundled assets
+- `packages/stylyf-builder-core`: internal server-side workspace/process/agent orchestration helpers
+- `apps/builder`: auth-gated internal app factory deployed at `stylyf.com`
+- `apps/landing`: retained small landing app source, no longer the live default site
 
 Generated apps:
 
@@ -15,7 +17,7 @@ Generated apps:
 - do not import this repo
 - do not depend on `@depths/stylyf-cli` at runtime
 
-## Install
+## CLI Install
 
 ```bash
 npm install -g @depths/stylyf-cli
@@ -33,7 +35,7 @@ npx @depths/stylyf-cli --help
 stylyf intro
 stylyf new generic --name "Atlas" --backend portable --media basic --output stylyf.spec.json
 stylyf validate --spec stylyf.spec.json
-stylyf plan --spec stylyf.spec.json
+stylyf plan --spec stylyf.spec.json --resolved
 stylyf generate --spec stylyf.spec.json --target ./my-app
 stylyf search auth supabase tigris
 stylyf serve-search --port 4310
@@ -41,14 +43,14 @@ stylyf serve-search --port 4310
 
 ## Backend Modes
 
-### Portable
+Portable:
 
 - Better Auth
 - Drizzle ORM
 - PostgreSQL or SQLite/libsql
 - S3-compatible object storage via AWS SDK v3 presigned URLs
 
-### Hosted
+Hosted:
 
 - Supabase Auth
 - Supabase SDK data access
@@ -56,42 +58,56 @@ stylyf serve-search --port 4310
 
 Both modes keep storage presigned-URL based so browsers never receive raw bucket credentials.
 
-## Monorepo Layout
+## Internal Builder
 
-- [apps/landing](./apps/landing): small SolidStart landing page for Stylyf
-- [packages/stylyf-cli](./packages/stylyf-cli): published CLI package
-- [packages/stylyf-source](./packages/stylyf-source): internal source inventory used to build bundled assets/manifests
-- [scripts](./scripts): repo-level manifest sync and package verification tooling
+`apps/builder` is the v1.1 internal GUI layer for non-technical operators. It provides:
+
+- Supabase email/password auth
+- project workspaces
+- friendly IR panes plus raw JSON escape hatch
+- Stylyf validate/plan/generate controls
+- managed local previews
+- Codex App Server adapter seam with manual fallback
+- Webknife screenshot QA loop
+- git commit/push handoff workflow
+- Supabase-only internal telemetry
+
+Deployment remains limited to the builder control plane. Generated apps are committed/pushed for dev review; deployment of generated apps is intentionally manual.
 
 ## Local Development
 
-Run the landing page:
+Run the internal builder:
 
 ```bash
 npm run dev
 ```
 
-Build the landing page:
+Build the internal builder:
 
 ```bash
 npm run build
 ```
 
-Build the CLI package from repo source:
+Build and verify the CLI package:
 
 ```bash
 npm run cli:build
-```
-
-Verify the packaged CLI end to end:
-
-```bash
 npm run cli:verify-pack
 ```
 
-## Deployment
+Run the old landing app explicitly:
 
-The public site is the landing app in `apps/landing`. See [DEPLOYMENT.md](./DEPLOYMENT.md).
+```bash
+npm run landing:dev
+npm run landing:build
+```
+
+## Operations
+
+- Builder deployment: [DEPLOYMENT.md](./DEPLOYMENT.md)
+- Builder operator workflow: [BUILDER_OPERATIONS.md](./BUILDER_OPERATIONS.md)
+- Builder security model: [BUILDER_SECURITY.md](./BUILDER_SECURITY.md)
+- Dogfood/scaffold issues: [ISSUES.md](./ISSUES.md)
 
 ## Releases
 
