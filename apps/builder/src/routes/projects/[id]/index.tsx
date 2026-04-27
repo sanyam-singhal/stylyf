@@ -21,7 +21,18 @@ import {
 } from "lucide-solid";
 import { For, Show, createEffect, createSignal, type JSX } from "solid-js";
 import { demoProject, getProject } from "~/lib/server/projects";
-import { composeSpec, getSpecChunks, planSpec, saveSpecChunk, validateSpec, type SpecChunkKind } from "~/lib/server/specs";
+import {
+  buildGeneratedApp,
+  checkGeneratedApp,
+  composeSpec,
+  generateDraft,
+  getSpecChunks,
+  installGeneratedApp,
+  planSpec,
+  saveSpecChunk,
+  validateSpec,
+  type SpecChunkKind,
+} from "~/lib/server/specs";
 import { getTimeline, runScreenshotReview, sendAgentPrompt, startPreview, stopPreview } from "~/lib/server/studio";
 
 type UploadIntentResponse =
@@ -120,6 +131,10 @@ export default function ProjectStudioRoute() {
   const composeSpecSubmission = useSubmission(composeSpec);
   const validateSpecSubmission = useSubmission(validateSpec);
   const planSpecSubmission = useSubmission(planSpec);
+  const generateDraftSubmission = useSubmission(generateDraft);
+  const installGeneratedAppSubmission = useSubmission(installGeneratedApp);
+  const checkGeneratedAppSubmission = useSubmission(checkGeneratedApp);
+  const buildGeneratedAppSubmission = useSubmission(buildGeneratedApp);
   const activeProject = () => project() ?? demoProject;
   const projectName = () => activeProject().name;
   const pending = () =>
@@ -131,6 +146,10 @@ export default function ProjectStudioRoute() {
     composeSpecSubmission.pending ||
     validateSpecSubmission.pending ||
     planSpecSubmission.pending ||
+    generateDraftSubmission.pending ||
+    installGeneratedAppSubmission.pending ||
+    checkGeneratedAppSubmission.pending ||
+    buildGeneratedAppSubmission.pending ||
     referencePending();
   const activeSpecChunk = () => specChunks()?.find(chunk => chunk.kind === activeSpecKind());
   const activeSpecText = () => activeSpecChunk()?.spec_text ?? specPaneDefaultText[activeSpecKind()];
@@ -456,19 +475,41 @@ export default function ProjectStudioRoute() {
 
             <section class="control-card">
               <h3>Stylyf loop</h3>
-              <p>Save panes, compose them, then validate the resolved app plan.</p>
+              <p>Turn saved panes into a working app draft, then run the generated app checks.</p>
               <div class="spec-action-grid">
                 <form action={composeSpec.with(params.id ?? "demo")} method="post">
-                  <button class="button button--quiet" type="submit" disabled={pending()}><Code2 size={17} /> Compose</button>
+                  <button class="button button--quiet" type="submit" disabled={pending()}><Code2 size={17} /> Prepare outline</button>
                 </form>
                 <form action={validateSpec.with(params.id ?? "demo")} method="post">
-                  <button class="button button--quiet" type="submit" disabled={pending()}>Validate</button>
+                  <button class="button button--quiet" type="submit" disabled={pending()}>Check outline</button>
                 </form>
                 <form action={planSpec.with(params.id ?? "demo")} method="post">
-                  <button class="button button--ink" type="submit" disabled={pending()}>Plan</button>
+                  <button class="button button--quiet" type="submit" disabled={pending()}>Preview plan</button>
+                </form>
+                <form action={generateDraft.with(params.id ?? "demo")} method="post">
+                  <button class="button button--ink" type="submit" disabled={pending()}>Build draft</button>
+                </form>
+                <form action={installGeneratedApp.with(params.id ?? "demo")} method="post">
+                  <button class="button button--quiet" type="submit" disabled={pending()}>Install app</button>
+                </form>
+                <form action={checkGeneratedApp.with(params.id ?? "demo")} method="post">
+                  <button class="button button--quiet" type="submit" disabled={pending()}>Quality check</button>
+                </form>
+                <form action={buildGeneratedApp.with(params.id ?? "demo")} method="post">
+                  <button class="button button--ink" type="submit" disabled={pending()}>Production build</button>
                 </form>
               </div>
-              <Show when={composeSpecSubmission.error ?? validateSpecSubmission.error ?? planSpecSubmission.error}>
+              <Show
+                when={
+                  composeSpecSubmission.error ??
+                  validateSpecSubmission.error ??
+                  planSpecSubmission.error ??
+                  generateDraftSubmission.error ??
+                  installGeneratedAppSubmission.error ??
+                  checkGeneratedAppSubmission.error ??
+                  buildGeneratedAppSubmission.error
+                }
+              >
                 {error => <p class="prompt-example" role="alert">{error().message}</p>}
               </Show>
             </section>

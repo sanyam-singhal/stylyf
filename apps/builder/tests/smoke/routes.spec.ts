@@ -47,6 +47,7 @@ test.describe("authenticated builder routes", () => {
     await expect(page.getByLabel("Next instruction")).toBeVisible();
     await expect(page.getByText("Preview").first()).toBeVisible();
     await expect(page.getByText("Spec panes")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Build draft" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Screenshot review/i })).toBeVisible();
     assertNoClientErrors();
   });
