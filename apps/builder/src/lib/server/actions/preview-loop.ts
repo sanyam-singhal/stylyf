@@ -127,7 +127,7 @@ export const startProjectPreview = action(async (projectId: string) => {
   const preview = startManagedProcess({
     id: projectId,
     command: "npm",
-    args: ["run", "dev", "--", "--host", "0.0.0.0", "--port", String(port)],
+    args: ["run", "dev", "--", "--host", "127.0.0.1", "--port", String(port)],
     cwd: workspace.app,
   });
   processRegistry.set(projectId, preview);
@@ -140,6 +140,14 @@ export const startProjectPreview = action(async (projectId: string) => {
     port,
     pid: preview.pid,
     status: "running",
+  });
+  await supabase.from("preview_processes").insert({
+    project_id: projectId,
+    port,
+    pid: preview.pid,
+    preview_url: previewUrl,
+    status: "running",
+    started_at: new Date().toISOString(),
   });
   await supabase.from("projects").update({ preview_port: port, previewUrl }).eq("id", projectId);
   await recordEvent({
@@ -170,6 +178,11 @@ export const stopProjectPreview = action(async (projectId: string) => {
 
   const supabase = createSupabaseServerClient();
   await supabase.from("previews").update({ status: "stopped" }).eq("project_id", projectId).eq("status", "running");
+  await supabase
+    .from("preview_processes")
+    .update({ status: "stopped", stopped_at: new Date().toISOString() })
+    .eq("project_id", projectId)
+    .eq("status", "running");
   await supabase.from("projects").update({ preview_port: null, previewUrl: null }).eq("id", projectId);
   await recordEvent({
     projectId,
