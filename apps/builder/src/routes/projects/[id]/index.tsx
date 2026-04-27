@@ -1,5 +1,5 @@
 import { Meta, Title } from "@solidjs/meta";
-import { ErrorBoundary, Show } from "solid-js";
+import { ErrorBoundary, For, Show } from "solid-js";
 import { createAsync, useParams, useSubmission } from "@solidjs/router";
 import { SidebarAppShell } from "~/components/shells/app/sidebar-app";
 import { GeneratedNavigation } from "~/components/generated-navigation";
@@ -14,14 +14,19 @@ import { PageHeader } from "~/components/registry/information-states/page-header
 import { getProjects } from "~/lib/server/queries/projects-detail";
 import { runStylyfProjectStep } from "~/lib/server/actions/stylyf-loop";
 import { startProjectPreview, stopProjectPreview } from "~/lib/server/actions/preview-loop";
+import { decideApproval, sendAgentPrompt } from "~/lib/server/actions/agent-loop";
+import { getWorkbenchTimeline } from "~/lib/server/queries/workbench-timeline";
 
 export default function ProjectsIdRoute() {
   const params = useParams();
   const projectData = createAsync(() => getProjects(params.id ?? ""));
+  const timeline = createAsync(() => getWorkbenchTimeline(params.id ?? ""));
   const stylyfSubmission = useSubmission(runStylyfProjectStep);
   const startPreviewSubmission = useSubmission(startProjectPreview);
   const stopPreviewSubmission = useSubmission(stopProjectPreview);
-  const pending = () => stylyfSubmission.pending || startPreviewSubmission.pending || stopPreviewSubmission.pending;
+  const agentSubmission = useSubmission(sendAgentPrompt);
+  const approvalSubmission = useSubmission(decideApproval);
+  const pending = () => stylyfSubmission.pending || startPreviewSubmission.pending || stopPreviewSubmission.pending || agentSubmission.pending || approvalSubmission.pending;
   return (
     <>
       <Title>Project workbench</Title>
@@ -40,6 +45,28 @@ export default function ProjectsIdRoute() {
                   description={projectData()?.summary || "Draft, validate, plan, and generate the standalone app source from this workspace."}
                 />
                 <div class="grid gap-[var(--space-5)] lg:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]">
+                  <DetailPanel
+                    title="Agent chat"
+                    description="Prompts are recorded first. Risky operations queue explicit approval before execution."
+                    body={
+                      <form action={sendAgentPrompt.with(params.id ?? "")} method="post" class="space-y-3">
+                        <textarea
+                          name="prompt"
+                          required
+                          rows="5"
+                          class="min-h-32 w-full rounded-[var(--radius-lg)] border border-border bg-background px-3 py-2 text-sm text-foreground shadow-inner outline-none transition focus:border-primary"
+                          placeholder="Describe the next iteration. Example: make the rating app homepage feel more editorial and add moderation queue affordances."
+                        />
+                        <div class="flex items-center justify-between gap-3">
+                          <p class="text-xs text-muted-foreground">The current adapter records the loop; Codex App Server plugs into the same event stream.</p>
+                          <Button type="submit" pending={pending()}>Send prompt</Button>
+                        </div>
+                        <Show when={agentSubmission.result}>
+                          {result => <p class="text-sm text-muted-foreground">{result().message}</p>}
+                        </Show>
+                      </form>
+                    }
+                  />
                   <DetailPanel
                     title="Stylyf generation loop"
                     description="Run each step visibly. Logs are written into the project workspace and mirrored into the builder timeline."
@@ -86,12 +113,73 @@ export default function ProjectsIdRoute() {
                     }
                   />
                   <DetailPanel
-                    title="Current handoff"
-                    description="The builder does not deploy apps. It prepares a repo-backed source tree for dev review."
+                    title="Approvals"
+                    description="Sensitive changes stay visible and require a deliberate operator decision."
                     body={
-                      <div class="space-y-2 text-sm text-muted-foreground">
-                        <p>Generated app source lands under the project workspace.</p>
-                        <p>Preview runs are local managed processes. Deployment remains a manual dev-team handoff.</p>
+                      <div class="space-y-3 text-sm text-muted-foreground">
+                        <Show when={(timeline()?.approvals.length ?? 0) > 0} fallback={<p>No approval requests yet.</p>}>
+                          <For each={timeline()?.approvals ?? []}>
+                            {approval => (
+                              <div class="rounded-[var(--radius-lg)] border border-border/80 bg-background p-3">
+                                <div class="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p class="font-medium text-foreground">{approval.type}</p>
+                                    <p>{approval.summary}</p>
+                                    <p class="mt-1 text-xs uppercase tracking-[0.16em]">{approval.status}</p>
+                                  </div>
+                                  <Show when={approval.status === "pending"}>
+                                    <div class="flex shrink-0 gap-2">
+                                      <form action={decideApproval.with(approval.id, "approved")} method="post">
+                                        <Button type="submit" tone="outline" pending={pending()}>Approve</Button>
+                                      </form>
+                                      <form action={decideApproval.with(approval.id, "denied")} method="post">
+                                        <Button type="submit" tone="ghost" pending={pending()}>Deny</Button>
+                                      </form>
+                                    </div>
+                                  </Show>
+                                </div>
+                              </div>
+                            )}
+                          </For>
+                        </Show>
+                      </div>
+                    }
+                  />
+                </div>
+                <div class="grid gap-[var(--space-5)] lg:grid-cols-2">
+                  <DetailPanel
+                    title="Timeline"
+                    description="Recent agent events and command outcomes for this project."
+                    body={
+                      <div class="space-y-3 text-sm text-muted-foreground">
+                        <Show when={(timeline()?.events.length ?? 0) > 0} fallback={<p>No timeline events yet.</p>}>
+                          <For each={timeline()?.events ?? []}>
+                            {event => (
+                              <div class="rounded-[var(--radius-lg)] border border-border/80 bg-background p-3">
+                                <p class="font-medium text-foreground">{event.type}</p>
+                                <p>{event.summary}</p>
+                              </div>
+                            )}
+                          </For>
+                        </Show>
+                      </div>
+                    }
+                  />
+                  <DetailPanel
+                    title="Commands"
+                    description="Every CLI, install, check, and preview command is logged with redacted output paths."
+                    body={
+                      <div class="space-y-3 text-sm text-muted-foreground">
+                        <Show when={(timeline()?.commands.length ?? 0) > 0} fallback={<p>No commands have run yet.</p>}>
+                          <For each={timeline()?.commands ?? []}>
+                            {command => (
+                              <div class="rounded-[var(--radius-lg)] border border-border/80 bg-background p-3">
+                                <p class="font-medium text-foreground">{command.command}</p>
+                                <p>Status: {command.status} · Exit: {String(command.exit_code ?? "n/a")}</p>
+                              </div>
+                            )}
+                          </For>
+                        </Show>
                       </div>
                     }
                   />
