@@ -8,12 +8,16 @@ The product is not a no-code editor. It is a controlled agentic workbench:
 
 - non-technical users describe and refine small apps through a friendly GUI
 - Stylyf IR remains the explicit operating layer
-- Codex/Codex App Server provides the coding harness
+- a single controlled Codex harness on the VPS provides the coding runtime
 - `@depths/stylyf-cli` provides deterministic scaffolding
 - `@depths/webknife` provides screenshot, interaction, runtime-signal, and UI-review feedback
 - generated apps remain ordinary standalone SolidStart source trees
+- generated apps are tracked in private GitHub repositories under the Depths AI organization
+- every accepted builder iteration ends with a visible git commit followed by an automatic push
 
 The internal builder should dogfood Stylyf itself. The first implementation target is an internal SolidStart app generated from Stylyf, then hand-refined inside this monorepo.
+
+The builder does not deploy generated apps. It produces reviewed, reproducible, git-tracked app repositories. Deployment remains a manual dev-team responsibility after review, because each generated app may deserve a different deployment strategy.
 
 ## Current Codebase Seams
 
@@ -21,7 +25,7 @@ The internal builder should dogfood Stylyf itself. The first implementation targ
   - `stylyf intro` for cold-start agent context
   - `stylyf search` and `stylyf serve-search` for capability lookup
   - `stylyf new`, `compose`, `validate`, `plan`, and `generate` for spec-driven app generation
-  - v1.0 spec support for app kind, backend mode, media, resources, flows, surfaces, routes, APIs, server modules, env extras, fixtures, navigation, and deployment
+  - v1.0 spec support for app kind, backend mode, media, resources, flows, surfaces, routes, APIs, server modules, env extras, fixtures, navigation, and deployment metadata
 - `packages/stylyf-source` is the source-owned UI/styling grammar and should stay the upstream source for copied UI inventory.
 - `apps/landing` is currently the deployed SolidStart app. For v1.1, either replace it with `apps/builder` on `stylyf.com` or convert it into the internal builder once the generated baseline is proven.
 - Generated apps currently run their own `npm install`, `check`, `build`, Playwright smoke tests, typed env contracts, and backend scaffolds.
@@ -36,6 +40,7 @@ The internal builder should dogfood Stylyf itself. The first implementation targ
 - OpenAI Codex App Server exposes Codex through JSON-RPC, including threads, turns, events, approvals, filesystem/tool activity, stdio transport, and an experimental websocket transport. The v1.1 builder should target this seam rather than scrape terminal output long-term.
 - OpenAI describes the Codex harness as reusable infrastructure behind IDE/app surfaces: sandboxed command execution, file edits, approvals, model discovery, and ChatGPT/API-key auth flows.
 - OpenCode by SST validates the shape we want: a server-first agent core, SDK-controlled sessions, permissions, web UI, tools, and multiple clients over one coding runtime.
+- OpenCode also validates the need to separate agent runtime, server API, UI client, workspace state, permission handling, and git/process activity instead of treating the GUI as a terminal wrapper.
 - Supabase is the right internal metadata substrate for v1.1 because it gives us auth, Postgres tables, RLS, service-role server access, and straightforward SolidStart SSR integration.
 - Webknife is the right visual QA substrate because it emits deterministic artifacts under `.webknife/`: screenshots, scripted interaction traces, console errors, page errors, request failures, typecheck/lint/test outputs, a11y/perf audits, and UI review reports.
 
@@ -63,6 +68,21 @@ The main screen should be a project workbench:
 
 Every GUI pane should write explicit Stylyf IR or explicit project metadata. No hidden builder state should be required to reproduce a project.
 
+## Operating Model
+
+The builder is an internal GUI over a controlled agentic development loop:
+
+1. A team member creates a project from a brief.
+2. The builder turns the brief and pane state into explicit Stylyf IR.
+3. Stylyf validates, plans, and generates or updates a standalone SolidStart app.
+4. Codex runs inside the project workspace through the server-side harness and refines the app.
+5. Webknife inspects the local preview through screenshots, interaction traces, console errors, page errors, and UI review output.
+6. The builder runs typecheck/build/smoke checks and records logs.
+7. If the iteration is accepted, the builder creates a git commit and immediately pushes it to the project's GitHub repository.
+8. A dev team member reviews the repository and decides the deployment strategy manually.
+
+The Codex harness is intentionally server-controlled. For v1.1, the VPS uses one dedicated Depths AI ChatGPT/Codex subscription login. Supabase users are builder operators, not separate Codex identities. Per-user Codex subscriptions can be explored later only if we need strict per-user model-account attribution.
+
 ## Architecture
 
 ### Apps
@@ -82,8 +102,9 @@ Every GUI pane should write explicit Stylyf IR or explicit project metadata. No 
 - SolidStart builder app server.
 - Builder worker process or in-process server actions with a strict job queue.
 - Per-project generated app dev servers on allocated localhost ports.
-- Codex App Server sessions launched per project/session.
+- Codex App Server sessions launched per project/session through the single server-side Codex login.
 - Webknife runs against project preview URLs and writes artifacts into the project workspace.
+- GitHub repository orchestration for private Depths AI org repos.
 
 ### Directory Layout On VPS
 
@@ -97,6 +118,8 @@ Every GUI pane should write explicit Stylyf IR or explicit project metadata. No 
       screenshots/
       .webknife/
       metadata.json
+      handoff.md
+      repo.json
   tmp/
   locks/
 ```
@@ -122,6 +145,9 @@ Minimum metadata schema:
   - `workspace_path text`
   - `preview_port int`
   - `preview_url text`
+  - `github_repo_full_name text`
+  - `github_default_branch text default 'main'`
+  - `last_pushed_sha text`
   - timestamps
 - `project_members`
   - `project_id uuid references projects(id)`
@@ -158,6 +184,15 @@ Minimum metadata schema:
   - `exit_code int`
   - `stdout_path text`
   - `stderr_path text`
+  - timestamps
+- `git_events`
+  - `project_id uuid references projects(id)`
+  - `kind text check in ('repo_created','commit_created','push_completed','push_failed','handoff_ready')`
+  - `repo_full_name text`
+  - `branch text`
+  - `commit_sha text`
+  - `summary text`
+  - `payload jsonb`
   - timestamps
 - `previews`
   - `project_id uuid references projects(id)`
@@ -197,14 +232,16 @@ This is internal-only, single-server, single Codex login, but should still be st
   - `npm run dev`
   - `npm run test:smoke`
   - `npx webknife ...`
-  - `git status`, `git diff`, `git add`, `git commit`
+  - `git status`, `git diff`, `git add`, `git commit`, `git push`
 - Human approval required for:
   - dependency changes after initial generation
   - env writes
   - DB migration execution
-  - deploy/restart
   - network-facing preview exposure
   - destructive workspace cleanup
+- GitHub repository creation and pushes should use a narrow server-side GitHub token or GitHub App installation scoped to Depths AI repositories.
+- A successful accepted iteration must create a local commit and push it immediately. The app must never accumulate unpushed accepted changes.
+- Generated app deployment must not be exposed as a non-technical user action in v1.1.
 - Logs must redact environment variable values and known token patterns.
 - The builder app must never expose raw `.env` values in UI or agent transcripts.
 - Per-project env values should be encrypted at rest or only stored in server-local files with `0600` permissions for v1.1.
@@ -364,7 +401,6 @@ This is internal-only, single-server, single Codex login, but should still be st
   - file writes
   - env writes
   - dependency installs
-  - deploy/restart
 - Initial system prompt should instruct Codex:
   - read `stylyf intro --topic operator`
   - use Stylyf IR first
@@ -441,21 +477,30 @@ This is internal-only, single-server, single Codex login, but should still be st
   - event writes through service role
   - no prompt/env secret leakage
 
-### Commit 15: `git: add commit and PR workflow`
+### Commit 15: `git: add repository lifecycle and auto-push workflow`
 
 - Add controlled git actions:
+  - create private GitHub repository under the Depths AI organization
+  - initialize the generated app repository
+  - configure remote origin
   - status
   - diff summary
   - add selected files
   - commit
-  - optionally push/open PR later
-- For v1.1, keep GitHub PR integration optional and approval-gated.
+  - push immediately after every accepted commit
+- Add handoff actions:
+  - generate `handoff.md`
+  - mark project ready for dev review
+  - optionally open a GitHub issue or PR for dev review later
+- GitHub PR integration is optional and approval-gated in v1.1; repository tracking and push-after-commit are mandatory.
 - Never squash internal commits by default.
 - Validate:
+  - create a private test repository in the configured org or mock the GitHub adapter locally
   - create commit in generated workspace
+  - push commit to remote
   - persist commit hash in project timeline
 
-### Commit 16: `deploy: replace stylyf.com landing with internal builder`
+### Commit 16: `ops: replace stylyf.com landing with internal builder`
 
 - Update deployment config so `stylyf.com` serves `apps/builder`.
 - Keep Caddy/systemd simple:
@@ -467,8 +512,11 @@ This is internal-only, single-server, single Codex login, but should still be st
   - Supabase URL/anon/service role
   - workspace root
   - Codex auth expectation
+  - GitHub org/repo token expectation
   - preview port range
   - allowed hostnames
+- Explicitly document that this deploys only the builder control plane, not generated apps.
+- Generated-app deployment remains a manual dev-team handoff after repository review.
 - Validate:
   - `npm --prefix apps/builder run build`
   - systemd restart
@@ -485,6 +533,8 @@ This is internal-only, single-server, single Codex login, but should still be st
   - creating projects
   - approvals
   - preview lifecycle
+  - commit and push lifecycle
+  - dev review handoff
   - workspace cleanup
   - failure recovery
 - Add `BUILDER_SECURITY.md`:
@@ -493,6 +543,8 @@ This is internal-only, single-server, single Codex login, but should still be st
   - Supabase roles/RLS
   - preview isolation
   - Codex single-login assumption
+  - GitHub token scope
+  - deployment out-of-scope boundary
 - Validate docs against implementation.
 
 ### Commit 18: `test: add builder end-to-end dogfood smoke`
@@ -505,6 +557,9 @@ This is internal-only, single-server, single Codex login, but should still be st
   - install/check/build generated app
   - start preview
   - run Webknife screenshot
+  - commit generated app
+  - push generated app commit through mock or real GitHub adapter
+  - write handoff summary
   - stop preview
 - Keep secrets optional by supporting local/mock mode.
 - Validate:
@@ -576,7 +631,9 @@ This is intentionally only the baseline. The real builder experience comes from 
 - No billing.
 - No broad provider marketplace.
 - No drag/drop canvas before the IR panes are solid.
-- No production deployment automation for generated apps beyond preview/dev workflow.
+- No production deployment automation for generated apps.
+- No non-technical-user deploy button.
+- No hidden generated app state outside git, workspace files, and Supabase metadata.
 - No reliance on undocumented Codex token extraction.
 - No hidden runtime dependency from generated apps back to this monorepo.
 
@@ -591,8 +648,9 @@ v1.1 is ready when:
 - generated app install/check/build logs are visible
 - iframe preview works
 - Webknife screenshot and runtime-signal capture works
-- a project timeline records commands, agent events, approvals, and visual runs
+- a project timeline records commands, agent events, approvals, visual runs, commits, pushes, and handoff state
 - Codex adapter has a working real or mocked session path
-- the deployment is Caddy/systemd simple
+- each accepted iteration creates a git commit and pushes it to the Depths AI project repository
+- generated apps are not deployed by the builder
+- the builder control-plane deployment is Caddy/systemd simple
 - docs explain operations and failure recovery
-
