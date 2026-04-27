@@ -5,7 +5,6 @@ import { Button } from "~/components/registry/actions-navigation/button";
 import { TextField } from "~/components/registry/form-inputs/text-field";
 
 export default function LoginRoute() {
-  const [mode, setMode] = createSignal<"sign-in" | "sign-up">("sign-in");
   const [email, setEmail] = createSignal("");
   const [password, setPassword] = createSignal("");
   const [message, setMessage] = createSignal("");
@@ -16,10 +15,10 @@ export default function LoginRoute() {
     setMessage("");
     setPending(true);
 
-    const response = await fetch(mode() === "sign-up" ? "/api/auth/sign-up/password" : "/api/auth/sign-in/password", {
+    const response = await fetch("/api/auth/sign-in/password", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(mode() === "sign-up" ? { email: email(), password: password() } : { email: email(), password: password() }),
+      body: JSON.stringify({ email: email(), password: password() }),
     }).catch(error => ({ ok: false, statusText: error instanceof Error ? error.message : String(error) }));
 
     setPending(false);
@@ -36,8 +35,8 @@ export default function LoginRoute() {
     <>
       <Title>Sign in</Title>
       <AuthPageShell
-        title={mode() === "sign-up" ? "Create your account" : "Sign in"}
-        subtitle="Access Stylyf Builder with the generated Supabase email/password flow."
+        title="Sign in"
+        subtitle="Access the internal Stylyf Builder with your Depths AI email and password."
       >
         <form class="space-y-4" onSubmit={submit}>
           <TextField label="Email" type="email" value={email()} onValueChange={setEmail} required />
@@ -48,13 +47,11 @@ export default function LoginRoute() {
             </p>
           </Show>
           <Button type="submit" fullWidth pending={pending()}>
-            {mode() === "sign-up" ? "Create account" : "Sign in"}
+            Sign in
           </Button>
         </form>
         <div class="pt-2 text-center text-sm text-muted-foreground">
-          <button type="button" class="font-semibold text-foreground underline-offset-4 hover:underline" onClick={() => setMode(mode() === "sign-up" ? "sign-in" : "sign-up")}>
-            {mode() === "sign-up" ? "Already have an account? Sign in" : "Need an account? Create one"}
-          </button>
+          Accounts are manually provisioned by the Depths AI admin team.
         </div>
       </AuthPageShell>
     </>
