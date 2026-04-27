@@ -19,7 +19,7 @@ import {
 } from "lucide-solid";
 import { For, Show, createSignal } from "solid-js";
 import { demoProject, getProject } from "~/lib/server/projects";
-import { getTimeline, sendAgentPrompt, startPreview, stopPreview } from "~/lib/server/studio";
+import { getTimeline, runScreenshotReview, sendAgentPrompt, startPreview, stopPreview } from "~/lib/server/studio";
 
 export default function ProjectStudioRoute() {
   const params = useParams();
@@ -29,9 +29,10 @@ export default function ProjectStudioRoute() {
   const promptSubmission = useSubmission(sendAgentPrompt);
   const startPreviewSubmission = useSubmission(startPreview);
   const stopPreviewSubmission = useSubmission(stopPreview);
+  const screenshotSubmission = useSubmission(runScreenshotReview);
   const activeProject = () => project() ?? demoProject;
   const projectName = () => activeProject().name;
-  const pending = () => promptSubmission.pending || startPreviewSubmission.pending || stopPreviewSubmission.pending;
+  const pending = () => promptSubmission.pending || startPreviewSubmission.pending || stopPreviewSubmission.pending || screenshotSubmission.pending;
 
   return (
     <main class="app-frame app-frame--studio">
@@ -111,7 +112,11 @@ export default function ProjectStudioRoute() {
               <form action={stopPreview.with(params.id ?? "demo")} method="post">
                 <button class="button button--quiet" type="submit" disabled={pending()}>Stop</button>
               </form>
-              <button class="button" type="button"><Sparkles size={17} /> Screenshot review</button>
+              <form action={runScreenshotReview.with(params.id ?? "demo")} method="post">
+                <button class="button" type="submit" disabled={pending()}>
+                  <Sparkles size={17} /> {screenshotSubmission.pending ? "Reviewing..." : "Screenshot review"}
+                </button>
+              </form>
             </div>
           </header>
 

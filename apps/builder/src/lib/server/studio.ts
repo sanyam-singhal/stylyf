@@ -3,6 +3,7 @@ import {
   CodexExecAdapter,
   ManualAgentAdapter,
   allocatePort,
+  runCommand,
   startManagedProcess,
   type BuilderAgentAdapter,
   type BuilderAgentEvent,
@@ -227,3 +228,57 @@ export const stopPreview = action(async (projectId: string) => {
   await revalidate(getTimeline.keyFor(projectId));
   return { ok: true };
 }, "builder.studio.stop-preview");
+
+export const runScreenshotReview = action(async (projectId: string) => {
+  "use server";
+  if (projectId === "demo") throw new Error("Open a real project preview before taking screenshots.");
+  const userId = await getUserId();
+  const project = await requireProject(projectId, userId);
+  if (!project.workspacePath) throw new Error("This project workspace is not ready yet.");
+  if (!project.previewUrl) throw new Error("Open a preview before taking screenshots.");
+
+  const webknifePath = join(project.workspacePath, ".webknife");
+  const logsPath = join(project.workspacePath, "logs");
+  await mkdir(webknifePath, { recursive: true });
+  await mkdir(logsPath, { recursive: true });
+
+  const result = await runCommand({
+    command: "npx",
+    args: ["@depths/webknife", "shot", project.previewUrl, "--out", webknifePath, "--ci", "--json"],
+    cwd: project.workspacePath,
+    logsDir: logsPath,
+  });
+
+  const status = result.exitCode === 0 ? "completed" : "failed";
+  const supabase = createSupabaseServerClient();
+  await supabase.from("commands").insert({
+    project_id: projectId,
+    command: `npx @depths/webknife shot ${project.previewUrl} --out .webknife --ci --json`,
+    cwd: project.workspacePath,
+    status,
+    exit_code: result.exitCode,
+    stdout_path: result.stdoutPath,
+    stderr_path: result.stderrPath,
+    completed_at: new Date().toISOString(),
+  });
+  await supabase.from("webknife_runs").insert({
+    project_id: projectId,
+    kind: "shot",
+    artifact_path: webknifePath,
+    summary: status === "completed" ? "Screenshot review completed." : "Screenshot review failed.",
+  });
+  await recordEvent({
+    projectId,
+    userId,
+    type: "webknife.shot",
+    summary: status === "completed" ? "Screenshot review completed." : "Screenshot review failed.",
+    artifactPath: webknifePath,
+  });
+  await revalidate(getTimeline.keyFor(projectId));
+
+  if (result.exitCode !== 0) {
+    throw new Error("Screenshot review failed. Check the recorded Webknife logs.");
+  }
+
+  return { ok: true, artifactPath: webknifePath };
+}, "builder.studio.screenshot-review");
