@@ -33,7 +33,7 @@ import {
   validateSpec,
   type SpecChunkKind,
 } from "~/lib/server/specs";
-import { getTimeline, runScreenshotReview, sendAgentPrompt, startPreview, stopPreview } from "~/lib/server/studio";
+import { getTimeline, runScreenshotReview, sendAgentPrompt, startPreview, stopPreview, type TimelineEvent } from "~/lib/server/studio";
 
 type UploadIntentResponse =
   | {
@@ -153,6 +153,19 @@ export default function ProjectStudioRoute() {
     referencePending();
   const activeSpecChunk = () => specChunks()?.find(chunk => chunk.kind === activeSpecKind());
   const activeSpecText = () => activeSpecChunk()?.spec_text ?? specPaneDefaultText[activeSpecKind()];
+  const orderedTimeline = () => [...(timeline() ?? [])].reverse();
+  const chatTimeline = () =>
+    orderedTimeline().filter(event =>
+      ["user.prompt", "message", "turn.started", "turn.completed", "session.error"].includes(event.type),
+    );
+  const eventSpeaker = (event: TimelineEvent) => {
+    if (event.role === "user" || event.type === "user.prompt") return "You";
+    if (event.role === "tool") return "Tool";
+    if (event.status === "failed" || event.type === "session.error") return "Builder issue";
+    if (event.role === "system") return "System";
+    return "Stylyf agent";
+  };
+  const eventText = (event: TimelineEvent) => event.content ?? event.summary ?? event.type;
 
   const refreshReferenceAssets = async (projectId = params.id ?? "demo") => {
     if (projectId === "demo") {
@@ -284,19 +297,39 @@ export default function ProjectStudioRoute() {
           </header>
 
           <div class="message-stream">
-            <article class="message message--builder">
-              <strong><Bot size={15} /> Stylyf agent</strong>
-              <p>
-                I opened the first draft. Tell me what feels wrong, missing, or too plain.
-              </p>
-            </article>
-            <article class="message message--user">
-              <strong>Team brief</strong>
-              <p>
-                Make this feel like IMDb for user-generated social posts: ratings, submissions, leaderboard, and a clean
-                moderation queue.
-              </p>
-            </article>
+            <Show
+              when={chatTimeline().length > 0}
+              fallback={
+                <article class="message message--builder">
+                  <strong><Bot size={15} /> Stylyf agent</strong>
+                  <p>Describe the first useful draft. I’ll keep the work tracked and reviewable.</p>
+                </article>
+              }
+            >
+              <For each={chatTimeline()}>
+                {event => (
+                  <article
+                    class="message"
+                    classList={{
+                      "message--user": event.role === "user" || event.type === "user.prompt",
+                      "message--builder": event.role !== "user" && event.type !== "user.prompt",
+                    }}
+                  >
+                    <strong>{eventSpeaker(event)}</strong>
+                    <p>{eventText(event)}</p>
+                    <Show when={event.status === "failed"}>
+                      <span class="pill pill--coral">Needs review</span>
+                    </Show>
+                  </article>
+                )}
+              </For>
+            </Show>
+            <Show when={promptSubmission.pending}>
+              <article class="message message--builder">
+                <strong><Bot size={15} /> Stylyf agent</strong>
+                <p>Working through the project workspace now...</p>
+              </article>
+            </Show>
           </div>
 
           <form class="composer" action={sendAgentPrompt.with(params.id ?? "demo")} method="post">
@@ -522,7 +555,12 @@ export default function ProjectStudioRoute() {
                     {event => (
                       <div class="timeline-item">
                         <span class="timeline-dot" />
-                        <p>{event.summary ?? event.type}</p>
+                        <p>
+                          {event.summary ?? event.type}
+                          <Show when={event.artifact_path}>
+                            {artifactPath => <small> Artifact: {artifactPath()}</small>}
+                          </Show>
+                        </p>
                       </div>
                     )}
                   </For>

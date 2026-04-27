@@ -31,7 +31,11 @@ export type TimelineEvent = {
   id: string;
   type: string;
   summary: string | null;
+  role: string | null;
+  status: string;
+  content: string | null;
   artifact_path: string | null;
+  content_path: string | null;
   created_at: string;
 };
 
@@ -67,15 +71,30 @@ async function requireProject(projectId: string, userId: string) {
   return data as ProjectWorkspaceRecord;
 }
 
-async function recordEvent(input: { projectId: string; userId: string; sessionId?: string | null; type: string; summary: string; artifactPath?: string | null }) {
+async function recordEvent(input: {
+  projectId: string;
+  userId: string;
+  sessionId?: string | null;
+  type: string;
+  summary: string;
+  role?: string | null;
+  status?: "queued" | "running" | "completed" | "failed" | "cancelled";
+  content?: string | null;
+  artifactPath?: string | null;
+  contentPath?: string | null;
+}) {
   const supabase = createSupabaseServerClient();
   await supabase.from("agent_events").insert({
     project_id: input.projectId,
     session_id: input.sessionId ?? null,
     owner_id: input.userId,
     type: input.type,
+    role: input.role ?? null,
+    status: input.status ?? "completed",
     summary: input.summary.slice(0, 500),
+    content: input.content ?? null,
     artifact_path: input.artifactPath ?? null,
+    content_path: input.contentPath ?? null,
   });
 }
 
@@ -256,10 +275,10 @@ export const getTimeline = query(async (projectId: string): Promise<TimelineEven
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from("agent_events")
-    .select("id,type,summary,artifact_path,created_at")
+    .select("id,type,summary,role,status,content,artifact_path,content_path,created_at")
     .eq("project_id", projectId)
     .order("created_at", { ascending: false })
-    .limit(8);
+    .limit(30);
   if (error) throw error;
   return (data ?? []) as TimelineEvent[];
 }, "builder.studio.timeline");
@@ -290,19 +309,64 @@ export const sendAgentPrompt = action(async (projectId: string, formData: FormDa
     .single();
   if (sessionError) throw sessionError;
 
+  await recordEvent({
+    projectId,
+    userId,
+    sessionId: session.id,
+    type: "user.prompt",
+    role: "user",
+    summary: prompt,
+    content: prompt,
+  });
+
   let adapterSessionId = "";
-  for await (const event of adapter.startSession({ workspacePath: project.workspacePath, systemPrompt: operatorSystemPrompt })) {
-    if (event.type === "session.started") adapterSessionId = event.sessionId;
-    await recordEvent({ projectId, userId, sessionId: session.id, type: event.type, summary: summarizeAgentEvent(event) });
+  try {
+    for await (const event of adapter.startSession({ workspacePath: project.workspacePath, systemPrompt: operatorSystemPrompt })) {
+      if (event.type === "session.started") adapterSessionId = event.sessionId;
+      await recordEvent({
+        projectId,
+        userId,
+        sessionId: session.id,
+        type: event.type,
+        role: event.type === "message" ? event.role : "system",
+        status: event.type === "session.error" ? "failed" : "completed",
+        summary: summarizeAgentEvent(event),
+        content: event.type === "message" ? event.content : null,
+      });
+    }
+
+    const packet = buildTaskPacket({ project, prompt });
+    for await (const event of adapter.sendTurn({ sessionId: adapterSessionId, prompt: packet })) {
+      await recordEvent({
+        projectId,
+        userId,
+        sessionId: session.id,
+        type: event.type,
+        role: event.type === "message" ? event.role : event.type === "turn.started" ? "user" : "assistant",
+        status: event.type === "session.error" ? "failed" : event.type === "turn.started" ? "running" : "completed",
+        summary: summarizeAgentEvent(event),
+        content: event.type === "message" ? event.content : null,
+      });
+    }
+
+    await commitAndPushProject({ project, userId, sessionId: session.id, prompt });
+    await supabase.from("agent_sessions").update({ status: "completed", thread_id: adapterSessionId }).eq("id", session.id);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Builder turn failed.";
+    await recordEvent({
+      projectId,
+      userId,
+      sessionId: session.id,
+      type: "session.error",
+      role: "system",
+      status: "failed",
+      summary: message,
+    });
+    await supabase.from("agent_sessions").update({ status: "error", thread_id: adapterSessionId || null }).eq("id", session.id);
+    await revalidate(getTimeline.keyFor(projectId));
+    throw error;
   }
 
-  const packet = buildTaskPacket({ project, prompt });
-  for await (const event of adapter.sendTurn({ sessionId: adapterSessionId, prompt: packet })) {
-    await recordEvent({ projectId, userId, sessionId: session.id, type: event.type, summary: summarizeAgentEvent(event) });
-  }
-
-  await commitAndPushProject({ project, userId, sessionId: session.id, prompt });
-  await supabase.from("agent_sessions").update({ status: "completed", thread_id: adapterSessionId }).eq("id", session.id);
   await revalidate(getTimeline.keyFor(projectId));
   return { ok: true, message: "Sent to builder." };
 }, "builder.studio.send-prompt");
