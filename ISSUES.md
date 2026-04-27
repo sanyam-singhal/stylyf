@@ -123,3 +123,11 @@ This file tracks issues discovered while dogfooding Stylyf against real app work
 - **Local fix:** Partial worktree pass started on a darker command rail, richer auth panel, builder cockpit cards, and stronger page hierarchy.
 - **Likely source fix:** Add higher-level app-builder/dashboard shell presets and guidance so generated apps can compose primitives into product-grade control planes instead of literal CRUD surfaces.
 - **Status:** Planning required before committing the UI rewrite.
+
+### Authenticated Webknife smoke depends on valid provisioned Supabase credentials
+
+- **Context:** During the v1.1 builder revamp, login screenshots succeeded but the authenticated dashboard screenshot pass could not complete with the locally available test credential assumptions.
+- **Symptom:** Supabase returned `Authentication failed: Bad Request`, so Webknife could not reach the dashboard/workbench routes through the normal login flow.
+- **Local fix:** Recorded the failure honestly and kept unauthenticated login screenshots as the visual checkpoint for this pass.
+- **Likely source fix:** Builder smoke tooling should have an explicit test-user contract and a safe credential-loading path that validates auth before starting screenshot tours.
+- **Status:** Needs a valid Supabase test user before authenticated screenshot assertions can be trusted.
