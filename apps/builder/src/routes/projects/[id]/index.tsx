@@ -17,7 +17,7 @@ import { runStylyfProjectStep } from "~/lib/server/actions/stylyf-loop";
 import { startProjectPreview, stopProjectPreview } from "~/lib/server/actions/preview-loop";
 import { decideApproval, sendAgentPrompt } from "~/lib/server/actions/agent-loop";
 import { getWorkbenchTimeline } from "~/lib/server/queries/workbench-timeline";
-import { runWebknifeScreenshot } from "~/lib/server/actions/webknife-loop";
+import { runWebknifeScreenshot, runWebknifeUiReview } from "~/lib/server/actions/webknife-loop";
 import { saveIrDraft } from "~/lib/server/actions/ir-draft";
 import { getActiveIrDraft } from "~/lib/server/queries/ir-draft";
 import { commitAndPushProject } from "~/lib/server/actions/git-loop";
@@ -33,9 +33,10 @@ export default function ProjectsIdRoute() {
   const agentSubmission = useSubmission(sendAgentPrompt);
   const approvalSubmission = useSubmission(decideApproval);
   const webknifeSubmission = useSubmission(runWebknifeScreenshot);
+  const webknifeReviewSubmission = useSubmission(runWebknifeUiReview);
   const irSubmission = useSubmission(saveIrDraft);
   const gitSubmission = useSubmission(commitAndPushProject);
-  const pending = () => stylyfSubmission.pending || startPreviewSubmission.pending || stopPreviewSubmission.pending || agentSubmission.pending || approvalSubmission.pending || webknifeSubmission.pending || irSubmission.pending || gitSubmission.pending;
+  const pending = () => stylyfSubmission.pending || startPreviewSubmission.pending || stopPreviewSubmission.pending || agentSubmission.pending || approvalSubmission.pending || webknifeSubmission.pending || webknifeReviewSubmission.pending || irSubmission.pending || gitSubmission.pending;
   return (
     <>
       <Title>Project workbench</Title>
@@ -182,6 +183,9 @@ export default function ProjectsIdRoute() {
                           <form action={runWebknifeScreenshot.with(params.id ?? "")} method="post">
                             <Button type="submit" tone="outline" leftIcon={<Camera class="size-4" />} pending={pending()}>Run Webknife shot</Button>
                           </form>
+                          <form action={runWebknifeUiReview.with(params.id ?? "")} method="post">
+                            <Button type="submit" tone="outline" leftIcon={<ShieldCheck class="size-4" />} pending={pending()}>UI review</Button>
+                          </form>
                         </div>
                         <Show when={stylyfSubmission.result}>
                           {result => (
@@ -201,6 +205,13 @@ export default function ProjectsIdRoute() {
                           {result => (
                             <div class="rounded-[var(--radius-lg)] border border-border/80 bg-muted-soft p-3 text-sm text-muted-foreground">
                               Webknife shot {result().ok ? "completed" : "failed"}; artifacts: {result().artifactPath}
+                            </div>
+                          )}
+                        </Show>
+                        <Show when={webknifeReviewSubmission.result}>
+                          {result => (
+                            <div class="rounded-[var(--radius-lg)] border border-border/80 bg-muted-soft p-3 text-sm text-muted-foreground">
+                              Webknife UI review {result().ok ? "completed" : "failed"}; artifacts: {result().artifactPath}
                             </div>
                           )}
                         </Show>

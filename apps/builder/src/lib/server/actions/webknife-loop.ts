@@ -106,3 +106,53 @@ export const runWebknifeScreenshot = action(async (projectId: string) => {
 
   return { ok: command.exitCode === 0, exitCode: command.exitCode, artifactPath: workspace.webknife };
 }, "webknife.screenshot");
+
+export const runWebknifeUiReview = action(async (projectId: string) => {
+  "use server";
+  const { userId } = await requireViewerIdentity();
+  const project = await getProject(projectId, userId);
+  const previewUrl = typeof project.previewUrl === "string" ? project.previewUrl : "";
+  if (!previewUrl) throw new Error("Start a preview before running Webknife UI review.");
+
+  const workspace = await ensureWorkspace(project);
+  const command = await runCommand({
+    command: "npx",
+    args: ["@depths/webknife", "ui:review", "--url", previewUrl, "--out", workspace.webknife],
+    cwd: workspace.root,
+    logsDir: workspace.logs,
+  });
+
+  await recordCommand({
+    projectId,
+    command: `npx @depths/webknife ui:review --url ${previewUrl} --out ${workspace.webknife}`,
+    cwd: workspace.root,
+    status: command.exitCode === 0 ? "completed" : "failed",
+    exitCode: command.exitCode,
+    stdoutPath: command.stdoutPath,
+    stderrPath: command.stderrPath,
+  });
+
+  const supabase = createSupabaseServerClient();
+  await supabase.from("webknife_runs").insert({
+    project_id: projectId,
+    kind: "ui-review",
+    artifact_path: join(workspace.webknife, "ui"),
+    summary: command.exitCode === 0 ? "Webknife UI review completed." : `Webknife UI review failed with exit code ${command.exitCode ?? "unknown"}.`,
+  });
+  await supabase.from("agent_events").insert({
+    project_id: projectId,
+    owner_id: userId,
+    type: "webknife.ui_review",
+    summary: command.exitCode === 0 ? "Webknife UI review completed." : "Webknife UI review failed.",
+    artifact_path: join(workspace.webknife, "ui"),
+  });
+  await recordTelemetry({
+    projectId,
+    userId,
+    kind: command.exitCode === 0 ? "webknife.completed" : "webknife.failed",
+    summary: command.exitCode === 0 ? "Webknife UI review completed." : "Webknife UI review failed.",
+    artifactPath: join(workspace.webknife, "ui"),
+  });
+
+  return { ok: command.exitCode === 0, exitCode: command.exitCode, artifactPath: join(workspace.webknife, "ui") };
+}, "webknife.ui-review");
