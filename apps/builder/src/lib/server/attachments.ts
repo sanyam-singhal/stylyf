@@ -1,6 +1,6 @@
 import { revalidate } from "@solidjs/router";
 import { requireSession } from "~/lib/auth";
-import { createPresignedUpload, storageBucket, storagePolicy } from "~/lib/storage";
+import { createPresignedDownload, createPresignedUpload, deleteObject, storageBucket, storagePolicy } from "~/lib/storage";
 import { createSupabaseServerClient } from "~/lib/supabase";
 import { getTimeline } from "~/lib/server/studio";
 
@@ -12,6 +12,15 @@ type ProjectAssetRecord = {
   content_type: string | null;
   file_size: number | null;
   status: string;
+};
+
+export type ReferenceAsset = {
+  id: string;
+  fileName: string | null;
+  contentType: string | null;
+  fileSize: number | null;
+  status: string;
+  createdAt: string;
 };
 
 export type ReferenceUploadIntentInput = {
@@ -47,6 +56,44 @@ async function requireOwnedProject(projectId: string, userId: string) {
     .single();
   if (error) throw error;
   return data as { id: string; owner_id: string; name: string };
+}
+
+async function requireOwnedAsset(input: { projectId: string; assetId: string; userId: string }) {
+  await requireOwnedProject(input.projectId, input.userId);
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("projects_assets")
+    .select("id, resource_id, object_key, file_name, content_type, file_size, status")
+    .eq("id", input.assetId)
+    .eq("resource_id", input.projectId)
+    .single();
+  if (error) throw error;
+  return data as ProjectAssetRecord;
+}
+
+export async function listReferenceAssets(projectId: string): Promise<ReferenceAsset[]> {
+  if (projectId === "demo") return [];
+  const userId = await getUserId();
+  await requireOwnedProject(projectId, userId);
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("projects_assets")
+    .select("id, file_name, content_type, file_size, status, created_at")
+    .eq("resource_id", projectId)
+    .eq("attachment_name", "reference")
+    .eq("status", "attached")
+    .order("created_at", { ascending: false })
+    .limit(12);
+  if (error) throw error;
+
+  return (data ?? []).map(asset => ({
+    id: String(asset.id),
+    fileName: typeof asset.file_name === "string" ? asset.file_name : null,
+    contentType: typeof asset.content_type === "string" ? asset.content_type : null,
+    fileSize: typeof asset.file_size === "number" ? asset.file_size : null,
+    status: typeof asset.status === "string" ? asset.status : "unknown",
+    createdAt: typeof asset.created_at === "string" ? asset.created_at : "",
+  }));
 }
 
 export async function createReferenceUploadIntent(input: ReferenceUploadIntentInput) {
@@ -145,4 +192,49 @@ export async function confirmReferenceUpload(input: { projectId: string; assetId
     assetId: record.id,
     fileName: record.file_name,
   };
+}
+
+export async function createReferenceDownload(input: { projectId: string; assetId: string }) {
+  const userId = await getUserId();
+  const asset = await requireOwnedAsset({ projectId: input.projectId, assetId: input.assetId, userId });
+  if (asset.status !== "attached") {
+    throw new Error("Reference file is not available for download.");
+  }
+  const download = await createPresignedDownload({ key: asset.object_key });
+  return {
+    ok: true,
+    assetId: asset.id,
+    fileName: asset.file_name,
+    download,
+  };
+}
+
+export async function deleteReferenceAsset(input: { projectId: string; assetId: string }) {
+  const userId = await getUserId();
+  const asset = await requireOwnedAsset({ projectId: input.projectId, assetId: input.assetId, userId });
+  if (asset.status === "deleted") {
+    return { ok: true, assetId: asset.id };
+  }
+
+  if (asset.status === "attached") {
+    await deleteObject(asset.object_key);
+  }
+  const supabase = createSupabaseServerClient();
+  const { error: assetError } = await supabase
+    .from("projects_assets")
+    .update({ status: "deleted", deleted_at: new Date().toISOString() })
+    .eq("id", asset.id);
+  if (assetError) throw assetError;
+
+  const { error: pointerError } = await supabase.from("asset_pointers").delete().eq("object_key", asset.object_key);
+  if (pointerError) throw pointerError;
+
+  await supabase.from("agent_events").insert({
+    project_id: input.projectId,
+    owner_id: userId,
+    type: "reference.deleted",
+    summary: asset.file_name ? `Deleted ${asset.file_name}.` : "Deleted reference file.",
+  });
+  await revalidate(getTimeline.keyFor(input.projectId));
+  return { ok: true, assetId: asset.id };
 }

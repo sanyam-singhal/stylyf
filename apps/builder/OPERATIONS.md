@@ -2,16 +2,17 @@
 
 Service: Stylyf Builder
 
-## Health
+## Validation
 
-- `GET /api/health`: lightweight liveness check; does not touch external services.
-- `GET /api/readiness`: checks required environment presence without printing secret values.
+Run these from the repo root:
 
-## Logging
+```bash
+npm --prefix apps/builder run env:check
+npm --prefix apps/builder run check
+npm --prefix apps/builder run build
+```
 
-- `src/lib/server/observability.ts` emits JSON logs through `logInfo` and `logError`.
-- Keep request IDs, user IDs, and domain identifiers explicit in log metadata.
-- Never log raw auth tokens, database URLs, object-storage keys, or signed URLs.
+The env check prints key names only. It must never print raw Supabase keys, object-storage credentials, cookies, or signed URLs.
 
 ## Backend
 
@@ -39,6 +40,32 @@ gh auth status
 - New project workspaces receive a generated `AGENTS.md` that forces a Stylyf-first loop before raw source edits.
 - Generated app previews bind to `127.0.0.1`; public deployment of generated apps remains a manual dev-team decision.
 - GitHub repo creation and pushes use the authenticated `gh` CLI.
+- Browser presigned uploads require Tigris/S3 bucket CORS for the exact page origin. The server only signs URLs; browser bytes go directly to object storage.
+- Every accepted project iteration should create a workspace git commit and push when a remote exists.
+
+## Object Storage CORS
+
+Direct browser uploads need the storage bucket to allow the builder origin for `PUT`. This is not a server CORS setting; it is bucket CORS.
+
+Check the effective bucket rule:
+
+```bash
+npm --prefix apps/builder run storage:cors:check
+```
+
+Apply the normal local rule:
+
+```bash
+npm --prefix apps/builder run storage:cors:apply
+```
+
+Apply explicit local and deployed origins:
+
+```bash
+npm --prefix apps/builder run storage:cors:apply -- --origins http://127.0.0.1:3000,https://stylyf.com
+```
+
+The rule should allow `GET`, `PUT`, and `HEAD`, allow headers `content-type` and `x-amz-*`, and expose `ETag`.
 
 ## Useful Env Key Names
 
@@ -52,6 +79,7 @@ Do not print values in logs.
 - `AWS_SECRET_ACCESS_KEY`
 - `AWS_ENDPOINT_URL_S3`
 - `AWS_REGION`
+- `STYLYF_BUILDER_CORS_ORIGINS`
 - `APP_BASE_URL`
 - `STYLYF_BUILDER_ROOT`
 - `STYLYF_BUILDER_GITHUB_ORG`

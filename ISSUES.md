@@ -144,6 +144,34 @@ This file tracks issues discovered while dogfooding Stylyf against real app work
 
 - **Context:** After correcting the Tigris bucket name, the builder generated a valid presigned PUT URL for the configured bucket endpoint.
 - **Symptom:** Browser upload smoke failed at preflight from `http://127.0.0.1:3000` because the Tigris bucket did not return `Access-Control-Allow-Origin`.
-- **Local fix:** None in app code; the app correctly surfaces the failed upload. This is a bucket CORS configuration requirement for browser-to-object-storage presigned uploads.
-- **Likely source fix:** Stylyf hosted-media docs and generated handoff notes should include the required bucket CORS rule for local builder origins and production app origins.
-- **Status:** Awaiting bucket CORS configuration before browser upload confirmation can pass end to end.
+- **Local fix:** Added repeatable `storage:cors:check` and `storage:cors:apply` scripts, documented the required exact-origin bucket CORS rule, and validated the full browser upload path after the bucket returned an effective S3 CORS rule.
+- **CLI source issue:** The generated media/handoff context currently explains presigned uploads but does not explicitly tell the operator that browser-direct uploads require bucket CORS on the S3/Tigris bucket. A fresh agent can correctly generate server-side presign routes and still fail runtime upload smoke because the object-store origin policy is missing.
+- **CLI remedy:** In a later CLI-focused pass, update hosted-media docs, `stylyf intro --topic media`, and generated `SECURITY_NOTES.md`/`LOCAL_SMOKE.md`/handoff text to state that the server signs URLs while browser bytes go directly to object storage. Include the minimum bucket CORS rule: allow the exact local/deployed app origins, methods `PUT`, `GET`, and `HEAD`, request headers `content-type` and `x-amz-*`, and expose `ETag`. Do not add compatibility bloat or server-mediated upload fallbacks.
+- **Status:** Resolved for the builder app. Browser smoke confirmed direct upload and confirmation with `Attached stylyf-builder-cors-final.txt.`
+
+### Object storage lifecycle must validate PUT, list, GET, and delete, not just upload confirmation
+
+- **Context:** The builder storage path is intentionally presigned and browser-direct: the server signs object URLs, the browser sends/receives bytes with Tigris, and Postgres stores scalar pointers.
+- **Symptom:** Initial smoke validation only covered upload intent, direct `PUT`, and DB confirmation. It did not prove presigned read or delete semantics.
+- **Local fix:** Added owned reference listing, presigned download URL creation, and reference deletion endpoints. The studio now lists attached reference pointers and exposes open/delete actions without exposing raw storage credentials.
+- **Validation:** Full lifecycle smoke passed: presigned `PUT` returned `200`, API list returned `200`, presigned `GET` returned `200` with payload match, delete returned `200`, and the old presigned `GET` returned `404` after deletion.
+- **CLI source issue:** Hosted media scaffolds should be validated against the entire object lifecycle, not only upload confirmation.
+- **CLI remedy:** In a later CLI-focused pass, make generated media smoke/handoff expectations cover create intent -> browser direct PUT -> confirm pointer -> list pointer -> presigned GET -> delete object/pointer -> post-delete read failure.
+- **Status:** Resolved for the builder app; pending CLI generator hardening.
+
+### Attachment listing must not import server-only storage modules into client routes
+
+- **Context:** The studio route needed to show attached references after upload.
+- **Symptom:** Importing the attachment server module into the route pulled server-only env/S3 code toward the client build. `npm --prefix apps/builder run build` failed when Vite tried to externalize `node:fs` from `env.server.ts`.
+- **Local fix:** Kept attachment storage/auth operations behind API routes and made the client fetch `/api/attachments/list` instead of importing the attachment server module. Production build now passes.
+- **CLI source issue:** Generated apps with media routes can accidentally cross server/client boundaries if UI pages import storage-capable server modules directly.
+- **CLI remedy:** In a later CLI-focused pass, generated browser routes should call API/server actions through explicit route boundaries for media lifecycle operations. Server modules that import AWS SDK, storage env, or filesystem env loaders must not be imported into client-compiled route code.
+- **Status:** Resolved for the builder app; pending CLI generator hardening.
+
+### Generated app script advertised env check without emitting the checker
+
+- **Context:** The builder app `package.json` included `env:check` and `preflight` scripts.
+- **Symptom:** Running `npm --prefix apps/builder run env:check` failed because `src/lib/env.check.ts` was not present.
+- **Local fix:** Added a builder env checker that loads app-local and repo-root env files, validates required key names, validates bucket naming shape, and never prints secret values.
+- **Likely source fix:** Stylyf CLI generation should either emit every script target it advertises or omit the script. Preflight scripts need to be part of scaffold verification.
+- **Status:** Locally fixed in the builder app. CLI generator should be checked for the same missing-file class.

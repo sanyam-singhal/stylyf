@@ -16,7 +16,6 @@ App kind: internal-tool
 - `/`: clean project dashboard.
 - `/projects/new`: one-field project creation.
 - `/projects/:id`: app-builder workbench with chat, IR panes, preview controls, Webknife, timeline, and git handoff.
-- `/settings`: internal settings.
 
 The old generated `agent_events` CRUD routes are implementation vestiges. They should not be linked in primary navigation; timeline events belong inside the project workbench.
 
@@ -28,6 +27,8 @@ The old generated `agent_events` CRUD routes are implementation vestiges. They s
 - Generated app source lives in `app/` and remains standalone.
 - Webknife artifacts stay in `.webknife/` and are referenced from builder timeline records.
 - Accepted iterations commit and push through the workspace repository.
+- Reference assets use browser-direct presigned URLs to Tigris/S3-compatible storage for upload and download; deletes remove the object and mark/delete the pointer records. Postgres stores pointers and compact metadata only.
+- Browser upload smoke requires bucket CORS for the exact builder page origin. Use `npm --prefix apps/builder run storage:cors:check` to inspect the effective rule and `storage:cors:apply` to write the repo-owned local rule.
 
 ## Source Ownership
 

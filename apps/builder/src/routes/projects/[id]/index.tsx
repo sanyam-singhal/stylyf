@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Bot,
   Code2,
+  Download,
   Folder,
   GitBranch,
   HelpCircle,
@@ -16,8 +17,9 @@ import {
   Plus,
   Send,
   Sparkles,
+  Trash2,
 } from "lucide-solid";
-import { For, Show, createSignal, type JSX } from "solid-js";
+import { For, Show, createEffect, createSignal, type JSX } from "solid-js";
 import { demoProject, getProject } from "~/lib/server/projects";
 import { composeSpec, getSpecChunks, planSpec, saveSpecChunk, validateSpec, type SpecChunkKind } from "~/lib/server/specs";
 import { getTimeline, runScreenshotReview, sendAgentPrompt, startPreview, stopPreview } from "~/lib/server/studio";
@@ -35,6 +37,19 @@ type UploadIntentResponse =
   | { ok: false; error: string };
 
 type UploadConfirmResponse = { ok: true; fileName: string | null } | { ok: false; error: string };
+type ReferenceAsset = {
+  id: string;
+  fileName: string | null;
+  contentType: string | null;
+  fileSize: number | null;
+  status: string;
+  createdAt: string;
+};
+type ListReferencesResponse = { ok: true; assets: ReferenceAsset[] } | { ok: false; error: string };
+type DownloadResponse =
+  | { ok: true; fileName: string | null; download: { url: string; method: "GET" } }
+  | { ok: false; error: string };
+type DeleteResponse = { ok: true; assetId: string } | { ok: false; error: string };
 
 const specPaneKinds: { kind: SpecChunkKind; label: string }[] = [
   { kind: "brief", label: "Brief" },
@@ -91,6 +106,7 @@ export default function ProjectStudioRoute() {
   const [controlsVisible, setControlsVisible] = createSignal(true);
   const [referenceStatus, setReferenceStatus] = createSignal("");
   const [referencePending, setReferencePending] = createSignal(false);
+  const [referenceAssets, setReferenceAssets] = createSignal<ReferenceAsset[]>([]);
   const [activeSpecKind, setActiveSpecKind] = createSignal<SpecChunkKind>("brief");
   let referenceInput!: HTMLInputElement;
   const project = createAsync(() => getProject(params.id ?? "demo"));
@@ -118,6 +134,23 @@ export default function ProjectStudioRoute() {
     referencePending();
   const activeSpecChunk = () => specChunks()?.find(chunk => chunk.kind === activeSpecKind());
   const activeSpecText = () => activeSpecChunk()?.spec_text ?? specPaneDefaultText[activeSpecKind()];
+
+  const refreshReferenceAssets = async (projectId = params.id ?? "demo") => {
+    if (projectId === "demo") {
+      setReferenceAssets([]);
+      return;
+    }
+    const response = await fetch(`/api/attachments/list?projectId=${encodeURIComponent(projectId)}`);
+    const result = (await response.json()) as ListReferencesResponse;
+    if (!result.ok) throw new Error(result.error);
+    setReferenceAssets(result.assets);
+  };
+
+  createEffect(() => {
+    void refreshReferenceAssets(params.id ?? "demo").catch(error => {
+      setReferenceStatus(error instanceof Error ? error.message : "Could not load references.");
+    });
+  });
 
   const handleReferenceSelected: JSX.EventHandler<HTMLInputElement, Event> = async event => {
     const file = event.currentTarget.files?.[0];
@@ -161,11 +194,47 @@ export default function ProjectStudioRoute() {
 
       setReferenceStatus(confirmed.fileName ? `Attached ${confirmed.fileName}.` : "Reference attached.");
       await revalidate(getTimeline.keyFor(params.id ?? "demo"));
+      await refreshReferenceAssets();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Reference upload failed.";
       setReferenceStatus(message === "Failed to fetch" ? "Upload is blocked by storage permissions. Ask dev team to allow this builder origin." : message);
     } finally {
       setReferencePending(false);
+    }
+  };
+
+  const handleOpenReference = async (assetId: string) => {
+    setReferenceStatus("Opening reference...");
+    try {
+      const response = await fetch("/api/attachments/download", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ projectId: params.id, assetId }),
+      });
+      const result = (await response.json()) as DownloadResponse;
+      if (!result.ok) throw new Error(result.error);
+      window.open(result.download.url, "_blank", "noopener,noreferrer");
+      setReferenceStatus(result.fileName ? `Opened ${result.fileName}.` : "Opened reference.");
+    } catch (error) {
+      setReferenceStatus(error instanceof Error ? error.message : "Could not open reference.");
+    }
+  };
+
+  const handleDeleteReference = async (assetId: string) => {
+    setReferenceStatus("Deleting reference...");
+    try {
+      const response = await fetch("/api/attachments/delete", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ projectId: params.id, assetId }),
+      });
+      const result = (await response.json()) as DeleteResponse;
+      if (!result.ok) throw new Error(result.error);
+      setReferenceStatus("Reference deleted.");
+      await revalidate(getTimeline.keyFor(params.id ?? "demo"));
+      await refreshReferenceAssets();
+    } catch (error) {
+      setReferenceStatus(error instanceof Error ? error.message : "Could not delete reference.");
     }
   };
 
@@ -241,6 +310,28 @@ export default function ProjectStudioRoute() {
             />
             <Show when={referenceStatus()}>
               {status => <p class="prompt-example" role="status">{status()}</p>}
+            </Show>
+            <Show when={(referenceAssets()?.length ?? 0) > 0}>
+              <div class="reference-list" aria-label="Attached references">
+                <For each={referenceAssets()}>
+                  {asset => (
+                    <article class="reference-item">
+                      <div>
+                        <strong>{asset.fileName ?? "Reference file"}</strong>
+                        <span>{asset.contentType ?? "file"} · {asset.status}</span>
+                      </div>
+                      <div class="reference-item__actions">
+                        <button class="icon-button" type="button" onClick={() => handleOpenReference(asset.id)} aria-label={`Open ${asset.fileName ?? "reference"}`}>
+                          <Download size={16} />
+                        </button>
+                        <button class="icon-button icon-button--danger" type="button" onClick={() => handleDeleteReference(asset.id)} aria-label={`Delete ${asset.fileName ?? "reference"}`}>
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </article>
+                  )}
+                </For>
+              </div>
             </Show>
           </form>
         </aside>
