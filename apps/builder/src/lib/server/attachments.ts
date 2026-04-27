@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { getAttachmentDefinition, getAttachmentEntry } from "~/lib/attachments";
 import { resourcesByName } from "~/lib/resources";
-import { buildObjectUrl, createPresignedUpload, deleteObject, storagePolicy } from "~/lib/storage";
+import { createPresignedDownload, createPresignedUpload, deleteObject, storageBucket, storagePolicy } from "~/lib/storage";
 import { createSupabaseServerClient } from "~/lib/supabase";
 import { getViewerIdentity, requireViewerIdentity } from "~/lib/server/resource-policy";
 
@@ -36,6 +36,13 @@ export type AttachmentDeleteInput = {
   assetId: string;
 };
 
+export type AttachmentDownloadInput = {
+  resource: string;
+  attachment: string;
+  resourceId: string;
+  assetId: string;
+};
+
 function sanitizeFileName(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]+/g, "-");
 }
@@ -50,20 +57,23 @@ function mutationAccessFor(resource: ReturnType<typeof getResourceDefinition>) {
   return (resource.access?.update ?? resource.access?.create ?? "user") as string;
 }
 
+function readAccessFor(resource: ReturnType<typeof getResourceDefinition>) {
+  return (resource.access?.read ?? resource.access?.list ?? "user") as string;
+}
+
 function buildAttachmentObjectKey(input: { bucketAlias: string; resource: string; resourceId: string; attachment: string; assetId: string; fileName: string }) {
   const safeFileName = sanitizeFileName(input.fileName || "upload.bin");
   return `${storagePolicy.keyPrefix}/${input.bucketAlias}/${input.resource}/${input.resourceId}/${input.attachment}/${input.assetId}-${safeFileName}`;
 }
 
-async function assertSupabaseMutationAccess(resourceName: string, resourceId: string) {
+async function assertSupabaseAccess(resourceName: string, resourceId: string, accessPolicy: string) {
   const resource = getResourceDefinition(resourceName);
   const supabase = createSupabaseServerClient() as any;
   const tableName = resource.table ?? resource.name;
-  const policy = mutationAccessFor(resource);
   const ownerField = resource.ownership?.ownerField ?? "owner_id";
   const workspaceField = resource.ownership?.workspaceField ?? "workspace_id";
 
-  switch (policy) {
+  switch (accessPolicy) {
     case "public": {
       const { data, error } = await supabase.from(tableName).select("id").eq("id", resourceId).limit(1);
       if (error) throw error;
@@ -112,6 +122,14 @@ async function assertSupabaseMutationAccess(resourceName: string, resourceId: st
   }
 }
 
+async function assertSupabaseMutationAccess(resourceName: string, resourceId: string) {
+  return assertSupabaseAccess(resourceName, resourceId, mutationAccessFor(getResourceDefinition(resourceName)));
+}
+
+async function assertSupabaseReadAccess(resourceName: string, resourceId: string) {
+  return assertSupabaseAccess(resourceName, resourceId, readAccessFor(getResourceDefinition(resourceName)));
+}
+
 async function loadSupabaseAssetRecord(input: AttachmentDeleteInput | AttachmentConfirmInput, requirePending = false) {
   await assertSupabaseMutationAccess(input.resource, input.resourceId);
   const entry = getAttachmentEntry(input.resource);
@@ -129,6 +147,24 @@ async function loadSupabaseAssetRecord(input: AttachmentDeleteInput | Attachment
   if (!asset) throw new Error("Attachment record not found.");
   if (requirePending && asset.status !== "pending") throw new Error("Attachment upload is not pending.");
   return { supabase, tableName: entry.table, asset, definition };
+}
+
+async function loadSupabaseAssetRecordForRead(input: AttachmentDownloadInput) {
+  await assertSupabaseReadAccess(input.resource, input.resourceId);
+  const entry = getAttachmentEntry(input.resource);
+  const supabase = createSupabaseServerClient() as any;
+  const { data, error } = await supabase
+    .from(entry.table)
+    .select("*")
+    .eq("id", input.assetId)
+    .eq("resource_id", input.resourceId)
+    .eq("attachment_name", input.attachment)
+    .eq("status", "attached")
+    .limit(1);
+  if (error) throw error;
+  const asset = data?.[0];
+  if (!asset) throw new Error("Attachment record not found.");
+  return asset;
 }
 
 export async function createAttachmentUploadIntent(input: AttachmentIntentInput) {
@@ -150,16 +186,17 @@ export async function createAttachmentUploadIntent(input: AttachmentIntentInput)
   const { error } = await supabase.from(entry.table).insert({
     id: assetId,
     resource_id: input.resourceId,
+    storage_provider: "tigris",
+    bucket_name: upload.bucket,
     attachment_name: input.attachment,
     bucket_alias: bucketAlias,
     object_key: objectKey,
-    object_url: null,
     file_name: input.fileName,
     content_type: input.contentType,
     file_size: input.fileSize ?? null,
     kind: definition.kind,
     status: "pending",
-    metadata: input.metadata ?? null,
+    metadata_path: null,
     replaced_by_asset_id: null,
     deleted_at: null,
   });
@@ -198,19 +235,30 @@ export async function confirmAttachment(input: AttachmentConfirmInput) {
     if (error) throw error;
   }
 
-  const objectUrl = buildObjectUrl(asset.object_key);
   const { data, error } = await supabase.from(tableName).update({
     status: "attached",
-    object_url: objectUrl,
     content_type: input.contentType ?? asset.content_type ?? null,
     file_size: input.fileSize ?? asset.file_size ?? null,
-    metadata: input.metadata ?? asset.metadata ?? null,
     deleted_at: null,
   }).eq("id", input.assetId).select("*").limit(1);
   if (error) throw error;
   return {
-    asset: data?.[0] ?? { ...asset, object_url: objectUrl, status: "attached" },
+    asset: data?.[0] ?? { ...asset, status: "attached" },
     replacedAssetIds: priorRows.map((row: any) => row.id),
+  };
+}
+
+export async function createAttachmentDownloadIntent(input: AttachmentDownloadInput) {
+  const asset = await loadSupabaseAssetRecordForRead(input);
+  if (asset.bucket_name && asset.bucket_name !== storageBucket()) {
+    throw new Error("Attachment bucket does not match the configured Tigris bucket.");
+  }
+  const download = await createPresignedDownload({ key: asset.object_key });
+  return {
+    assetId: asset.id,
+    bucketAlias: asset.bucket_alias,
+    objectKey: asset.object_key,
+    download,
   };
 }
 

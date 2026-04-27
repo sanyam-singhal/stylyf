@@ -18,7 +18,7 @@ export const env = {
   SUPABASE_SECRET_KEY: requiredServer("SUPABASE_SECRET_KEY"),
   S3_REGION: optionalServer("S3_REGION"),
   AWS_REGION: optionalServer("AWS_REGION"),
-  S3_BUCKET: requiredServer("S3_BUCKET"),
+  S3_BUCKET: optionalServer("S3_BUCKET"),
   AWS_S3_BUCKET: optionalServer("AWS_S3_BUCKET"),
   S3_ACCESS_KEY_ID: optionalServer("S3_ACCESS_KEY_ID"),
   AWS_ACCESS_KEY_ID: optionalServer("AWS_ACCESS_KEY_ID"),
@@ -27,7 +27,6 @@ export const env = {
   S3_ENDPOINT: optionalServer("S3_ENDPOINT"),
   AWS_ENDPOINT_URL_S3: optionalServer("AWS_ENDPOINT_URL_S3"),
   S3_FORCE_PATH_STYLE: optionalServer("S3_FORCE_PATH_STYLE"),
-  S3_PUBLIC_BASE_URL: optionalServer("S3_PUBLIC_BASE_URL"),
 };
 
 export type ServerEnv = typeof env;

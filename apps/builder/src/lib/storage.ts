@@ -1,4 +1,4 @@
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "~/lib/env";
 
@@ -38,7 +38,7 @@ function storageRegion() {
   return env.AWS_REGION ?? env.S3_REGION ?? "us-east-1";
 }
 
-function storageBucket() {
+export function storageBucket() {
   const value = env.AWS_S3_BUCKET || env.S3_BUCKET;
   if (!value) throw new Error("Missing object storage bucket. Set AWS_S3_BUCKET or S3_BUCKET.");
   return value;
@@ -98,6 +98,23 @@ export async function createPresignedUpload(input: UploadIntent) {
   };
 }
 
+export async function createPresignedDownload(input: { key: string; expiresIn?: number }) {
+  const client = getStorageClient();
+  const expiresIn = input.expiresIn ?? storagePolicy.presignExpiresSeconds;
+  const command = new GetObjectCommand({
+    Bucket: storageBucket(),
+    Key: input.key,
+  });
+  const url = await getSignedUrl(client, command, { expiresIn });
+  return {
+    method: "GET" as const,
+    url,
+    key: input.key,
+    bucket: storageBucket(),
+    expiresIn,
+  };
+}
+
 export async function deleteObject(key: string) {
   const client = getStorageClient();
   await client.send(
@@ -106,21 +123,4 @@ export async function deleteObject(key: string) {
       Key: key,
     }),
   );
-}
-
-export function buildObjectUrl(key: string) {
-  if (env.S3_PUBLIC_BASE_URL) {
-    return new URL(key, env.S3_PUBLIC_BASE_URL.endsWith('/') ? env.S3_PUBLIC_BASE_URL : `${env.S3_PUBLIC_BASE_URL}/`).toString();
-  }
-
-  const endpoint = storageEndpoint();
-  if (endpoint) {
-    const url = new URL(endpoint);
-    if (parseForcePathStyle(env.S3_FORCE_PATH_STYLE)) {
-      return new URL(`${storageBucket()}/${key}`, url.toString().endsWith('/') ? url.toString() : `${url.toString()}/`).toString();
-    }
-    return `${url.protocol}//${storageBucket()}.${url.host}/${key}`;
-  }
-
-  return `https://${storageBucket()}.s3.${storageRegion()}.amazonaws.com/${key}`;
 }

@@ -46,27 +46,6 @@ const requiredEnv = [
     "exposure": "server",
     "example": "sb_secret_xxx",
     "description": "Server-only Supabase secret key for privileged admin and bypass-RLS operations."
-  },
-  {
-    "name": "VITE_SUPABASE_URL",
-    "required": true,
-    "exposure": "public",
-    "example": "https://your-project-ref.supabase.co",
-    "description": "Client-exposed Supabase project URL for browser auth flows."
-  },
-  {
-    "name": "VITE_SUPABASE_PUBLISHABLE_KEY",
-    "required": true,
-    "exposure": "public",
-    "example": "sb_publishable_xxx",
-    "description": "Client-exposed Supabase publishable key for browser auth and data access."
-  },
-  {
-    "name": "S3_BUCKET",
-    "required": true,
-    "exposure": "server",
-    "example": "app-uploads",
-    "description": "Target bucket for generated storage helpers."
   }
 ] as const;
 const publicEnvNames: readonly string[] = [
@@ -89,6 +68,24 @@ function checkEnv() {
     if ((entry.name.endsWith("_URL") || entry.name === "APP_BASE_URL") && !isProbablyUrl(value)) {
       issues.push(`${entry.name} must be a valid absolute URL.`);
     }
+  }
+  if (!process.env.VITE_SUPABASE_URL && !process.env.SUPABASE_URL) {
+    issues.push("Missing required public Supabase URL: set VITE_SUPABASE_URL or SUPABASE_URL.");
+  }
+  if (!process.env.VITE_SUPABASE_PUBLISHABLE_KEY && !process.env.SUPABASE_PUBLISHABLE_KEY) {
+    issues.push("Missing required public Supabase publishable key: set VITE_SUPABASE_PUBLISHABLE_KEY or SUPABASE_PUBLISHABLE_KEY.");
+  }
+  if (!process.env.AWS_S3_BUCKET && !process.env.S3_BUCKET) {
+    issues.push("Missing required server env: set AWS_S3_BUCKET or S3_BUCKET.");
+  }
+  if (!process.env.AWS_ACCESS_KEY_ID && !process.env.S3_ACCESS_KEY_ID) {
+    issues.push("Missing required server env: set AWS_ACCESS_KEY_ID or S3_ACCESS_KEY_ID.");
+  }
+  if (!process.env.AWS_SECRET_ACCESS_KEY && !process.env.S3_SECRET_ACCESS_KEY) {
+    issues.push("Missing required server env: set AWS_SECRET_ACCESS_KEY or S3_SECRET_ACCESS_KEY.");
+  }
+  if (!process.env.AWS_ENDPOINT_URL_S3 && !process.env.S3_ENDPOINT) {
+    issues.push("Missing required server env: set AWS_ENDPOINT_URL_S3 or S3_ENDPOINT.");
   }
   for (const name of publicEnvNames) {
     if (!name.startsWith("VITE_") && !name.startsWith("PUBLIC_")) {

@@ -115,7 +115,8 @@ create table if not exists public.agent_events (
   session_id uuid references public.agent_sessions(id) on delete set null,
   owner_id uuid not null references public.profiles(id) on delete cascade,
   type text not null,
-  payload jsonb not null default '{}'::jsonb,
+  summary text,
+  artifact_path text,
   created_at timestamptz not null default timezone('utc'::text, now())
 );
 
@@ -129,6 +130,7 @@ create table if not exists public.commands (
   session_id uuid references public.agent_sessions(id) on delete set null,
   command text not null,
   cwd text not null,
+  summary text,
   status text not null default 'queued' check (status in ('queued', 'running', 'completed', 'failed', 'cancelled')),
   exit_code integer,
   stdout_path text,
@@ -162,7 +164,7 @@ create table if not exists public.webknife_runs (
   project_id uuid not null references public.projects(id) on delete cascade,
   kind text not null,
   artifact_path text,
-  summary jsonb not null default '{}'::jsonb,
+  summary text,
   created_at timestamptz not null default timezone('utc'::text, now())
 );
 
@@ -174,7 +176,8 @@ create table if not exists public.approvals (
   session_id uuid references public.agent_sessions(id) on delete set null,
   type text not null,
   requested_by text not null,
-  payload jsonb not null default '{}'::jsonb,
+  summary text,
+  payload_path text,
   status text not null default 'pending' check (status in ('pending', 'approved', 'denied', 'expired')),
   decided_by uuid references public.profiles(id) on delete set null,
   decided_at timestamptz,
@@ -192,7 +195,7 @@ create table if not exists public.git_events (
   branch text,
   commit_sha text,
   summary text,
-  payload jsonb not null default '{}'::jsonb,
+  payload_path text,
   created_at timestamptz not null default timezone('utc'::text, now())
 );
 
@@ -202,16 +205,17 @@ create index if not exists git_events_kind_idx on public.git_events(kind);
 create table if not exists public.projects_assets (
   id uuid primary key default gen_random_uuid(),
   resource_id uuid not null references public.projects(id) on delete cascade,
+  storage_provider text not null default 'tigris',
+  bucket_name text not null,
   attachment_name text not null,
   bucket_alias text not null,
   object_key text unique not null,
-  object_url text,
   file_name text,
   content_type text,
   file_size integer,
   kind text not null,
   status text not null,
-  metadata jsonb,
+  metadata_path text,
   replaced_by_asset_id uuid references public.projects_assets(id) on delete set null,
   deleted_at timestamptz,
   created_at timestamptz not null default timezone('utc'::text, now()),
@@ -228,16 +232,17 @@ for each row execute function public.set_updated_at();
 create table if not exists public.agent_events_assets (
   id uuid primary key default gen_random_uuid(),
   resource_id uuid not null references public.agent_events(id) on delete cascade,
+  storage_provider text not null default 'tigris',
+  bucket_name text not null,
   attachment_name text not null,
   bucket_alias text not null,
   object_key text unique not null,
-  object_url text,
   file_name text,
   content_type text,
   file_size integer,
   kind text not null,
   status text not null,
-  metadata jsonb,
+  metadata_path text,
   replaced_by_asset_id uuid references public.agent_events_assets(id) on delete set null,
   deleted_at timestamptz,
   created_at timestamptz not null default timezone('utc'::text, now()),
