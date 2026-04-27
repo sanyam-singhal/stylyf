@@ -1,5 +1,6 @@
 .output
 .vinxi
+.stylyf-builder
 dist
 node_modules
 design/smoke
