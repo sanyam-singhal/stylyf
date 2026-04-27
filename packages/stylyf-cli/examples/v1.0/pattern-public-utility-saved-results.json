@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "app": {
+    "name": "Quick Tool",
+    "kind": "free-saas-tool",
+    "description": "A public utility with optional authenticated saved results."
+  },
+  "backend": {
+    "mode": "portable",
+    "portable": {
+      "database": "sqlite"
+    }
+  },
+  "media": {
+    "mode": "basic"
+  },
+  "objects": [
+    {
+      "name": "tool_runs",
+      "ownership": "user",
+      "visibility": "private",
+      "fields": [
+        { "name": "input", "type": "json" },
+        { "name": "result", "type": "json" },
+        { "name": "label", "type": "short-text" }
+      ]
+    }
+  ],
+  "flows": [
+    { "name": "savedResults", "object": "tool_runs", "kind": "saved-results" }
+  ],
+  "surfaces": [
+    { "name": "Landing", "kind": "landing", "path": "/", "audience": "public" },
+    { "name": "Tool", "kind": "tool", "path": "/tool", "audience": "public" },
+    { "name": "Saved Results", "kind": "list", "object": "tool_runs", "path": "/saved", "audience": "user" }
+  ]
+}

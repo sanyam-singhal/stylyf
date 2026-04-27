@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "app": {
+    "name": "Ops Console",
+    "kind": "internal-tool",
+    "description": "A generalized internal dashboard for triage, queues, and operational ownership."
+  },
+  "backend": {
+    "mode": "hosted"
+  },
+  "media": {
+    "mode": "basic"
+  },
+  "experience": {
+    "theme": "opal",
+    "mode": "light",
+    "radius": "trim",
+    "density": "compact",
+    "spacing": "tight"
+  },
+  "objects": [
+    {
+      "name": "work_items",
+      "ownership": "user",
+      "visibility": "private",
+      "fields": [
+        { "name": "title", "type": "short-text", "required": true },
+        { "name": "priority", "type": "status", "options": ["low", "medium", "high", "urgent"], "default": "medium" },
+        { "name": "owner_note", "type": "long-text" }
+      ]
+    }
+  ],
+  "flows": [
+    { "name": "workItemApproval", "object": "work_items", "kind": "approval" }
+  ],
+  "surfaces": [
+    { "name": "Dashboard", "kind": "dashboard", "path": "/", "audience": "user" },
+    { "name": "Queue", "kind": "list", "object": "work_items", "path": "/queue", "audience": "user" },
+    { "name": "New Item", "kind": "create", "object": "work_items", "path": "/queue/new", "audience": "user" },
+    { "name": "Settings", "kind": "settings", "path": "/settings", "audience": "user" }
+  ]
+}

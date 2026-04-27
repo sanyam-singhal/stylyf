@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "app": {
+    "name": "Media Intake",
+    "kind": "internal-tool",
+    "description": "A generalized media submission, review, and handoff queue."
+  },
+  "backend": {
+    "mode": "hosted"
+  },
+  "media": {
+    "mode": "rich"
+  },
+  "objects": [
+    {
+      "name": "assets",
+      "ownership": "user",
+      "visibility": "private",
+      "media": [
+        { "name": "files", "kind": "file", "bucketAlias": "uploads", "metadataTable": "asset_files" }
+      ],
+      "fields": [
+        { "name": "title", "type": "short-text", "required": true },
+        { "name": "usage_context", "type": "long-text" },
+        { "name": "state", "type": "status", "options": ["uploaded", "needs_review", "approved", "archived"], "default": "uploaded" }
+      ]
+    }
+  ],
+  "flows": [
+    { "name": "assetReview", "object": "assets", "kind": "approval" }
+  ],
+  "surfaces": [
+    { "name": "Intake", "kind": "create", "object": "assets", "path": "/intake", "audience": "user" },
+    { "name": "Review Queue", "kind": "list", "object": "assets", "path": "/review", "audience": "user" },
+    { "name": "Asset Detail", "kind": "detail", "object": "assets", "path": "/assets/:id", "audience": "user" }
+  ]
+}
