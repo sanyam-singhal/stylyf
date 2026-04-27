@@ -1,7 +1,7 @@
 import { action } from "@solidjs/router";
 import { createProjectWorkspace, runCommand, slugify, writeJson } from "@depths/stylyf-builder-core";
 import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createSupabaseServerClient } from "~/lib/supabase";
 import { requireViewerIdentity } from "~/lib/server/resource-policy";
@@ -74,32 +74,22 @@ async function runGit(projectId: string, cwd: string, logsDir: string, args: str
   return result;
 }
 
-async function createGithubRepo(input: { repoName: string }) {
-  const token = process.env.GITHUB_TOKEN;
-  const org = process.env.GITHUB_ORG ?? "Depths-AI";
-  if (!token) return null;
-
-  const response = await fetch(`https://api.github.com/orgs/${org}/repos`, {
-    method: "POST",
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "X-GitHub-Api-Version": "2022-11-28",
-    },
-    body: JSON.stringify({
-      name: input.repoName,
-      private: true,
-      auto_init: false,
-    }),
+async function runGh(projectId: string, cwd: string, logsDir: string, args: string[]) {
+  const result = await runCommand({ command: "gh", args, cwd, logsDir });
+  await recordCommand({
+    projectId,
+    command: `gh ${args.join(" ")}`,
+    cwd,
+    status: result.exitCode === 0 ? "completed" : "failed",
+    exitCode: result.exitCode,
+    stdoutPath: result.stdoutPath,
+    stderrPath: result.stderrPath,
   });
-  if (!response.ok && response.status !== 422) {
-    throw new Error(`GitHub repo creation failed: ${response.status} ${response.statusText}`);
-  }
-  return {
-    fullName: `${org}/${input.repoName}`,
-    sshUrl: `git@github.com:${org}/${input.repoName}.git`,
-  };
+  return result;
+}
+
+async function readCommandStdout(path: string) {
+  return (await readFile(path, "utf8")).trim();
 }
 
 export const commitAndPushProject = action(async (projectId: string, formData: FormData) => {
@@ -114,21 +104,24 @@ export const commitAndPushProject = action(async (projectId: string, formData: F
   }
 
   const supabase = createSupabaseServerClient();
-  if (!existsSync(join(appPath, ".git"))) {
-    await runGit(projectId, appPath, workspace.logs, ["init"]);
-    await runGit(projectId, appPath, workspace.logs, ["config", "user.email", "builder@depthsai.com"]);
-    await runGit(projectId, appPath, workspace.logs, ["config", "user.name", "Stylyf Builder"]);
-    await runGit(projectId, appPath, workspace.logs, ["branch", "-M", "main"]);
+  if (!existsSync(join(workspace.root, ".git"))) {
+    await runGit(projectId, workspace.root, workspace.logs, ["init"]);
+    await runGit(projectId, workspace.root, workspace.logs, ["config", "user.email", process.env.STYLYF_BUILDER_GIT_USER_EMAIL ?? "builder@depthsai.com"]);
+    await runGit(projectId, workspace.root, workspace.logs, ["config", "user.name", process.env.STYLYF_BUILDER_GIT_USER_NAME ?? "Stylyf Builder"]);
+    await runGit(projectId, workspace.root, workspace.logs, ["branch", "-M", "main"]);
   }
 
   let repoFullName = typeof project.githubRepoFullName === "string" ? project.githubRepoFullName : "";
   if (!repoFullName) {
     const repoName = slugify(`${String(project.name ?? "stylyf-app")}-${projectId.slice(0, 8)}`);
-    const repo = await createGithubRepo({ repoName });
-    if (repo) {
-      repoFullName = repo.fullName;
-      await runGit(projectId, appPath, workspace.logs, ["remote", "add", "origin", repo.sshUrl]);
-      await writeJson(workspace.repo, repo);
+    const org = process.env.STYLYF_BUILDER_GITHUB_ORG ?? process.env.STYLYF_GITHUB_ORG ?? "Depths-AI";
+    repoFullName = `${org}/${repoName}`;
+    const gh = await runGh(projectId, workspace.root, workspace.logs, ["repo", "create", repoFullName, "--private", "--source", workspace.root, "--remote", "origin"]);
+    if (gh.exitCode !== 0) {
+      throw new Error("GitHub repository creation failed. Check gh command logs.");
+    }
+    const repo = { fullName: repoFullName, sshUrl: `git@github.com:${repoFullName}.git` };
+    await writeJson(workspace.repo, repo);
       await supabase.from("git_events").insert({
         project_id: projectId,
         kind: "repo_created",
@@ -138,12 +131,11 @@ export const commitAndPushProject = action(async (projectId: string, formData: F
         payload_path: workspace.repo,
       });
       await supabase.from("projects").update({ githubRepoFullName: repo.fullName }).eq("id", projectId);
-    }
   }
 
   await writeFile(workspace.handoff, `# ${String(project.name ?? "Generated app")}\n\nLatest accepted iteration: ${message}\n\nDeployment remains a manual dev-team handoff.\n`, "utf8");
-  await runGit(projectId, appPath, workspace.logs, ["add", "."]);
-  const commit = await runGit(projectId, appPath, workspace.logs, ["commit", "-m", message]);
+  await runGit(projectId, workspace.root, workspace.logs, ["add", "."]);
+  const commit = await runGit(projectId, workspace.root, workspace.logs, ["commit", "-m", message]);
   const committed = commit.exitCode === 0;
   await supabase.from("git_events").insert({
     project_id: projectId,
@@ -160,21 +152,25 @@ export const commitAndPushProject = action(async (projectId: string, formData: F
 
   await recordTelemetry({ projectId, userId, kind: "commit.created", summary: message, artifactPath: workspace.handoff });
   if (repoFullName) {
-    const push = await runGit(projectId, appPath, workspace.logs, ["push", "-u", "origin", "main"]);
+    const push = await runGit(projectId, workspace.root, workspace.logs, ["push", "-u", "origin", "main"]);
     const pushed = push.exitCode === 0;
+    const head = pushed ? await runGit(projectId, workspace.root, workspace.logs, ["rev-parse", "HEAD"]) : null;
+    const headSha = head && head.exitCode === 0 ? await readCommandStdout(head.stdoutPath) : null;
     await supabase.from("git_events").insert({
       project_id: projectId,
       kind: pushed ? "push_completed" : "push_failed",
       repo_full_name: repoFullName,
       branch: "main",
-      summary: pushed ? "Generated app commit pushed to GitHub." : "Git push failed. Check command logs.",
+      commit_sha: headSha,
+      summary: pushed ? "Builder workspace commit pushed to GitHub." : "Git push failed. Check command logs.",
       payload_path: pushed ? push.stdoutPath : push.stderrPath,
     });
+    if (headSha) await supabase.from("projects").update({ lastPushedSha: headSha }).eq("id", projectId);
     await recordTelemetry({
       projectId,
       userId,
       kind: pushed ? "push.completed" : "push.failed",
-      summary: pushed ? "Generated app commit pushed to GitHub." : "Git push failed.",
+      summary: pushed ? "Builder workspace commit pushed to GitHub." : "Git push failed.",
       artifactPath: pushed ? push.stdoutPath : push.stderrPath,
     });
     if (!pushed) throw new Error("Git push failed. Check command logs for details.");
@@ -183,14 +179,14 @@ export const commitAndPushProject = action(async (projectId: string, formData: F
       project_id: projectId,
       kind: "push_failed",
       branch: "main",
-      summary: "No GITHUB_TOKEN was configured, so the commit remains local in the generated app workspace.",
+      summary: "No GitHub remote was configured, so the commit remains local in the builder workspace.",
       payload_path: workspace.handoff,
     });
     await recordTelemetry({
       projectId,
       userId,
       kind: "push.failed",
-      summary: "No GitHub token configured; commit remains local.",
+      summary: "No GitHub remote configured; commit remains local.",
       artifactPath: workspace.handoff,
     });
   }
