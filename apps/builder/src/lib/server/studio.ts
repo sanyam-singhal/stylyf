@@ -10,7 +10,7 @@ import {
   type ManagedProcess,
 } from "@depths/stylyf-builder-core";
 import { existsSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { requireSession } from "~/lib/auth";
 import { env } from "~/lib/env.server";
@@ -24,6 +24,7 @@ type ProjectWorkspaceRecord = {
   workspacePath: string | null;
   previewUrl: string | null;
   githubRepoFullName: string | null;
+  github_default_branch: string | null;
 };
 
 export type TimelineEvent = {
@@ -58,7 +59,7 @@ async function requireProject(projectId: string, userId: string) {
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from("projects")
-    .select("id, owner_id, name, status, workspacePath, previewUrl, githubRepoFullName")
+    .select("id, owner_id, name, status, workspacePath, previewUrl, githubRepoFullName, github_default_branch")
     .eq("id", projectId)
     .eq("owner_id", userId)
     .single();
@@ -76,6 +77,132 @@ async function recordEvent(input: { projectId: string; userId: string; sessionId
     summary: input.summary.slice(0, 500),
     artifact_path: input.artifactPath ?? null,
   });
+}
+
+async function recordCommand(projectId: string, result: Awaited<ReturnType<typeof runCommand>>) {
+  const status = result.exitCode === 0 ? "completed" : "failed";
+  await createSupabaseServerClient().from("commands").insert({
+    project_id: projectId,
+    command: `${result.command} ${result.args.join(" ")}`.trim(),
+    cwd: result.cwd,
+    status,
+    exit_code: result.exitCode,
+    stdout_path: result.stdoutPath,
+    stderr_path: result.stderrPath,
+    completed_at: new Date().toISOString(),
+  });
+  return status;
+}
+
+async function runTrackedCommand(input: { projectId: string; command: string; args: string[]; cwd: string; logsDir: string }) {
+  const result = await runCommand({
+    command: input.command,
+    args: input.args,
+    cwd: input.cwd,
+    logsDir: input.logsDir,
+  });
+  await recordCommand(input.projectId, result);
+  return result;
+}
+
+function summarizeCommitMessage(prompt: string) {
+  return `builder iteration: ${prompt.replace(/\s+/g, " ").slice(0, 72)}`;
+}
+
+async function commitAndPushProject(input: { project: ProjectWorkspaceRecord; userId: string; sessionId: string; prompt: string }) {
+  if (!input.project.workspacePath) return;
+  const logsDir = join(input.project.workspacePath, "logs");
+  await mkdir(logsDir, { recursive: true });
+
+  const statusResult = await runTrackedCommand({
+    projectId: input.project.id,
+    command: "git",
+    args: ["status", "--short"],
+    cwd: input.project.workspacePath,
+    logsDir,
+  });
+  if (statusResult.exitCode !== 0) {
+    await recordEvent({ projectId: input.project.id, userId: input.userId, sessionId: input.sessionId, type: "git.status_failed", summary: "Could not inspect project git status." });
+    return;
+  }
+
+  const statusText = (await readFile(statusResult.stdoutPath, "utf8")).trim();
+  if (!statusText) {
+    await recordEvent({ projectId: input.project.id, userId: input.userId, sessionId: input.sessionId, type: "git.clean", summary: "No file changes to commit." });
+    return;
+  }
+
+  const addResult = await runTrackedCommand({
+    projectId: input.project.id,
+    command: "git",
+    args: ["add", "."],
+    cwd: input.project.workspacePath,
+    logsDir,
+  });
+  if (addResult.exitCode !== 0) throw new Error("Could not stage project changes.");
+
+  const commitMessage = summarizeCommitMessage(input.prompt);
+  const commitResult = await runTrackedCommand({
+    projectId: input.project.id,
+    command: "git",
+    args: ["commit", "-m", commitMessage],
+    cwd: input.project.workspacePath,
+    logsDir,
+  });
+  if (commitResult.exitCode !== 0) throw new Error("Could not commit project changes.");
+
+  const shaResult = await runTrackedCommand({
+    projectId: input.project.id,
+    command: "git",
+    args: ["rev-parse", "HEAD"],
+    cwd: input.project.workspacePath,
+    logsDir,
+  });
+  const commitSha = shaResult.exitCode === 0 ? (await readFile(shaResult.stdoutPath, "utf8")).trim() : null;
+  const branch = input.project.github_default_branch ?? "main";
+  const supabase = createSupabaseServerClient();
+  await supabase.from("git_events").insert({
+    project_id: input.project.id,
+    kind: "commit_created",
+    repo_full_name: input.project.githubRepoFullName,
+    branch,
+    commit_sha: commitSha,
+    summary: commitMessage,
+  });
+  await recordEvent({ projectId: input.project.id, userId: input.userId, sessionId: input.sessionId, type: "git.committed", summary: commitSha ? `Committed ${commitSha.slice(0, 7)}.` : "Committed project changes." });
+
+  if (!input.project.githubRepoFullName) {
+    await recordEvent({ projectId: input.project.id, userId: input.userId, sessionId: input.sessionId, type: "git.push_skipped", summary: "No GitHub remote is connected for this project." });
+    return;
+  }
+
+  const pushResult = await runTrackedCommand({
+    projectId: input.project.id,
+    command: "git",
+    args: ["push", "origin", branch],
+    cwd: input.project.workspacePath,
+    logsDir,
+  });
+  const pushed = pushResult.exitCode === 0;
+  await supabase.from("git_events").insert({
+    project_id: input.project.id,
+    kind: pushed ? "push_completed" : "push_failed",
+    repo_full_name: input.project.githubRepoFullName,
+    branch,
+    commit_sha: commitSha,
+    summary: pushed ? "Pushed builder iteration." : "Project push failed.",
+  });
+  if (pushed) {
+    await supabase.from("projects").update({ lastPushedSha: commitSha }).eq("id", input.project.id);
+  }
+  await recordEvent({
+    projectId: input.project.id,
+    userId: input.userId,
+    sessionId: input.sessionId,
+    type: pushed ? "git.pushed" : "git.push_failed",
+    summary: pushed ? "Pushed project changes." : "Project push failed.",
+  });
+  if (!pushed) throw new Error("Project push failed. Check the recorded git logs.");
 }
 
 function summarizeAgentEvent(event: BuilderAgentEvent) {
@@ -174,6 +301,7 @@ export const sendAgentPrompt = action(async (projectId: string, formData: FormDa
     await recordEvent({ projectId, userId, sessionId: session.id, type: event.type, summary: summarizeAgentEvent(event) });
   }
 
+  await commitAndPushProject({ project, userId, sessionId: session.id, prompt });
   await supabase.from("agent_sessions").update({ status: "completed", thread_id: adapterSessionId }).eq("id", session.id);
   await revalidate(getTimeline.keyFor(projectId));
   return { ok: true, message: "Sent to builder." };
