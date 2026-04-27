@@ -281,6 +281,53 @@ function buildPreviewUrl(port: number) {
   return `${base.protocol}//${base.hostname}:${port}`;
 }
 
+function isProcessAlive(pid: number | null | undefined) {
+  if (!pid) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function stopProcessGroup(pid: number | null | undefined) {
+  if (!pid) return;
+  try {
+    process.kill(-pid, "SIGTERM");
+  } catch {
+    try {
+      process.kill(pid, "SIGTERM");
+    } catch {
+      // Process is already gone or owned elsewhere.
+    }
+  }
+}
+
+async function markExistingPreviewStale(projectId: string) {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("preview_processes")
+    .select("id,pid,status")
+    .eq("project_id", projectId)
+    .in("status", ["starting", "running"])
+    .order("updated_at", { ascending: false })
+    .limit(5);
+  if (error) throw error;
+
+  for (const preview of data ?? []) {
+    const pid = typeof preview.pid === "number" ? preview.pid : null;
+    if (isProcessAlive(pid)) await stopProcessGroup(pid);
+    await supabase
+      .from("preview_processes")
+      .update({
+        status: "stale",
+        stopped_at: new Date().toISOString(),
+      })
+      .eq("id", preview.id);
+  }
+}
+
 export const getTimeline = query(async (projectId: string): Promise<TimelineEvent[]> => {
   "use server";
   if (projectId === "demo") return [];
@@ -406,6 +453,7 @@ export const startPreview = action(async (projectId: string) => {
     await existing.stop();
     processRegistry.delete(projectId);
   }
+  await markExistingPreviewStale(projectId);
 
   const port = await allocatePort();
   const preview = startManagedProcess({
@@ -417,7 +465,18 @@ export const startPreview = action(async (projectId: string) => {
   processRegistry.set(projectId, preview);
 
   const previewUrl = buildPreviewUrl(port);
-  await createSupabaseServerClient().from("projects").update({ preview_port: port, previewUrl }).eq("id", projectId);
+  const supabase = createSupabaseServerClient();
+  const now = new Date().toISOString();
+  const { error: previewError } = await supabase.from("preview_processes").insert({
+    project_id: projectId,
+    port,
+    pid: preview.pid,
+    preview_url: previewUrl,
+    status: "running",
+    started_at: now,
+  });
+  if (previewError) throw previewError;
+  await supabase.from("projects").update({ preview_port: port, previewUrl }).eq("id", projectId);
   await recordEvent({ projectId, userId, type: "preview.started", summary: `Preview started.` });
   await revalidate(getTimeline.keyFor(projectId));
   return { ok: true, previewUrl };
@@ -433,7 +492,28 @@ export const stopPreview = action(async (projectId: string) => {
     await existing.stop();
     processRegistry.delete(projectId);
   }
-  await createSupabaseServerClient().from("projects").update({ preview_port: null, previewUrl: null }).eq("id", projectId);
+  const supabase = createSupabaseServerClient();
+  const { data: previews, error: previewError } = await supabase
+    .from("preview_processes")
+    .select("id,pid,status")
+    .eq("project_id", projectId)
+    .in("status", ["starting", "running", "stale"])
+    .order("updated_at", { ascending: false })
+    .limit(5);
+  if (previewError) throw previewError;
+
+  for (const preview of previews ?? []) {
+    const pid = typeof preview.pid === "number" ? preview.pid : null;
+    if (isProcessAlive(pid)) await stopProcessGroup(pid);
+    await supabase
+      .from("preview_processes")
+      .update({
+        status: "stopped",
+        stopped_at: new Date().toISOString(),
+      })
+      .eq("id", preview.id);
+  }
+  await supabase.from("projects").update({ preview_port: null, previewUrl: null }).eq("id", projectId);
   await recordEvent({ projectId, userId, type: "preview.stopped", summary: "Preview stopped." });
   await revalidate(getTimeline.keyFor(projectId));
   return { ok: true };
