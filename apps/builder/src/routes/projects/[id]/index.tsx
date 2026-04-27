@@ -13,12 +13,15 @@ import { LoadingState } from "~/components/registry/information-states/loading-s
 import { PageHeader } from "~/components/registry/information-states/page-header";
 import { getProjects } from "~/lib/server/queries/projects-detail";
 import { runStylyfProjectStep } from "~/lib/server/actions/stylyf-loop";
+import { startProjectPreview, stopProjectPreview } from "~/lib/server/actions/preview-loop";
 
 export default function ProjectsIdRoute() {
   const params = useParams();
   const projectData = createAsync(() => getProjects(params.id ?? ""));
   const stylyfSubmission = useSubmission(runStylyfProjectStep);
-  const pending = () => stylyfSubmission.pending;
+  const startPreviewSubmission = useSubmission(startProjectPreview);
+  const stopPreviewSubmission = useSubmission(stopProjectPreview);
+  const pending = () => stylyfSubmission.pending || startPreviewSubmission.pending || stopPreviewSubmission.pending;
   return (
     <>
       <Title>Project workbench</Title>
@@ -58,11 +61,24 @@ export default function ProjectsIdRoute() {
                           <form action={runStylyfProjectStep.with(params.id ?? "", "generate")} method="post">
                             <Button type="submit" pending={pending()}>Generate app</Button>
                           </form>
+                          <form action={startProjectPreview.with(params.id ?? "")} method="post">
+                            <Button type="submit" tone="outline" pending={pending()}>Start preview</Button>
+                          </form>
+                          <form action={stopProjectPreview.with(params.id ?? "")} method="post">
+                            <Button type="submit" tone="ghost" pending={pending()}>Stop preview</Button>
+                          </form>
                         </div>
                         <Show when={stylyfSubmission.result}>
                           {result => (
                             <div class="rounded-[var(--radius-lg)] border border-border/80 bg-muted-soft p-3 text-sm text-muted-foreground">
                               Step {result().step} {result().ok ? "completed" : "failed"} with exit code {String(result().exitCode)}.
+                            </div>
+                          )}
+                        </Show>
+                        <Show when={startPreviewSubmission.result}>
+                          {result => (
+                            <div class="rounded-[var(--radius-lg)] border border-border/80 bg-muted-soft p-3 text-sm text-muted-foreground">
+                              Preview started on <a class="font-medium text-foreground underline" href={result().previewUrl} target="_blank">{result().previewUrl}</a>.
                             </div>
                           )}
                         </Show>
@@ -75,11 +91,29 @@ export default function ProjectsIdRoute() {
                     body={
                       <div class="space-y-2 text-sm text-muted-foreground">
                         <p>Generated app source lands under the project workspace.</p>
-                        <p>Future steps wire preview, Codex, Webknife, commits, pushes, and handoff state.</p>
+                        <p>Preview runs are local managed processes. Deployment remains a manual dev-team handoff.</p>
                       </div>
                     }
                   />
                 </div>
+                <Show when={projectData()?.previewUrl || startPreviewSubmission.result?.previewUrl}>
+                  {previewUrl => (
+                    <DetailPanel
+                      title="Live preview"
+                      description="The iframe points at the managed local dev process for this generated app."
+                      body={
+                        <div class="overflow-hidden rounded-[var(--radius-xl)] border border-border bg-background shadow-soft">
+                          <iframe
+                            src={previewUrl()}
+                            title="Generated app preview"
+                            class="h-[42rem] w-full bg-background"
+                            sandbox="allow-forms allow-scripts allow-same-origin allow-popups"
+                          />
+                        </div>
+                      }
+                    />
+                  )}
+                </Show>
               </Stack>
               </Show>
             </Show>

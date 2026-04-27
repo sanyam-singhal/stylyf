@@ -1,4 +1,4 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { basename, join, resolve, sep } from "node:path";
@@ -233,12 +233,14 @@ async function isPortFree(port: number) {
 export function startManagedProcess(input: { id: string; command: string; args?: string[]; cwd: string }): ManagedProcess {
   const args = input.args ?? [];
   assertAllowedCommand(input.command, args);
-  const child: ChildProcessWithoutNullStreams = spawn(input.command, args, {
+  const child: ChildProcess = spawn(input.command, args, {
     cwd: input.cwd,
     shell: false,
     detached: true,
+    stdio: "ignore",
     env: process.env,
   });
+  child.unref();
   return {
     id: input.id,
     command: input.command,
