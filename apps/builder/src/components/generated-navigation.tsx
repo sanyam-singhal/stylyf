@@ -1,4 +1,6 @@
 import { For, Show } from "solid-js";
+import { useLocation } from "@solidjs/router";
+import { FolderKanban, Plus, Settings } from "lucide-solid";
 import { SidebarNav } from "~/components/registry/navigation-workflow/sidebar-nav";
 import { cn } from "~/lib/cn";
 
@@ -51,20 +53,6 @@ export const navigationConfig = {
       "command": true
     },
     {
-      "label": "Agent events",
-      "href": "/agent-events",
-      "group": "App",
-      "auth": "user",
-      "command": true
-    },
-    {
-      "label": "Create Agent event",
-      "href": "/agent-events/new",
-      "group": "App",
-      "auth": "user",
-      "command": true
-    },
-    {
       "label": "Settings",
       "href": "/settings",
       "group": "App",
@@ -76,30 +64,42 @@ export const navigationConfig = {
 
 const sidebarGroups = [
   {
-    "label": "Navigation",
+    "label": "Build",
     "items": [
       {
         "label": "Projects",
         "href": "/",
-        "auth": "user"
+        "auth": "user",
+        "icon": <FolderKanban class="size-4" />
       },
       {
         "label": "New Project",
         "href": "/projects/new",
-        "auth": "user"
+        "auth": "user",
+        "icon": <Plus class="size-4" />
       },
       {
         "label": "Settings",
         "href": "/settings",
-        "auth": "user"
+        "auth": "user",
+        "icon": <Settings class="size-4" />
       }
     ]
   }
 ] as const;
 
 export function GeneratedNavigation(props: { class?: string; shell?: "sidebar-app" | "topbar-app" | "docs-shell" | "marketing-shell" }) {
+  const location = useLocation();
+  const groups = () => sidebarGroups.map(group => ({
+    ...group,
+    items: group.items.map(item => ({
+      ...item,
+      active: item.href === "/" ? location.pathname === "/" || location.pathname === "/projects" : location.pathname.startsWith(item.href),
+    })),
+  }));
+
   if (props.shell === "sidebar-app" || props.shell === "docs-shell") {
-    return <SidebarNav title="Stylyf Builder" groups={sidebarGroups as any} class={props.class} />;
+    return <SidebarNav title="Stylyf Builder" groups={groups()} class={props.class} />;
   }
 
   return (

@@ -25,7 +25,8 @@ export function SidebarAppShell(userProps: SidebarAppShellProps) {
   ]);
 
   return (
-    <div class={cn("grid min-h-screen gap-[var(--space-6)] lg:grid-cols-[18rem_minmax(0,1fr)]", local.class)} {...others}>
+    <div class={cn("builder-stage", local.class)} {...others}>
+      <div class="builder-shell grid gap-[var(--space-6)] lg:grid-cols-[19.5rem_minmax(0,1fr)]">
       <div class="lg:sticky lg:top-[var(--space-6)] lg:self-start">
         {local.navigation ?? <SidebarNav title="Stylyf Builder" />}
       </div>
@@ -39,7 +40,7 @@ export function SidebarAppShell(userProps: SidebarAppShellProps) {
         />
         <main class="min-w-0">{local.children}</main>
       </div>
+      </div>
     </div>
   );
 }
-

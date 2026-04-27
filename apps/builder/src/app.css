@@ -849,6 +849,165 @@
     color: var(--foreground);
     box-shadow: var(--shadow-inset);
   }
+
+  .builder-stage {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 18% 8%, color-mix(in oklab, var(--primary) 22%, transparent) 0%, transparent 28%),
+      radial-gradient(circle at 92% 14%, color-mix(in oklab, var(--secondary) 22%, transparent) 0%, transparent 26%),
+      radial-gradient(circle at 76% 78%, color-mix(in oklab, var(--info) 13%, transparent) 0%, transparent 34%),
+      linear-gradient(135deg, color-mix(in oklab, var(--background) 82%, white 18%), color-mix(in oklab, var(--background-subtle) 84%, var(--muted) 16%));
+  }
+
+  .builder-shell {
+    width: min(100%, 96rem);
+    margin-inline: auto;
+    padding: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .builder-sidebar {
+    position: relative;
+    overflow: hidden;
+    border-radius: calc(var(--radius-3xl) + 0.35rem);
+    border: 1px solid color-mix(in oklab, var(--ink-foreground) 10%, transparent);
+    background:
+      radial-gradient(circle at 22% 0%, color-mix(in oklab, var(--primary) 28%, transparent) 0%, transparent 34%),
+      radial-gradient(circle at 84% 18%, color-mix(in oklab, var(--secondary) 22%, transparent) 0%, transparent 30%),
+      linear-gradient(180deg, color-mix(in oklab, var(--ink) 86%, black 14%), color-mix(in oklab, var(--ink) 94%, black 6%));
+    color: var(--ink-foreground);
+    box-shadow: 0 36px 90px -44px oklch(0 0 0 / 0.72);
+  }
+
+  .builder-sidebar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(color-mix(in oklab, var(--ink-foreground) 8%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in oklab, var(--ink-foreground) 8%, transparent) 1px, transparent 1px);
+    background-size: 38px 38px;
+    mask-image: linear-gradient(180deg, black, transparent 78%);
+  }
+
+  .builder-sidebar > * {
+    position: relative;
+  }
+
+  .builder-sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: var(--radius-xl);
+    border: 1px solid transparent;
+    padding: 0.78rem 0.85rem;
+    color: color-mix(in oklab, var(--ink-foreground) 72%, transparent);
+  }
+
+  .builder-sidebar-link:hover {
+    border-color: color-mix(in oklab, var(--ink-foreground) 14%, transparent);
+    background: color-mix(in oklab, var(--ink-foreground) 8%, transparent);
+    color: var(--ink-foreground);
+  }
+
+  .builder-sidebar-link[data-active="true"] {
+    border-color: color-mix(in oklab, var(--primary) 34%, transparent);
+    background:
+      linear-gradient(135deg, color-mix(in oklab, var(--primary) 24%, transparent), color-mix(in oklab, var(--secondary) 12%, transparent));
+    color: var(--ink-foreground);
+    box-shadow: inset 0 1px 0 color-mix(in oklab, white 18%, transparent);
+  }
+
+  .builder-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: calc(var(--radius-3xl) + 0.45rem);
+    border: 1px solid color-mix(in oklab, var(--border) 78%, transparent);
+    background:
+      radial-gradient(circle at 12% 12%, color-mix(in oklab, var(--primary) 20%, transparent) 0%, transparent 28%),
+      radial-gradient(circle at 86% 18%, color-mix(in oklab, var(--secondary) 22%, transparent) 0%, transparent 28%),
+      linear-gradient(135deg, color-mix(in oklab, var(--card) 86%, white 14%), color-mix(in oklab, var(--muted-soft) 78%, var(--card) 22%));
+    box-shadow: var(--shadow-floating);
+  }
+
+  .builder-hero::after {
+    content: "";
+    position: absolute;
+    inset: auto -8% -46% 44%;
+    height: 18rem;
+    rotate: -7deg;
+    border-radius: 999px;
+    background: linear-gradient(90deg, color-mix(in oklab, var(--primary) 52%, transparent), color-mix(in oklab, var(--secondary) 34%, transparent));
+    filter: blur(18px);
+    opacity: 0.42;
+  }
+
+  .builder-hero > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .builder-panel {
+    border-radius: calc(var(--radius-2xl) + 0.25rem);
+    border: 1px solid color-mix(in oklab, var(--border) 78%, transparent);
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--card) 92%, white 8%), color-mix(in oklab, var(--card) 84%, var(--muted-soft) 16%));
+    box-shadow: 0 24px 70px -42px oklch(0.12 0.03 255 / 0.42);
+  }
+
+  .builder-panel-ink {
+    border-radius: calc(var(--radius-2xl) + 0.25rem);
+    border: 1px solid color-mix(in oklab, var(--ink-foreground) 10%, transparent);
+    background:
+      radial-gradient(circle at 10% 0%, color-mix(in oklab, var(--primary) 30%, transparent), transparent 36%),
+      linear-gradient(180deg, color-mix(in oklab, var(--ink) 92%, black 8%), var(--ink));
+    color: var(--ink-foreground);
+    box-shadow: 0 26px 70px -42px oklch(0 0 0 / 0.72);
+  }
+
+  .builder-kpi {
+    border-radius: var(--radius-2xl);
+    border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+    background: color-mix(in oklab, var(--background) 64%, var(--card) 36%);
+    padding: var(--space-4);
+    box-shadow: var(--shadow-inset);
+  }
+
+  .builder-input {
+    width: 100%;
+    border-radius: var(--radius-xl);
+    border: 1px solid color-mix(in oklab, var(--input) 90%, var(--border) 10%);
+    background: color-mix(in oklab, var(--background) 84%, var(--card) 16%);
+    padding: 0.78rem 0.95rem;
+    color: var(--foreground);
+    box-shadow: var(--shadow-inset);
+    outline: none;
+  }
+
+  .builder-input:focus {
+    border-color: color-mix(in oklab, var(--primary) 48%, var(--input) 52%);
+    box-shadow:
+      var(--shadow-inset),
+      0 0 0 3px color-mix(in oklab, var(--ring) 16%, transparent);
+  }
+
+  .builder-rail-card {
+    border-radius: var(--radius-2xl);
+    border: 1px solid color-mix(in oklab, var(--ink-foreground) 10%, transparent);
+    background: color-mix(in oklab, var(--ink-foreground) 7%, transparent);
+    padding: var(--space-4);
+    color: color-mix(in oklab, var(--ink-foreground) 78%, transparent);
+  }
+
+  .builder-orb {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-2xl);
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: var(--primary-foreground);
+    box-shadow: 0 18px 46px -22px color-mix(in oklab, var(--primary) 72%, black 28%);
+  }
 }
 
 @layer utilities {

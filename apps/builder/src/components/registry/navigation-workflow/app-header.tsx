@@ -34,22 +34,19 @@ export function AppHeader(userProps: AppHeaderProps) {
   const [local, others] = splitProps(props, ["actions", "breadcrumbs", "class", "description", "meta", "tabs", "title"]);
 
   return (
-    <section
-      class={cn(
-        "ui-shell-muted space-y-[var(--space-4)] border border-border/80 px-[var(--space-5)] py-[var(--space-5)] shadow-soft",
-        local.class,
-      )}
-      {...others}
-    >
+    <section class={cn("builder-hero space-y-[var(--space-4)] px-[var(--space-6)] py-[var(--space-6)]", local.class)} {...others}>
       <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div class="min-w-0 space-y-3">
-          <div>{local.breadcrumbs}</div>
-          <h3 class="text-2xl font-semibold tracking-[-0.03em] text-foreground">{local.title}</h3>
-          <div class="max-w-2xl text-sm leading-6 text-muted-foreground">{local.description}</div>
+          <div class="text-muted-foreground">{local.breadcrumbs}</div>
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="builder-orb size-10 font-mono text-xs font-black">AI</span>
+            <h3 class="text-[clamp(2rem,4vw,3.7rem)] font-semibold tracking-[-0.065em] text-foreground">{local.title}</h3>
+          </div>
+          <div class="max-w-3xl text-base leading-7 text-muted-foreground">{local.description}</div>
         </div>
         <div class="flex flex-col items-stretch gap-3 lg:items-end">
           <Show when={local.meta}>
-            <div class="ui-shell flex flex-wrap items-center gap-2 p-2">{local.meta}</div>
+            <div class="builder-panel flex flex-wrap items-center gap-2 p-2">{local.meta}</div>
           </Show>
           <Show when={local.actions}>
             <div>{local.actions}</div>
