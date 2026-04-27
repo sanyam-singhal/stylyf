@@ -22,6 +22,7 @@
     "builder:check": "npm --prefix apps/builder run check",
     "builder:build": "npm --prefix apps/builder run build",
     "builder:start": "npm --prefix apps/builder run start",
+    "builder:smoke": "node scripts/smoke-stylyf-builder.mjs",
     "builder-core:check": "npm --prefix packages/stylyf-builder-core run check",
     "builder-core:build": "npm --prefix packages/stylyf-builder-core run build",
     "builder-core:smoke": "npm --prefix packages/stylyf-builder-core run smoke",
