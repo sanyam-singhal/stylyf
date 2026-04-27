@@ -25,6 +25,7 @@ export type ProjectWorkspace = {
   metadata: string;
   handoff: string;
   repo: string;
+  events: string;
 };
 
 export type CommandResult = {
@@ -51,7 +52,8 @@ export type BuilderCommandEvent =
   | { type: "command.completed"; result: CommandResult; completedAt: string }
   | { type: "workspace.created"; workspace: ProjectWorkspace; summary: string }
   | { type: "git.initialized"; workspace: ProjectWorkspace; commit?: CommandResult }
-  | { type: "github.linked"; repoFullName: string; remote: string };
+  | { type: "github.repo_created"; repoFullName: string; remote?: string }
+  | { type: "git.pushed"; repoFullName: string; branch: string; result: CommandResult };
 
 export type BootstrapProjectInput = {
   projectId: string;
@@ -119,6 +121,10 @@ export function slugify(input: string) {
     .slice(0, 80) || "project";
 }
 
+function safeSegment(input: string, fallback = "project") {
+  return slugify(input).slice(0, 96) || fallback;
+}
+
 export function assertInside(parent: string, child: string) {
   const resolvedParent = resolve(parent);
   const resolvedChild = resolve(child);
@@ -138,7 +144,8 @@ export async function ensureBuilderPaths(paths = resolveBuilderPaths()) {
 export async function createProjectWorkspace(input: { projectId: string; name: string; root?: string }) {
   const paths = await ensureBuilderPaths(resolveBuilderPaths(input.root));
   const slug = slugify(input.name);
-  const workspaceRoot = assertInside(paths.workspaces, join(paths.workspaces, `${slug}-${input.projectId}`));
+  const projectSegment = safeSegment(input.projectId, "project");
+  const workspaceRoot = assertInside(paths.workspaces, join(paths.workspaces, `${slug}-${projectSegment}`));
   const workspace: ProjectWorkspace = {
     projectId: input.projectId,
     slug,
@@ -151,6 +158,7 @@ export async function createProjectWorkspace(input: { projectId: string; name: s
     metadata: join(workspaceRoot, "metadata.json"),
     handoff: join(workspaceRoot, "handoff.md"),
     repo: join(workspaceRoot, "repo.json"),
+    events: join(workspaceRoot, "events.jsonl"),
   };
 
   for (const directory of [workspace.root, workspace.app, workspace.specs, workspace.logs, workspace.screenshots, workspace.webknife]) {
@@ -187,6 +195,10 @@ export function redact(input: string) {
       return line.replace(tokenValuePattern, "<redacted>");
     })
     .join("\n");
+}
+
+function redactArgs(args: string[]) {
+  return args.map(arg => redact(arg));
 }
 
 export function assertAllowedCommand(command: string, args: string[]) {
@@ -245,7 +257,7 @@ export async function runCommand(input: { command: string; args?: string[]; cwd:
 
   return {
     command: input.command,
-    args,
+    args: redactArgs(args),
     cwd: input.cwd,
     exitCode,
     stdoutPath,
@@ -304,12 +316,28 @@ This repository is a Stylyf Builder workspace. The generated app lives in \`app/
 ## Agent Loop
 
 Use \`AGENTS.md\` as the operating contract. Prefer Stylyf IR and CLI regeneration before raw source edits.
+
+## Workspace Layout
+
+- \`specs/base.json\` starts the app contract.
+- \`specs/*.chunk.json\` should hold incremental app, style, route, object, API, and media edits.
+- \`app/\` is the generated app and must stay standalone.
+- \`logs/\`, \`screenshots/\`, and \`.webknife/\` are artifact directories.
+- \`repo.json\`, \`metadata.json\`, \`events.jsonl\`, and \`handoff.md\` are builder-owned handoff files.
 `;
 }
 
 export async function bootstrapProjectWorkspace(input: BootstrapProjectInput): Promise<BootstrapProjectResult> {
   const workspace = await createProjectWorkspace({ projectId: input.projectId, name: input.name, root: input.root });
   const commands: CommandResult[] = [];
+  const defaultBranch = input.git?.defaultBranch ?? "main";
+  const githubEnabled = input.github?.enabled === true;
+  const repoFullName = githubEnabled
+    ? `${input.github?.org ?? process.env.STYLYF_GITHUB_ORG ?? ""}/${input.github?.repoName ?? workspace.slug}`
+    : undefined;
+  if (githubEnabled && (!repoFullName || repoFullName.startsWith("/"))) {
+    throw new Error("GitHub bootstrap requires github.org or STYLYF_GITHUB_ORG.");
+  }
   const events: BuilderCommandEvent[] = [
     {
       type: "workspace.created",
@@ -333,44 +361,56 @@ export async function bootstrapProjectWorkspace(input: BootstrapProjectInput): P
     slug: workspace.slug,
     createdAt: new Date().toISOString(),
   });
+  await writeJson(workspace.repo, {
+    repoFullName: repoFullName ?? null,
+    remoteUrl: null,
+    defaultBranch,
+    createdAt: new Date().toISOString(),
+  });
+  await writeFile(workspace.events, `${JSON.stringify(events[0])}\n`, "utf8");
 
   commands.push(await runRequiredCommand({ command: "git", args: ["init"], cwd: workspace.root, logsDir: workspace.logs }));
-  commands.push(await runRequiredCommand({ command: "git", args: ["branch", "-M", input.git?.defaultBranch ?? "main"], cwd: workspace.root, logsDir: workspace.logs }));
+  commands.push(await runRequiredCommand({ command: "git", args: ["branch", "-M", defaultBranch], cwd: workspace.root, logsDir: workspace.logs }));
   if (input.git?.userName) {
     commands.push(await runRequiredCommand({ command: "git", args: ["config", "user.name", input.git.userName], cwd: workspace.root, logsDir: workspace.logs }));
   }
   if (input.git?.userEmail) {
     commands.push(await runRequiredCommand({ command: "git", args: ["config", "user.email", input.git.userEmail], cwd: workspace.root, logsDir: workspace.logs }));
   }
-  commands.push(await runRequiredCommand({ command: "git", args: ["add", "."], cwd: workspace.root, logsDir: workspace.logs }));
-  const commit = await runRequiredCommand({ command: "git", args: ["commit", "-m", "bootstrap stylyf builder workspace"], cwd: workspace.root, logsDir: workspace.logs });
-  commands.push(commit);
-  events.push({ type: "git.initialized", workspace, commit });
 
-  let repoFullName: string | undefined;
   let remoteUrl: string | undefined;
-  if (input.github?.enabled) {
-    const org = input.github.org ?? process.env.STYLYF_GITHUB_ORG;
-    if (!org) throw new Error("GitHub bootstrap requires github.org or STYLYF_GITHUB_ORG.");
-    repoFullName = `${org}/${input.github.repoName ?? workspace.slug}`;
-    const visibility = input.github.private === false ? "--public" : "--private";
+  if (githubEnabled && repoFullName) {
+    const visibility = input.github?.private === false ? "--public" : "--private";
     commands.push(await runRequiredCommand({
       command: "gh",
       args: ["repo", "create", repoFullName, visibility, "--source", workspace.root, "--remote", "origin"],
       cwd: workspace.root,
       logsDir: workspace.logs,
     }));
-    remoteUrl = `git@github.com:${repoFullName}.git`;
-    commands.push(await runRequiredCommand({ command: "git", args: ["push", "-u", "origin", input.git?.defaultBranch ?? "main"], cwd: workspace.root, logsDir: workspace.logs }));
-    events.push({ type: "github.linked", repoFullName, remote: remoteUrl });
+    const remoteResult = await runRequiredCommand({ command: "git", args: ["remote", "get-url", "origin"], cwd: workspace.root, logsDir: workspace.logs });
+    commands.push(remoteResult);
+    remoteUrl = (await readFile(remoteResult.stdoutPath, "utf8")).trim() || undefined;
+    await writeJson(workspace.repo, {
+      repoFullName,
+      remoteUrl: remoteUrl ?? null,
+      defaultBranch,
+      createdAt: new Date().toISOString(),
+    });
+    events.push({ type: "github.repo_created", repoFullName, remote: remoteUrl });
   }
 
-  await writeJson(workspace.repo, {
-    repoFullName,
-    remoteUrl,
-    defaultBranch: input.git?.defaultBranch ?? "main",
-    createdAt: new Date().toISOString(),
-  });
+  commands.push(await runRequiredCommand({ command: "git", args: ["add", "."], cwd: workspace.root, logsDir: workspace.logs }));
+  const commit = await runRequiredCommand({ command: "git", args: ["commit", "-m", "bootstrap stylyf builder workspace"], cwd: workspace.root, logsDir: workspace.logs });
+  commands.push(commit);
+  events.push({ type: "git.initialized", workspace, commit });
+
+  if (githubEnabled && repoFullName) {
+    const push = await runRequiredCommand({ command: "git", args: ["push", "-u", "origin", defaultBranch], cwd: workspace.root, logsDir: workspace.logs });
+    commands.push(push);
+    events.push({ type: "git.pushed", repoFullName, branch: defaultBranch, result: push });
+  }
+
+  await writeFile(workspace.events, `${events.map(event => JSON.stringify(event)).join("\n")}\n`, "utf8");
 
   return { workspace, repoFullName, remoteUrl, commands, events };
 }
