@@ -1,6 +1,7 @@
 import { Meta, Title } from "@solidjs/meta";
 import { ErrorBoundary, For, Show } from "solid-js";
 import { createAsync, useParams, useSubmission } from "@solidjs/router";
+import { Bot, Braces, Camera, GitBranch, MonitorPlay, Play, Save, ShieldCheck, WandSparkles } from "lucide-solid";
 import { SidebarAppShell } from "~/components/shells/app/sidebar-app";
 import { GeneratedNavigation } from "~/components/generated-navigation";
 import { ResourceDetailPageShell } from "~/components/shells/page/resource-detail";
@@ -49,9 +50,22 @@ export default function ProjectsIdRoute() {
               <Show when={projectData()} fallback={<EmptyState eyebrow="Not found" title="Project not found" description="The requested record was not returned by the generated detail query." />}>
               <Stack>
                 <PageHeader
+                  eyebrow="Workbench"
                   title={projectData()?.name ?? "Project workbench"}
                   description={projectData()?.summary || "Draft, validate, plan, and generate the standalone app source from this workspace."}
+                  meta={
+                    <>
+                      <span class="ui-chip ui-chip-accent">{projectData()?.status ?? "draft"}</span>
+                      <span class="ui-chip ui-chip-muted">{projectData()?.githubRepoFullName ? "GitHub linked" : "Local workspace"}</span>
+                    </>
+                  }
                 />
+                <div class="grid gap-[var(--space-4)] md:grid-cols-4">
+                  <div class="builder-kpi"><Braces class="mb-3 size-5 text-primary" /><div class="font-semibold">IR draft</div><p class="text-sm text-muted-foreground">{activeIr() ? `v${activeIr()?.version}` : "none"}</p></div>
+                  <div class="builder-kpi"><MonitorPlay class="mb-3 size-5 text-info" /><div class="font-semibold">Preview</div><p class="text-sm text-muted-foreground">{projectData()?.previewUrl ? "running" : "stopped"}</p></div>
+                  <div class="builder-kpi"><Camera class="mb-3 size-5 text-secondary-foreground" /><div class="font-semibold">Webknife</div><p class="text-sm text-muted-foreground">{timeline()?.webknifeRuns.length ?? 0} runs</p></div>
+                  <div class="builder-kpi"><GitBranch class="mb-3 size-5 text-success" /><div class="font-semibold">Git handoff</div><p class="text-sm text-muted-foreground">{timeline()?.gitEvents.length ?? 0} events</p></div>
+                </div>
                 <DetailPanel
                   title="Friendly IR panes"
                   description="These controls compose an explicit Stylyf spec. Use raw IR only when the panes are too coarse."
@@ -60,20 +74,20 @@ export default function ProjectsIdRoute() {
                       <div class="grid gap-3 md:grid-cols-2">
                         <label class="space-y-1 text-sm">
                           <span class="font-medium text-foreground">App name</span>
-                          <input name="appName" class="w-full rounded-[var(--radius-lg)] border border-border bg-background px-3 py-2" value={projectData()?.name ?? ""} />
+                          <input name="appName" class="builder-input" value={projectData()?.name ?? ""} />
                         </label>
                         <label class="space-y-1 text-sm">
                           <span class="font-medium text-foreground">App kind</span>
-                          <select name="appKind" class="w-full rounded-[var(--radius-lg)] border border-border bg-background px-3 py-2">
+                          <select name="appKind" class="builder-input">
                             <option value="generic">Generic</option>
                             <option value="internal-tool" selected>Internal tool</option>
-                            <option value="cms">CMS</option>
+                            <option value="cms-site">CMS</option>
                             <option value="free-saas-tool">Free SaaS tool</option>
                           </select>
                         </label>
                         <label class="space-y-1 text-sm">
                           <span class="font-medium text-foreground">Theme</span>
-                          <select name="theme" class="w-full rounded-[var(--radius-lg)] border border-border bg-background px-3 py-2">
+                          <select name="theme" class="builder-input">
                             <option value="opal" selected>Opal</option>
                             <option value="amber">Amber</option>
                             <option value="emerald">Emerald</option>
@@ -82,32 +96,32 @@ export default function ProjectsIdRoute() {
                         </label>
                         <label class="space-y-1 text-sm">
                           <span class="font-medium text-foreground">Primary object</span>
-                          <input name="objectName" class="w-full rounded-[var(--radius-lg)] border border-border bg-background px-3 py-2" value="records" />
+                          <input name="objectName" class="builder-input" value="records" />
                         </label>
                       </div>
                       <label class="space-y-1 text-sm">
                         <span class="font-medium text-foreground">Brief</span>
-                        <textarea name="brief" rows="3" class="w-full rounded-[var(--radius-lg)] border border-border bg-background px-3 py-2" placeholder="What should this app help users do?">{projectData()?.summary ?? ""}</textarea>
+                        <textarea name="brief" rows="3" class="builder-input" placeholder="What should this app help users do?">{projectData()?.summary ?? ""}</textarea>
                       </label>
                       <div class="grid gap-3 md:grid-cols-2">
                         <label class="space-y-1 text-sm">
                           <span class="font-medium text-foreground">Fields</span>
-                          <input name="fields" class="w-full rounded-[var(--radius-lg)] border border-border bg-background px-3 py-2" value="title,status,summary" />
+                          <input name="fields" class="builder-input" value="title,status,summary" />
                         </label>
                         <label class="space-y-1 text-sm">
                           <span class="font-medium text-foreground">Routes</span>
-                          <input name="routes" class="w-full rounded-[var(--radius-lg)] border border-border bg-background px-3 py-2" value="Dashboard,Records,New Record,Settings" />
+                          <input name="routes" class="builder-input" value="Dashboard,Records,New Record,Settings" />
                         </label>
                       </div>
                       <label class="space-y-1 text-sm">
                         <span class="font-medium text-foreground">Raw IR override</span>
-                        <textarea name="rawSpec" rows="8" class="w-full rounded-[var(--radius-lg)] border border-border bg-background px-3 py-2 font-mono text-xs" placeholder="Optional: paste a complete Stylyf JSON spec to use instead of the pane values.">{activeIr()?.spec ?? ""}</textarea>
+                        <textarea name="rawSpec" rows="8" class="builder-input font-mono text-xs" placeholder="Optional: paste a complete Stylyf JSON spec to use instead of the pane values.">{activeIr()?.spec ?? ""}</textarea>
                       </label>
                       <div class="flex items-center justify-between gap-3">
                         <p class="text-xs text-muted-foreground">
                           Active draft: {activeIr() ? `v${activeIr()?.version}` : "none yet"}. Generation uses the active draft when present.
                         </p>
-                        <Button type="submit" pending={pending()}>Save IR draft</Button>
+                        <Button type="submit" leftIcon={<Save class="size-4" />} pending={pending()}>Save IR draft</Button>
                       </div>
                       <Show when={irSubmission.result}>
                         {result => <p class="text-sm text-muted-foreground">Saved IR draft v{result().version}.</p>}
@@ -125,12 +139,12 @@ export default function ProjectsIdRoute() {
                           name="prompt"
                           required
                           rows="5"
-                          class="min-h-32 w-full rounded-[var(--radius-lg)] border border-border bg-background px-3 py-2 text-sm text-foreground shadow-inner outline-none transition focus:border-primary"
+                          class="builder-input min-h-36 text-sm"
                           placeholder="Describe the next iteration. Example: make the rating app homepage feel more editorial and add moderation queue affordances."
                         />
                         <div class="flex items-center justify-between gap-3">
                           <p class="text-xs text-muted-foreground">The current adapter records the loop; Codex App Server plugs into the same event stream.</p>
-                          <Button type="submit" pending={pending()}>Send prompt</Button>
+                          <Button type="submit" leftIcon={<Bot class="size-4" />} pending={pending()}>Send prompt</Button>
                         </div>
                         <Show when={agentSubmission.result}>
                           {result => <p class="text-sm text-muted-foreground">{result().message}</p>}
@@ -151,22 +165,22 @@ export default function ProjectsIdRoute() {
                         </div>
                         <div class="flex flex-wrap gap-2">
                           <form action={runStylyfProjectStep.with(params.id ?? "", "validate")} method="post">
-                            <Button type="submit" tone="outline" pending={pending()}>Validate spec</Button>
+                            <Button type="submit" tone="outline" leftIcon={<ShieldCheck class="size-4" />} pending={pending()}>Validate spec</Button>
                           </form>
                           <form action={runStylyfProjectStep.with(params.id ?? "", "plan")} method="post">
-                            <Button type="submit" tone="outline" pending={pending()}>Plan generation</Button>
+                            <Button type="submit" tone="outline" leftIcon={<Braces class="size-4" />} pending={pending()}>Plan generation</Button>
                           </form>
                           <form action={runStylyfProjectStep.with(params.id ?? "", "generate")} method="post">
-                            <Button type="submit" pending={pending()}>Generate app</Button>
+                            <Button type="submit" leftIcon={<WandSparkles class="size-4" />} pending={pending()}>Generate app</Button>
                           </form>
                           <form action={startProjectPreview.with(params.id ?? "")} method="post">
-                            <Button type="submit" tone="outline" pending={pending()}>Start preview</Button>
+                            <Button type="submit" tone="outline" leftIcon={<Play class="size-4" />} pending={pending()}>Start preview</Button>
                           </form>
                           <form action={stopProjectPreview.with(params.id ?? "")} method="post">
                             <Button type="submit" tone="ghost" pending={pending()}>Stop preview</Button>
                           </form>
                           <form action={runWebknifeScreenshot.with(params.id ?? "")} method="post">
-                            <Button type="submit" tone="outline" pending={pending()}>Run Webknife shot</Button>
+                            <Button type="submit" tone="outline" leftIcon={<Camera class="size-4" />} pending={pending()}>Run Webknife shot</Button>
                           </form>
                         </div>
                         <Show when={stylyfSubmission.result}>
@@ -195,11 +209,11 @@ export default function ProjectsIdRoute() {
                             <span class="font-medium text-foreground">Accepted iteration commit message</span>
                             <input
                               name="message"
-                              class="w-full rounded-[var(--radius-lg)] border border-border bg-background px-3 py-2"
+                              class="builder-input"
                               value="Accept generated app iteration"
                             />
                           </label>
-                          <Button type="submit" tone="outline" pending={pending()}>Commit and push</Button>
+                          <Button type="submit" tone="outline" leftIcon={<GitBranch class="size-4" />} pending={pending()}>Commit and push</Button>
                           <Show when={gitSubmission.result}>
                             {result => <p class="text-sm text-muted-foreground">Git handoff recorded{result().repoFullName ? ` for ${result().repoFullName}` : " locally"}.</p>}
                           </Show>

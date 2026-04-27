@@ -24,7 +24,7 @@ export function DetailPanel(userProps: DetailPanelProps) {
   return (
     <aside class={cn("ui-shell-muted space-y-[var(--space-5)] border border-border/80 p-[var(--space-6)] shadow-soft", local.class)} {...others}>
       <div class="space-y-2">
-        <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Selected record</div>
+        <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Control surface</div>
         <h3 class="text-lg font-semibold tracking-[-0.02em] text-foreground">{local.title}</h3>
         <p class="text-sm leading-6 text-muted-foreground">{local.description}</p>
       </div>
