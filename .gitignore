@@ -10,6 +10,7 @@ packages/*/*.tsbuildinfo
 apps/*/.output
 apps/*/.vinxi
 apps/*/node_modules
+packages/*/node_modules
 app.config.timestamp_*.js
 
 # Environment

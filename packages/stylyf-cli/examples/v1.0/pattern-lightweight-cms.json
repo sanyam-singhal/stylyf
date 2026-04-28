@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "app": {
+    "name": "Editorial Desk",
+    "kind": "cms-site",
+    "description": "A lightweight CMS with public content surfaces and authenticated editorial management."
+  },
+  "backend": {
+    "mode": "hosted"
+  },
+  "media": {
+    "mode": "rich"
+  },
+  "objects": [
+    {
+      "name": "articles",
+      "ownership": "user",
+      "visibility": "mixed",
+      "media": [
+        { "name": "cover", "kind": "image", "bucketAlias": "uploads", "metadataTable": "article_assets" }
+      ],
+      "fields": [
+        { "name": "title", "type": "short-text", "required": true },
+        { "name": "slug", "type": "slug", "required": true },
+        { "name": "body", "type": "rich-text" },
+        { "name": "status", "type": "status", "options": ["draft", "review", "published"], "default": "draft" }
+      ]
+    }
+  ],
+  "flows": [
+    { "name": "articlePublishing", "object": "articles", "kind": "publishing" }
+  ],
+  "surfaces": [
+    { "name": "Home", "kind": "landing", "path": "/", "audience": "public" },
+    { "name": "Articles", "kind": "content-index", "object": "articles", "path": "/articles", "audience": "public" },
+    { "name": "Article", "kind": "content-detail", "object": "articles", "path": "/articles/:slug", "audience": "public" },
+    { "name": "Editorial", "kind": "dashboard", "path": "/editorial", "audience": "user" }
+  ]
+}

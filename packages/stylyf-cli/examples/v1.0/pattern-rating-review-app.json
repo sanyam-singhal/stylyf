@@ -1,0 +1,45 @@
+{
+  "version": "1.0",
+  "app": {
+    "name": "Signal Board",
+    "kind": "generic",
+    "description": "A user-generated content rating and review app with moderation surfaces."
+  },
+  "backend": {
+    "mode": "hosted"
+  },
+  "media": {
+    "mode": "rich"
+  },
+  "experience": {
+    "theme": "amber",
+    "mode": "light",
+    "radius": "trim",
+    "density": "comfortable",
+    "spacing": "balanced"
+  },
+  "objects": [
+    {
+      "name": "submissions",
+      "ownership": "user",
+      "visibility": "mixed",
+      "media": [
+        { "name": "media", "kind": "image", "bucketAlias": "uploads", "metadataTable": "submission_assets" }
+      ],
+      "fields": [
+        { "name": "title", "type": "short-text", "required": true },
+        { "name": "source_url", "type": "short-text" },
+        { "name": "rating", "type": "number" },
+        { "name": "status", "type": "status", "options": ["submitted", "reviewing", "published", "rejected"], "default": "submitted" }
+      ]
+    }
+  ],
+  "flows": [
+    { "name": "moderation", "object": "submissions", "kind": "approval" }
+  ],
+  "surfaces": [
+    { "name": "Discover", "kind": "list", "object": "submissions", "path": "/", "audience": "public" },
+    { "name": "Submit", "kind": "create", "object": "submissions", "path": "/submit", "audience": "user" },
+    { "name": "Moderation", "kind": "dashboard", "path": "/moderation", "audience": "user" }
+  ]
+}

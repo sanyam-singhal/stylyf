@@ -28,6 +28,17 @@ stylyf intro --topic full
 - `v1.0/composition.ui.chunk.json`
 - `v1.0/composition.backend.chunk.json`
 
+## Builder Pattern Specs
+
+These are generalized v1.1 builder seeds. They are meant to help an agent pick
+a good starting architecture quickly while still editing ordinary Stylyf IR.
+
+- `v1.0/pattern-internal-ops-dashboard.json`
+- `v1.0/pattern-rating-review-app.json`
+- `v1.0/pattern-media-submission-queue.json`
+- `v1.0/pattern-lightweight-cms.json`
+- `v1.0/pattern-public-utility-saved-results.json`
+
 ## Portable Local Path
 
 Use this first when dogfooding v1.0:

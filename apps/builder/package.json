@@ -1,0 +1,50 @@
+{
+  "name": "stylyf-builder",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vinxi dev",
+    "build": "vinxi build",
+    "start": "vinxi start",
+    "preview": "vinxi preview",
+    "check": "tsc --noEmit",
+    "test": "npm run test:types && npm run test:smoke",
+    "test:types": "tsc -p tests/tsconfig.json --noEmit",
+    "test:e2e": "playwright test",
+    "test:smoke": "playwright test tests/smoke",
+    "test:dogfood": "npm run schema:check && STYLYF_BUILDER_RUN_DOGFOOD=1 STYLYF_BUILDER_CREATE_GITHUB_REPOS=false playwright test tests/dogfood",
+    "env:check": "tsx src/lib/env.check.ts",
+    "tool:check": "tsx scripts/tool-check.ts",
+    "schema:check": "tsx scripts/schema-check.ts",
+    "storage:cors:check": "tsx scripts/storage-cors.ts check",
+    "storage:cors:apply": "tsx scripts/storage-cors.ts apply",
+    "preflight": "npm run env:check && npm run tool:check && npm run schema:check && npm run test:types && npm run check"
+  },
+  "dependencies": {
+    "@solidjs/meta": "^0.29.4",
+    "@solidjs/router": "^0.15.0",
+    "@solidjs/start": "1.3.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-solid": "^1.8.0",
+    "solid-js": "^1.9.12",
+    "tailwind-merge": "^3.5.0",
+    "vinxi": "^0.5.7",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.104.0",
+    "@aws-sdk/client-s3": "^3.883.0",
+    "@aws-sdk/s3-request-presigner": "^3.883.0",
+    "@depths/stylyf-builder-core": "file:../../packages/stylyf-builder-core"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^25.6.0",
+    "tailwindcss": "^4.2.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
